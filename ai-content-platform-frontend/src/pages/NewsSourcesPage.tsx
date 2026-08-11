@@ -44,6 +44,8 @@ interface SourceRow {
   category?: string | null;
   enabled?: boolean;
   status?: string;
+  is_configured?: boolean;
+  config_error?: string | null;
   last_fetched_at?: string | null;
   schedule_cron?: string | null;
   credibility_score?: number | null;
@@ -224,7 +226,7 @@ export function NewsSourcesPage() {
   const [form, setForm] = useState<EditForm | null>(null);
   const [filterText, setFilterText] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
-  const [filterEnabled, setFilterEnabled] = useState<'all' | 'enabled' | 'disabled'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'enabled' | 'disabled' | 'issues'>('all');
   const [saving, setSaving] = useState(false);
 
   const timersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -430,13 +432,18 @@ export function NewsSourcesPage() {
   const filtered = sources.filter((s) => {
     const cat = (s.category || 'technology').toLowerCase();
     if (filterCategory !== 'all' && cat !== filterCategory) return false;
-    if (filterEnabled === 'enabled' && s.enabled === false) return false;
-    if (filterEnabled === 'disabled' && s.enabled !== false) return false;
+    if (filterStatus === 'enabled' && s.enabled === false) return false;
+    if (filterStatus === 'disabled' && s.enabled !== false) return false;
+    const working = s.is_configured !== false && s.health?.healthy !== false;
+    if (filterStatus === 'issues' && working) return false;
     const q = filterText.trim().toLowerCase();
     if (!q) return true;
     const hay = `${s.name} ${s.connector_type || ''} ${cat} ${sourceDetail(s)}`.toLowerCase();
     return hay.includes(q);
   });
+  const issueCount = sources.filter(
+    (s) => s.is_configured === false || s.health?.healthy === false
+  ).length;
   const grouped = filtered.reduce<Record<string, SourceRow[]>>((acc, source) => {
     const key = (source.category || 'technology').toLowerCase();
     (acc[key] ||= []).push(source);
@@ -486,12 +493,15 @@ export function NewsSourcesPage() {
           </select>
           <select
             className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-            value={filterEnabled}
-            onChange={(e) => setFilterEnabled(e.target.value as 'all' | 'enabled' | 'disabled')}
+            value={filterStatus}
+            onChange={(e) =>
+              setFilterStatus(e.target.value as 'all' | 'enabled' | 'disabled' | 'issues')
+            }
           >
             <option value="all">All status</option>
             <option value="enabled">Enabled</option>
             <option value="disabled">Disabled</option>
+            <option value="issues">Attention needed ({issueCount})</option>
           </select>
           <p className="text-xs text-muted-foreground sm:ml-auto">
             Showing {filtered.length} of {sources.length}
@@ -525,6 +535,7 @@ export function NewsSourcesPage() {
                   .map((source) => {
                     const connector = source.connector_type || source.type || 'rss';
                     const active = source.enabled !== false && source.status !== 'inactive';
+                    const configured = source.is_configured !== false;
                     const detail = sourceDetail(source);
                     const runState = runStates[source.id];
                     const badge = runBadge(runState);
@@ -538,7 +549,7 @@ export function NewsSourcesPage() {
                         : null;
 
                     return (
-                      <Card key={source.id}>
+                      <Card key={source.id} className={!configured ? 'opacity-60' : undefined}>
                         <CardContent className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-lg bg-navy-50 flex items-center justify-center shrink-0">
                             {running ? (
@@ -554,9 +565,13 @@ export function NewsSourcesPage() {
                                 {active ? 'enabled' : 'disabled'}
                               </Badge>
                               <Badge>{connector}</Badge>
-                              <Badge variant={healthy ? 'success' : 'destructive'}>
-                                {healthy ? 'healthy' : 'degraded'}
-                              </Badge>
+                              {configured ? (
+                                <Badge variant={healthy ? 'success' : 'destructive'}>
+                                  {healthy ? 'healthy' : 'degraded'}
+                                </Badge>
+                              ) : (
+                                <Badge variant="warning">needs setup</Badge>
+                              )}
                               {badge && <Badge variant={badge.variant}>{badge.label}</Badge>}
                             </div>
                             {detail && (
@@ -570,6 +585,9 @@ export function NewsSourcesPage() {
                               <p className="text-xs text-[var(--color-text-muted)] mt-1">
                                 Last fetched: {new Date(source.last_fetched_at).toLocaleString()}
                               </p>
+                            )}
+                            {!configured && source.config_error && (
+                              <p className="text-xs text-warning mt-1 truncate">{source.config_error}</p>
                             )}
                             {runState?.status === 'failed' && runState.error && (
                               <p className="text-xs text-destructive mt-1 truncate">{runState.error}</p>
@@ -593,7 +611,8 @@ export function NewsSourcesPage() {
                               variant="outline"
                               size="sm"
                               loading={running}
-                              disabled={anyRunning && !running}
+                              disabled={!configured || (anyRunning && !running)}
+                              title={!configured ? source.config_error || 'Needs setup before it can run' : undefined}
                               onClick={() => handleRun(source.id)}
                             >
                               <Play size={14} className="mr-1" />

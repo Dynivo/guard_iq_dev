@@ -25,9 +25,25 @@ from app.modules.news.infrastructure.repositories import (
 
 logger = get_logger(__name__)
 
+# Inline ingest holds one DB connection per job for the whole fetch+save
+# duration. Cap how many run at once, process-wide, well under the
+# SQLAlchemy pool ceiling (default pool_size=5 + max_overflow=10 = 15) —
+# this bounds a single `run-all` on a large catalog *and* any overlap
+# between multiple run-all/run calls (double-click, retries, two tabs),
+# which a per-call batch split alone would not.
+_DEFAULT_PARALLEL_LIMIT = 5
+_inline_semaphore = asyncio.Semaphore(_DEFAULT_PARALLEL_LIMIT)
+
 
 class RunAllSourcesUseCase:
-    """Dispatch ingest jobs for every enabled source in the org."""
+    """Dispatch ingest for every enabled source in the org.
+
+    Sources are ordered by ``priority`` so the ones most likely to matter
+    start first. Actual DB-connection usage is throttled process-wide by
+    ``_inline_semaphore``, so lower-priority sources effectively queue and
+    run as earlier ones finish, keeping concurrent inline ingest well under
+    the DB pool limit regardless of catalog size.
+    """
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
@@ -36,10 +52,13 @@ class RunAllSourcesUseCase:
         source_repo = PgNewsSourceRepository(self._session)
         sources = await source_repo.list_by_org(org_id)
         enabled = [s for s in sources if s.enabled]
+        enabled.sort(key=lambda s: (s.priority or 0), reverse=True)
+
         runner = RunSourceUseCase(self._session)
-        jobs: list[dict] = []
-        for source in enabled:
-            jobs.append(await runner.execute(org_id=org_id, source_id=source.id))
+        jobs = [
+            await runner.execute(org_id=org_id, source_id=source.id)
+            for source in enabled
+        ]
         return {
             "jobs": jobs,
             "count": len(jobs),
@@ -116,7 +135,19 @@ class RunSourceUseCase:
 async def _inline_ingest(
     org_id: uuid.UUID, source_id: uuid.UUID, job_id: uuid.UUID
 ) -> None:
-    """Execute the ingest workflow in a standalone session (background task)."""
+    """Execute the ingest workflow in a standalone session (background task).
+
+    Gated by ``_inline_semaphore`` so only a few of these hold a pooled DB
+    connection at once, no matter how many were dispatched or how many
+    separate dispatch calls (run-all, run, overlapping calls) triggered them.
+    """
+    async with _inline_semaphore:
+        await _run_inline_ingest(org_id, source_id, job_id)
+
+
+async def _run_inline_ingest(
+    org_id: uuid.UUID, source_id: uuid.UUID, job_id: uuid.UUID
+) -> None:
     from app.infrastructure.postgres.session import async_session_factory
 
     async with async_session_factory() as session:

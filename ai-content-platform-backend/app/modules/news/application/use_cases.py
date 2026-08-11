@@ -7,13 +7,26 @@ from typing import Any
 
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.infrastructure.connectors.registry import list_connector_types
+from app.infrastructure.connectors.registry import get_connector, list_connector_types
 from app.modules.news.infrastructure.repositories import (
     PgArticleRepository,
     PgNewsSourceRepository,
 )
 
 logger = get_logger(__name__)
+
+
+async def _check_configured(connector_type: str, config: dict) -> tuple[bool, str | None]:
+    """Run the connector's own validate_config to see if it's ready to fetch."""
+    try:
+        connector = get_connector(connector_type)
+    except ValueError as exc:
+        return False, str(exc)
+    try:
+        ok, error = await connector.validate_config(config or {})
+    except Exception as exc:  # noqa: BLE001
+        return False, str(exc)
+    return ok, (error or None) if not ok else None
 
 
 class ListArticlesUseCase:
@@ -79,7 +92,12 @@ class ListSourcesUseCase:
 
     async def execute(self, org_id: uuid.UUID) -> list[dict[str, Any]]:
         sources = await self._repo.list_by_org(org_id)
-        return [_source_to_dict(s) for s in sources]
+        result = []
+        for s in sources:
+            cfg = s.config_json if isinstance(s.config_json, dict) else {}
+            is_configured, config_error = await _check_configured(s.connector_type, cfg)
+            result.append(_source_to_dict(s, is_configured=is_configured, config_error=config_error))
+        return result
 
 
 class CreateSourceUseCase:
@@ -118,7 +136,8 @@ class CreateSourceUseCase:
             api_key_name=api_key_name,
         )
         logger.info("Created news source: name=%s type=%s org=%s", name, connector_type, org_id)
-        return _source_to_dict(source)
+        is_configured, config_error = await _check_configured(connector_type, config_json)
+        return _source_to_dict(source, is_configured=is_configured, config_error=config_error)
 
 
 class UpdateSourceUseCase:
@@ -154,7 +173,9 @@ class UpdateSourceUseCase:
         if source is None:
             raise NotFoundError("NewsSource", str(source_id))
         logger.info("Updated news source: id=%s org=%s", source_id, org_id)
-        return _source_to_dict(source)
+        cfg = source.config_json if isinstance(source.config_json, dict) else {}
+        is_configured, config_error = await _check_configured(source.connector_type, cfg)
+        return _source_to_dict(source, is_configured=is_configured, config_error=config_error)
 
 
 def _article_to_dict(a: Any, source_name: str | None = None) -> dict[str, Any]:
@@ -195,7 +216,9 @@ def _article_to_dict(a: Any, source_name: str | None = None) -> dict[str, Any]:
     }
 
 
-def _source_to_dict(s: Any) -> dict[str, Any]:
+def _source_to_dict(
+    s: Any, *, is_configured: bool = True, config_error: str | None = None
+) -> dict[str, Any]:
     health = s.health_json if isinstance(getattr(s, "health_json", None), dict) else {}
     credibility = getattr(s, "credibility_score", None)
     if credibility is None and getattr(s, "authority", None) is not None:
@@ -213,6 +236,8 @@ def _source_to_dict(s: Any) -> dict[str, Any]:
         "api_key_name": getattr(s, "api_key_name", None) or cfg.get("api_key_name"),
         "schedule_cron": s.schedule_cron,
         "enabled": s.enabled,
+        "is_configured": is_configured,
+        "config_error": config_error,
         "credibility_score": credibility,
         "priority": getattr(s, "priority", None),
         "authority": getattr(s, "authority", None),
