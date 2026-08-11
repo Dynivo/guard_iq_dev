@@ -136,7 +136,7 @@ class ImageOptimizeHandler(_BaseImageHandler):
 
 class ImageStoreHandler(_BaseImageHandler):
     def __init__(self, engine=None) -> None:
-        # Durable store — S3 when STORAGE_PROVIDER=s3
+        # Durable store — local disk via STORAGE_PROVIDER
         self._engine = engine or VisualIntelligenceFactory.create()
 
     async def execute(self, node: WorkflowNode, context: WorkflowContext) -> NodeOutcome:

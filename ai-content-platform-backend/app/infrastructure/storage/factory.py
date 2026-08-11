@@ -22,21 +22,8 @@ def get_storage_provider() -> StorageProvider:
     provider = settings.STORAGE_PROVIDER.lower().strip()
     if provider == "local":
         return LocalStorageProvider(root=settings.STORAGE_LOCAL_ROOT)
-    if provider == "s3":
-        from app.infrastructure.storage.s3 import S3StorageProvider
-
-        if not settings.S3_BUCKET:
-            raise StorageConfigError("S3_BUCKET is required when STORAGE_PROVIDER=s3")
-        return S3StorageProvider(
-            bucket=settings.S3_BUCKET,
-            region=settings.S3_REGION,
-            access_key_id=settings.S3_ACCESS_KEY_ID or None,
-            secret_access_key=settings.S3_SECRET_ACCESS_KEY or None,
-            endpoint_url=settings.S3_ENDPOINT_URL or None,
-            prefix=settings.S3_PREFIX,
-        )
     raise StorageConfigError(
-        f"Unsupported STORAGE_PROVIDER={settings.STORAGE_PROVIDER!r}; use local|s3"
+        f"Unsupported STORAGE_PROVIDER={settings.STORAGE_PROVIDER!r}; use local"
     )
 
 

@@ -55,7 +55,7 @@ class VisualWorkflow:
         self._storage = storage or get_storage_provider()
         self._delivery = delivery or get_delivery_strategy()
         self._engine = engine or VisualIntelligenceFactory.create()
-        # Always bind durable storage (S3 when STORAGE_PROVIDER=s3)
+        # Always bind durable storage (local disk via STORAGE_PROVIDER)
         self._engine._assets = MemoryImageAssetStore(
             storage=self._storage, require_storage=True
         )

@@ -205,9 +205,8 @@ python -c "import secrets; print(secrets.token_hex(32))"
 | OpenAI images | `IMAGE_PROVIDER=openai` + `OPENAI_API_KEY` + `OPENAI_IMAGE_MODEL=gpt-image-1` |
 | ComfyUI images | `IMAGE_PROVIDER=comfyui` + ComfyUI running + `COMFYUI_BASE_URL` |
 | Background jobs | `JOB_BACKEND=dramatiq` + Redis + **separate worker** (next section) |
-| S3 media | `STORAGE_PROVIDER=s3` + all `S3_*` | **All generated images** (original / optimized / thumbnail) are written here |
 
-When `STORAGE_PROVIDER=s3`, image generation fails the job if the S3 write/verify step fails (no silent memory-only assets).
+Generated images (original / optimized / thumbnail) are always written to local disk under `STORAGE_LOCAL_ROOT` (default `data/media`).
 
 
 ---

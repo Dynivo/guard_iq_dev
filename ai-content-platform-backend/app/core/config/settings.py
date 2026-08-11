@@ -48,15 +48,9 @@ class Settings(BaseSettings):
     CURRENTS_API_KEY: str = ""
 
     # ── Object storage (StorageProvider) ─────────────────────
-    # local = filesystem under STORAGE_LOCAL_ROOT; s3 = private AWS S3 bucket
+    # local = filesystem under STORAGE_LOCAL_ROOT
     STORAGE_PROVIDER: str = "local"
     STORAGE_LOCAL_ROOT: str = "data/media"
-    S3_BUCKET: str = ""
-    S3_REGION: str = "us-east-1"
-    S3_ACCESS_KEY_ID: str = ""
-    S3_SECRET_ACCESS_KEY: str = ""
-    S3_ENDPOINT_URL: str = ""  # optional custom endpoint (e.g. VPC gateway)
-    S3_PREFIX: str = ""
 
     # Delivery Strategy — backend_stream is the M2 default; CDN/short-lived later
     DELIVERY_STRATEGY: str = "backend_stream"

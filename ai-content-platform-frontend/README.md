@@ -30,12 +30,12 @@ Backend (FastAPI)
     ↓
 Your PostgreSQL  ← users, brand, articles, drafts, jobs, media keys
 Your Redis       ← optional (Dramatiq workers)
-Your S3 (or local media) ← generated images
+Local media dir  ← generated images
 LLM / image APIs ← keys in backend .env only (never in frontend)
 ```
 
-- **Frontend** = UI only. No DB connection, no LLM keys, no S3 keys.
-- **Backend `.env`** = database URL, Redis, S3, JWT, OpenAI/Gemini/etc.
+- **Frontend** = UI only. No DB connection, no LLM keys.
+- **Backend `.env`** = database URL, Redis, JWT, OpenAI/Gemini/etc.
 - **Seed / migrations** = run on the backend against **your** Postgres (see backend README).
 
 Default seed login (change in production):
@@ -540,7 +540,7 @@ VITE_API_BASE_URL=https://api.yourdomain.com/api/v1
 - [ ] Sources Run all succeeds; News shows articles
 - [ ] Rescore + Yes/No works
 - [ ] Draft from News opens editor; Approve works
-- [ ] Image generate completes; file downloadable; object in S3/local per backend config
+- [ ] Image generate completes; file downloadable; object saved under backend local media dir
 - [ ] Capture produces a success/personal draft
 - [ ] Plan regenerate respects Brand mix targets
 - [ ] Jobs/Analytics show activity
@@ -557,7 +557,7 @@ VITE_API_BASE_URL=https://api.yourdomain.com/api/v1
 | Everything “not relevant” | Improve Brand Markdown; Rescore; use Yes/No |
 | Drafts weak / off-voice | Tone, audience, profile Markdown; Learning examples |
 | Image dull / wrong colours | Save Brand colours; regenerate; use typography for text |
-| Image job fails | Backend `IMAGE_PROVIDER` + keys; Jobs error message; S3 creds |
+| Image job fails | Backend `IMAGE_PROVIDER` + keys; Jobs error message; check local media dir permissions |
 | Jobs stuck queued | `JOB_BACKEND=inline` **or** start Dramatiq worker + Redis |
 | Sync Latest fails | Finish wizard + LinkedIn session first |
 | Hear / voice capture fails | Backend Azure Speech / Translator env |
@@ -600,4 +600,4 @@ React 19 · Vite · TypeScript · Tailwind CSS v4 · Radix · TanStack Query/Tab
 
 ## Constitution
 
-Frontend-only package. Do not put secrets here. Do not call LLM/image/S3 vendors from the browser. All durable data lives in **your** backend database and object storage.
+Frontend-only package. Do not put secrets here. Do not call LLM/image vendors from the browser. All durable data lives in **your** backend database and local media storage.

@@ -62,7 +62,7 @@ class VisualIntelligenceFactory:
 
     @staticmethod
     def create(*, config_dir: Path | None = None) -> DefaultVisualIntelligenceEngine:
-        """Production engine — pixels persist via STORAGE_PROVIDER (local or s3)."""
+        """Production engine — pixels persist via STORAGE_PROVIDER (local disk)."""
         from app.infrastructure.storage.factory import get_storage_provider
 
         settings = get_settings()

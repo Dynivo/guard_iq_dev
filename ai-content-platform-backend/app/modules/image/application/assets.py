@@ -1,4 +1,4 @@
-"""Storage-backed image asset persistence (local filesystem or private S3)."""
+"""Storage-backed image asset persistence (local filesystem)."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ class StorageWriteError(AppError):
 
 
 def storage_backend_name(storage: StorageProvider | None = None) -> str:
-    """Human-readable backend: s3 | local | memory."""
+    """Human-readable backend: local | memory."""
     if storage is None:
         return "memory"
     name = getattr(storage, "provider_name", None)
@@ -43,7 +43,7 @@ def persist_png(
         raise StorageWriteError(f"Refusing to store empty image at {storage_key}")
     stored = storage.put_bytes(storage_key, data, "image/png")
     backend = storage_backend_name(storage)
-    should_verify = verify if verify is not None else backend == "s3"
+    should_verify = bool(verify)
     if should_verify and not storage.exists(storage_key):
         raise StorageWriteError(
             f"Image write to {backend} reported success but object missing: {storage_key}"
@@ -64,7 +64,7 @@ def persist_png(
 
 
 class MemoryImageAssetStore:
-    """Persists original / optimized / thumbnail via StorageProvider (S3 or local).
+    """Persists original / optimized / thumbnail via StorageProvider (local disk).
 
     Keeps an in-process blob cache for the same request (canonical re-key in VisualWorkflow).
     Name retained for backwards compatibility with tests/handlers.
@@ -79,7 +79,7 @@ class MemoryImageAssetStore:
         if require_storage and storage is None:
             raise StorageWriteError(
                 "ImageAssetStore requires a StorageProvider "
-                "(set STORAGE_PROVIDER=s3|local and configure credentials)"
+                "(set STORAGE_PROVIDER=local)"
             )
         self._storage = storage
         self._assets: list[ImageAssetRecord] = []
@@ -124,7 +124,7 @@ class MemoryImageAssetStore:
                 meta.update(written)
             else:
                 logger.warning(
-                    "image_asset_memory_only key=%s — configure STORAGE_PROVIDER=s3 for durable store",
+                    "image_asset_memory_only key=%s — configure STORAGE_PROVIDER=local for durable store",
                     key,
                 )
             self.blobs[key] = data

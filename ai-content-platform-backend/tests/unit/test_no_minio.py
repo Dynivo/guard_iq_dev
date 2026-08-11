@@ -31,7 +31,6 @@ def test_no_minio_imports_in_app() -> None:
 def test_requirements_has_no_minio() -> None:
     text = REQ.read_text(encoding="utf-8").lower()
     assert "minio" not in text
-    assert "boto3" in text
 
 
 def test_minio_package_directory_removed() -> None:
