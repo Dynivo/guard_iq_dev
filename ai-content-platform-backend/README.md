@@ -20,7 +20,6 @@ This README is the **client handoff guide**. After reading it you should be able
 | **Worker** (`dramatiq`, optional) | Background jobs: news ingest, scoring, image batches |
 | **PostgreSQL** | Primary database (users, articles, drafts, brand, jobs) |
 | **Redis** | Job broker + optional cache (needed for Dramatiq workers) |
-| **Qdrant** (optional) | Vector store for article embeddings |
 
 There is **no LinkedIn auto-post**. Editors approve drafts and publish manually.
 
@@ -33,7 +32,6 @@ There is **no LinkedIn auto-post**. Editors approve drafts and publish manually.
 | Python **3.11+** | Yes | Backend runtime |
 | PostgreSQL **14+** | Yes | App database |
 | Redis | Recommended (required if `JOB_BACKEND=dramatiq`) | Job queue / cache |
-| Qdrant | Optional | Embeddings / similarity |
 | LLM API key(s) | Optional | Real text generation (`mock` works without keys) |
 | Image provider | Optional | Real images (`mock` / `openai` / `comfyui`) |
 
@@ -367,7 +365,7 @@ app/
   api/             HTTP routes, schemas, middleware
   core/            Settings, JWT, logging, constants
   modules/         Domain modules (news, content, intelligence, …)
-  infrastructure/  Postgres, Redis, Qdrant, LLM/image adapters, connectors
+  infrastructure/  Postgres, Redis, LLM/image adapters, connectors
   workers/         Dramatiq actors (background jobs)
   main.py          API entrypoint
 configs/           YAML prompts, brand, workflows, providers

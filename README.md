@@ -40,7 +40,6 @@ Client relevance rubric: [`docs/client-profile.md`](docs/client-profile.md)
 | Node.js 20+ | Yes | Frontend |
 | PostgreSQL | Yes | App database (`ai_content_platform`) |
 | Redis | If using Dramatiq workers | Job broker (`JOB_BACKEND=dramatiq`) |
-| Qdrant | Optional | Article embeddings |
 | LLM / image API keys | Optional | Real AI (`mock` works without keys) |
 
 Full install commands (Postgres local vs server, Redis, worker, checks): see the **Backend README**.

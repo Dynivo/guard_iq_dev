@@ -1,4 +1,4 @@
-"""Intelligence module repositories — persistence for embeddings and relevance scores."""
+"""Intelligence module repositories — persistence for relevance scores."""
 
 from __future__ import annotations
 
@@ -7,36 +7,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.postgres.models.intelligence import ArticleEmbedding, RelevanceScore
-
-
-class PgArticleEmbeddingRepository:
-    """Postgres repository for article embeddings metadata."""
-
-    def __init__(self, session: AsyncSession) -> None:
-        self._session = session
-
-    async def create(
-        self,
-        article_id: uuid.UUID,
-        model_version: str,
-        qdrant_id: str | None,
-        dimensions: int,
-    ) -> ArticleEmbedding:
-        embedding = ArticleEmbedding(
-            article_id=article_id,
-            model_version=model_version,
-            qdrant_id=qdrant_id,
-            dimensions=dimensions,
-        )
-        self._session.add(embedding)
-        await self._session.flush()
-        return embedding
-
-    async def get_by_article(self, article_id: uuid.UUID) -> ArticleEmbedding | None:
-        stmt = select(ArticleEmbedding).where(ArticleEmbedding.article_id == article_id)
-        result = await self._session.execute(stmt)
-        return result.scalar_one_or_none()
+from app.infrastructure.postgres.models.intelligence import RelevanceScore
 
 
 class PgRelevanceScoreRepository:

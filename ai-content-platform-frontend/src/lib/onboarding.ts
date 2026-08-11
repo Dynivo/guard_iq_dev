@@ -29,13 +29,6 @@ export function startOnboardingTour() {
           description: 'Open a draft to approve or reject, then generate images on the same page.',
         },
       },
-      {
-        element: '[data-tour="cmd-trigger"]',
-        popover: {
-          title: 'Command palette',
-          description: 'Press ⌘K anytime to jump to pages and actions.',
-        },
-      },
     ],
     onDestroyed: () => {
       localStorage.setItem('onboarding-done', '1');

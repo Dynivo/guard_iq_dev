@@ -19,7 +19,6 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Search,
   Mic,
   Moon,
   Sun,
@@ -33,7 +32,6 @@ import { routes } from '@/lib/routes';
 import { Button } from '@/design-system/ui/button';
 import { ScrollArea } from '@/design-system/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/design-system/ui/tooltip';
-import { CommandPalette } from '@/components/CommandPalette';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { startOnboardingTour } from '@/lib/onboarding';
 
@@ -103,13 +101,12 @@ export function AppShell() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [collapsed, setCollapsed] = React.useState(() => localStorage.getItem('sidebar-collapsed') === '1');
-  const [cmdOpen, setCmdOpen] = React.useState(false);
   const [sidebarWidth, setSidebarWidth] = React.useState(() => {
     const w = Number(localStorage.getItem('sidebar-width') || 260);
     return Number.isFinite(w) ? Math.min(360, Math.max(200, w)) : 260;
   });
 
-  useKeyboardShortcuts({ onCommandPalette: () => setCmdOpen(true) });
+  useKeyboardShortcuts();
 
   React.useEffect(() => {
     localStorage.setItem('sidebar-collapsed', collapsed ? '1' : '0');
@@ -296,17 +293,6 @@ export function AppShell() {
 
             <div className="ml-auto flex items-center gap-2">
               <Button
-                variant="outline"
-                size="sm"
-                className="hidden gap-2 text-muted-foreground sm:inline-flex"
-                onClick={() => setCmdOpen(true)}
-                data-tour="cmd-trigger"
-              >
-                <Search size={14} />
-                Search
-                <kbd className="rounded border border-border bg-muted px-1.5 text-[10px]">⌘K</kbd>
-              </Button>
-              <Button
                 variant="ghost"
                 size="icon"
                 aria-label="Toggle theme"
@@ -336,8 +322,6 @@ export function AppShell() {
             </div>
           </main>
         </div>
-
-        <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />
       </div>
     </TooltipProvider>
   );

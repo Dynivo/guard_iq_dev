@@ -1,4 +1,4 @@
-"""IntelligenceWorkflow — orchestrates embed (best effort) → score → update status."""
+"""IntelligenceWorkflow — orchestrates score → update status."""
 
 from __future__ import annotations
 
@@ -13,17 +13,12 @@ from app.modules.ai.application.factory import AIOrchestratorFactory
 from app.modules.ai.domain.ports import AIOrchestrator
 from app.infrastructure.postgres.models.news import Article
 from app.modules.intelligence.application.scorer import RelevanceScorer
-from app.modules.intelligence.infrastructure.embedding import get_embedding_provider
-from app.modules.intelligence.infrastructure.qdrant_store import QdrantVectorStore
-from app.modules.intelligence.infrastructure.repositories import PgArticleEmbeddingRepository
 
 logger = get_logger(__name__)
 
-_COLLECTION_NAME = "articles"
-
 
 class IntelligenceWorkflow:
-    """For a given article_id: embed (best effort) → score → update status."""
+    """For a given article_id: score → update status."""
 
     def __init__(
         self,
@@ -32,9 +27,6 @@ class IntelligenceWorkflow:
     ) -> None:
         self._session = session
         orch = orchestrator or AIOrchestratorFactory.create()
-        self._embedding_provider = get_embedding_provider()
-        self._vector_store = QdrantVectorStore()
-        self._embedding_repo = PgArticleEmbeddingRepository(session)
         self._scorer = RelevanceScorer(session, orch)
 
     async def run(self, org_id: uuid.UUID, article_id: uuid.UUID) -> dict:
@@ -50,8 +42,6 @@ class IntelligenceWorkflow:
 
         if article is None:
             raise ValueError(f"Article {article_id} not found")
-
-        embed_success = await self._embed(article)
 
         score_result = await self._scorer.score(
             org_id=org_id,
@@ -70,12 +60,11 @@ class IntelligenceWorkflow:
         await self._merge_score_json(article, score_result, effective_score=effective)
 
         logger.info(
-            "Intelligence workflow complete: article=%s score=%d effective=%d status=%s embed=%s",
+            "Intelligence workflow complete: article=%s score=%d effective=%d status=%s",
             article_id,
             score_result.score,
             effective,
             new_status,
-            embed_success,
         )
 
         return {
@@ -87,7 +76,6 @@ class IntelligenceWorkflow:
             "framework": score_result.framework,
             "angle": score_result.angle,
             "reason": score_result.reason,
-            "embedded": embed_success,
         }
 
     async def _merge_score_json(
@@ -113,33 +101,6 @@ class IntelligenceWorkflow:
             .values(score_json=existing)
         )
         await self._session.execute(stmt)
-
-    async def _embed(self, article: Article) -> bool:
-        """Generate embedding and store in Qdrant (best effort)."""
-        try:
-            text = f"{article.title}\n{article.summary or ''}\n{article.body_text or ''}"
-            embedding_result = await self._embedding_provider.embed(text[:8000])
-
-            await self._embedding_repo.create(
-                article_id=article.id,
-                model_version=embedding_result.model_version,
-                qdrant_id=str(article.id),
-                dimensions=embedding_result.dimensions,
-            )
-
-            await self._vector_store.upsert(
-                collection=_COLLECTION_NAME,
-                doc_id=str(article.id),
-                vector=embedding_result.vector,
-                payload={
-                    "title": article.title,
-                    "org_id": str(article.organization_id),
-                },
-            )
-            return True
-        except Exception as exc:
-            logger.warning("Embedding failed for article %s (best effort): %s", article.id, exc)
-            return False
 
     async def _update_article_status(self, article_id: uuid.UUID, status: str) -> None:
         stmt = update(Article).where(Article.id == article_id).values(status=status)

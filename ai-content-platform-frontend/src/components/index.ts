@@ -7,7 +7,6 @@ export { EmptyState } from './EmptyState';
 export { ErrorState } from './ErrorState';
 export { PageHeader } from './PageHeader';
 export { DataTable } from './DataTable';
-export { CommandPalette } from './CommandPalette';
 export { PipelineProgress } from './ai/PipelineProgress';
 export { AITimeline } from './ai/AITimeline';
 export { WorkflowStageRail } from './ai/WorkflowStageRail';

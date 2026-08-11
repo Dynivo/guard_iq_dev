@@ -6,9 +6,10 @@ from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.embeddings.factory import get_embedding_provider
-from app.infrastructure.vector.memory_store import InMemoryVectorStore
-from app.infrastructure.vector.qdrant_store import QdrantVectorStore
+from app.modules.knowledge.infrastructure.local_retrieval import (
+    InMemoryVectorStore,
+    LocalEmbeddingProvider,
+)
 from app.modules.ai_cache.application.namespaced import NamespacedAICache, RetrievalCache
 from app.modules.ai_cache.infrastructure.memory_cache import InMemoryAICache
 from app.modules.context.application.builder import DefaultContextBuilder
@@ -75,7 +76,7 @@ class KnowledgeEngineFactory:
         src = source or InMemoryKnowledgeSource()
         composite = CompositeKnowledgeSource([StaticBrandSource(), src])
         vectors = InMemoryVectorStore()
-        embeddings = get_embedding_provider()
+        embeddings = LocalEmbeddingProvider()
         strategies = _build_strategies(composite, embeddings, vectors)
         planner = DefaultQueryPlanner(policy)
         ns_cache = NamespacedAICache(InMemoryAICache())
@@ -98,7 +99,6 @@ class KnowledgeEngineFactory:
     def create(
         session: AsyncSession | None = None,
         *,
-        use_qdrant: bool = False,
         policy_id: str = "default",
     ) -> DefaultKnowledgeEngine:
         if session is None:
@@ -116,8 +116,8 @@ class KnowledgeEngineFactory:
                 PgDraftSource(session),
             ]
         )
-        vectors = QdrantVectorStore() if use_qdrant else InMemoryVectorStore()
-        embeddings = get_embedding_provider()
+        vectors = InMemoryVectorStore()
+        embeddings = LocalEmbeddingProvider()
         strategies = _build_strategies(sources, embeddings, vectors)
         planner = DefaultQueryPlanner(policy)
         ns_cache = NamespacedAICache(InMemoryAICache())

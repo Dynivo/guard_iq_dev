@@ -37,10 +37,6 @@ class Settings(BaseSettings):
     # ── Redis ────────────────────────────────────────────────
     REDIS_URL: str = "redis://localhost:6379/0"
 
-    # ── Qdrant ───────────────────────────────────────────────
-    QDRANT_URL: str = "http://localhost:6333"
-    QDRANT_API_KEY: str = ""
-
     # ── News connectors ──────────────────────────────────────
     NEWSDATA_API_KEY: str = ""
     GNEWS_API_KEY: str = ""
@@ -101,13 +97,11 @@ class Settings(BaseSettings):
     # xAI Grok (OpenAI-compatible chat)
     GROK_API_KEY: str = ""
     GROK_BASE_URL: str = "https://api.x.ai/v1"
-    # Azure OpenAI (chat + embeddings)
+    # Azure OpenAI (chat)
     AZURE_OPENAI_ENDPOINT: str = ""
     AZURE_OPENAI_API_KEY: str = ""
     AZURE_OPENAI_API_VERSION: str = "2024-02-15-preview"
     AZURE_OPENAI_DEPLOYMENT_NAME: str = "gpt-4"
-    AZURE_OPENAI_EMBEDDING_DEPLOYMENT: str = "text-embedding-3-small"
-    AZURE_EMBEDDING_DIMENSION: int = 1536
     # Azure Speech (STT + optional TTS — not Azure OpenAI)
     AZURE_SPEECH_KEY: str = ""
     AZURE_SPEECH_REGION: str = ""
@@ -126,11 +120,6 @@ class Settings(BaseSettings):
     # Rotate writing/analysis across every LLM with an API key (openai, gemini, grok, …)
     # Prefer CONSENSUS_ENABLED for writing — scores all models and keeps the best draft.
     PROVIDER_MIX_ENABLED: bool = False
-    # Embeddings: local | openai | azure_openai
-    EMBEDDING_PROVIDER: str = "local"
-    OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
-    OPENAI_EMBEDDING_DIMENSION: int = 1536
-    LOCAL_EMBEDDING_URL: str = ""
     AI_CACHE_BACKEND: str = "memory"  # memory | redis
     INFERENCE_BACKEND: str = "remote"  # remote | local | gpu_cluster
 

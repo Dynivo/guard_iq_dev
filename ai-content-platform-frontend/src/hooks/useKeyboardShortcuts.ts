@@ -15,9 +15,7 @@ const GO_MAP: Record<string, string> = {
   s: routes.sources,
 };
 
-export function useKeyboardShortcuts(opts: {
-  onCommandPalette: () => void;
-}) {
+export function useKeyboardShortcuts() {
   const navigate = useNavigate();
   const pendingG = React.useRef(false);
   const timer = React.useRef<number | null>(null);
@@ -30,12 +28,6 @@ export function useKeyboardShortcuts(opts: {
         (target.tagName === 'INPUT' ||
           target.tagName === 'TEXTAREA' ||
           target.isContentEditable);
-
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        opts.onCommandPalette();
-        return;
-      }
 
       if (typing) return;
 
@@ -65,5 +57,5 @@ export function useKeyboardShortcuts(opts: {
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [navigate, opts]);
+  }, [navigate]);
 }

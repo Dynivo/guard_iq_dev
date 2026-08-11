@@ -26,7 +26,6 @@ from app.infrastructure.postgres.models.news import (
     TopicCluster,
 )
 from app.infrastructure.postgres.models.intelligence import (
-    ArticleEmbedding,
     Claim,
     RelevanceScore,
 )
@@ -117,7 +116,6 @@ from app.infrastructure.postgres.models.brand_intelligence import (
 
 __all__ = [
     "Article",
-    "ArticleEmbedding",
     "ArticleEntity",
     "ArticleEvent",
     "ArticleRawPayload",

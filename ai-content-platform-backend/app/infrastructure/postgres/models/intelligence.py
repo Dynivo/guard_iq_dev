@@ -1,4 +1,4 @@
-"""Intelligence models: embeddings, relevance scores, claims."""
+"""Intelligence models: relevance scores, claims."""
 
 from __future__ import annotations
 
@@ -14,17 +14,6 @@ from app.infrastructure.postgres.models.mixins import (
     TimestampMixin,
     UUIDPrimaryKeyMixin,
 )
-
-
-class ArticleEmbedding(Base, UUIDPrimaryKeyMixin, TimestampMixin):
-    __tablename__ = "article_embeddings"
-
-    article_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=False, index=True
-    )
-    model_version: Mapped[str] = mapped_column(String(100), nullable=False)
-    qdrant_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    dimensions: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
 class RelevanceScore(Base, UUIDPrimaryKeyMixin, TimestampMixin, OrgScopedMixin):

@@ -190,7 +190,7 @@ def test_prepare_context_end_to_end() -> None:
 
 
 def test_local_embedding_deterministic() -> None:
-    from app.infrastructure.embeddings.local_provider import LocalEmbeddingProvider
+    from app.modules.knowledge.infrastructure.local_retrieval import LocalEmbeddingProvider
 
     p = LocalEmbeddingProvider(dimensions=32)
     a = asyncio.run(p.embed("hello"))
@@ -200,8 +200,10 @@ def test_local_embedding_deterministic() -> None:
 
 
 def test_memory_vector_store_search() -> None:
-    from app.infrastructure.embeddings.local_provider import LocalEmbeddingProvider
-    from app.infrastructure.vector.memory_store import InMemoryVectorStore
+    from app.modules.knowledge.infrastructure.local_retrieval import (
+        InMemoryVectorStore,
+        LocalEmbeddingProvider,
+    )
 
     store = InMemoryVectorStore()
     emb = LocalEmbeddingProvider(dimensions=16)
