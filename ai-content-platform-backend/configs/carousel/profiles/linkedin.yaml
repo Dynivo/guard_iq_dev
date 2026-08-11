@@ -1,0 +1,29 @@
+id: linkedin
+name: LinkedIn Portrait
+width: 1080
+height: 1350
+margins:
+  top: 0.04
+  right: 0.06
+  bottom: 0.04
+  left: 0.06
+safe_area:
+  x: 0.06
+  y: 0.08
+  width: 0.88
+  height: 0.84
+bleed: 0.0
+render_strategy: svg_html_playwright
+formats:
+  - png
+  - pdf
+  - zip
+padding:
+  top: 0.02
+  right: 0.02
+  bottom: 0.02
+  left: 0.02
+grid_columns: 12
+alignment_rules:
+  title: left
+  body: left

@@ -1,0 +1,63 @@
+workflow:
+  name: content_generation
+  version: "2.0"
+  description: Strategy → plan → validate → generate → validate_draft → format → finalize
+  entry: strategy
+  nodes:
+    - id: strategy
+      name: Evaluate strategy
+      type: content.strategy
+      category: content
+      transitions:
+        - when: { type: always }
+          to: plan
+    - id: plan
+      name: Content plan
+      type: content.plan
+      category: content
+      transitions:
+        - when: { type: always }
+          to: validate
+    - id: validate
+      name: Validate plan
+      type: content.validate
+      category: content
+      transitions:
+        - when: { type: always }
+          to: generate
+    - id: generate
+      name: Generate via Content Generation Engine
+      type: content.generate
+      category: content
+      retry:
+        strategy: fixed_delay
+        max_attempts: 2
+        delay_ms: 1
+      fallback:
+        strategy: stop
+      transitions:
+        - when: { type: success }
+          to: validate_draft
+        - when: { type: failure }
+          to: validate_draft
+    - id: validate_draft
+      name: Validate structured draft
+      type: content.validate_draft
+      category: content
+      transitions:
+        - when: { type: success }
+          to: format
+        - when: { type: failure }
+          to: format
+    - id: format
+      name: Format draft
+      type: content.format
+      category: content
+      transitions:
+        - when: { type: always }
+          to: finalize
+    - id: finalize
+      name: Finalize draft for review
+      type: content.finalize
+      category: content
+      terminal: true

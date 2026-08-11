@@ -1,0 +1,29 @@
+sources:
+  - source_id: example_rss
+    name: Example Security RSS
+    connector_type: rss
+    enabled: true
+    schedule_cron: "0 */6 * * *"
+    authority: 0.7
+    reliability: 0.75
+    trust: 0.7
+    config:
+      feed_url: "https://example.com/security/feed.xml"
+      max_items: 25
+
+  - source_id: example_newsdata
+    name: NewsData Latest
+    connector_type: news_api
+    enabled: true
+    schedule_cron: "30 */4 * * *"
+    authority: 0.65
+    reliability: 0.7
+    trust: 0.65
+    config:
+      # api_key optional — falls back to NEWSDATA_API_KEY env (never commit secrets)
+      # Leave query/categories empty for latest news. Free plan max size=10/request.
+      query: ""
+      language: "en"
+      categories: []
+      max_items: 30
+      paid_plan: false

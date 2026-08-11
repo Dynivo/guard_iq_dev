@@ -1,0 +1,33 @@
+# Deterministic Opportunity ranking weights (Phase 1 — no LLM).
+# All scores are Estimated; never presented as LinkedIn ground truth.
+
+weights:
+  relevance: 0.35
+  opportunity_tags: 0.15
+  trend: 0.15
+  freshness: 0.15
+  audience_fit: 0.10
+  competition: 0.10
+
+# Maps opportunity detector tags → suggested content angles
+angle_map:
+  educational: Educational
+  thought_leadership: Opinion
+  checklist: Checklist
+  best_practices: Framework
+  weekly_roundup_candidate: Weekly Roundup
+  industry_alert: Industry Alert
+  security_advisory: Educational
+  compliance_update: Compliance
+  myth_vs_fact: Myth vs Fact
+  faq: FAQ
+  comparison: Comparison
+  multi_article_merge: Case Study
+
+default_strategic_goal: "Become a trusted authority in your market through consistent, high-signal LinkedIn content."
+
+# Days without posting a topic before Copilot memory nudges
+memory_gap_days: 14
+
+# Competition: more than N recent drafts/opps on similar topic → lower score
+competition_soft_cap: 3

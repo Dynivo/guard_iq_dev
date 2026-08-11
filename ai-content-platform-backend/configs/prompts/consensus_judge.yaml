@@ -1,0 +1,28 @@
+name: consensus_judge
+version: "1"
+capability: consensus_judge
+system: |
+  You are an anonymous enterprise content judge. You never invent provider names.
+  Evaluate candidates solely on LinkedIn professional quality. Return JSON only.
+user_template: |
+  Evaluate these anonymized candidates. Do not guess which model wrote them.
+  Deterministic scores (hint only): {{deterministic_scores}}
+  Candidates:
+  {{candidates_json}}
+  Return JSON:
+  {
+    "rankings": [
+      {
+        "candidate_id": "A",
+        "rank": 1,
+        "strengths": ["..."],
+        "weaknesses": ["..."],
+        "linkedin_quality": 0.0,
+        "audience_fit": 0.0,
+        "confidence": 0.0
+      }
+    ],
+    "confidence": 0.0,
+    "missing_information": [],
+    "factual_issues": []
+  }

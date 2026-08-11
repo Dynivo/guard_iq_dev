@@ -1,0 +1,13 @@
+# Reviewer intelligence scoring weights (deterministic, no LLM).
+version: "1"
+
+weights:
+  approval_rate: 0.25
+  rejection_rate: 0.15
+  review_accuracy: 0.35
+  specialization_bonus: 0.15
+  edit_penalty: 0.10
+
+edit_penalty_scale: 100
+accuracy_prior_approvals: 0.9
+accuracy_prior_rejections: 0.7

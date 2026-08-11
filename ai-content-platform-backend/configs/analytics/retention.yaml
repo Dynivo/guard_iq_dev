@@ -1,0 +1,8 @@
+# Retention policies for traces and evaluations.
+version: "1"
+
+retention:
+  ai_traces_days: 90
+  workflow_traces_days: 90
+  evaluation_results_days: 180
+  cost_records_days: 365

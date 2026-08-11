@@ -1,0 +1,17 @@
+id: comparison
+name: Comparison Layout
+preferred_slide_type: comparison
+preferred_layout: comparison
+layers_order:
+  - illustration
+  - title
+  - subtitle
+  - icons
+  - cta
+  - footer
+  - logo
+region_bias:
+  title:
+    align: center
+metadata:
+  template_family: comparison

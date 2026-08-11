@@ -1,0 +1,63 @@
+# Relevance scoring prompt configuration
+# Variables are injected at runtime; body is the prompt template.
+
+name: relevance_scoring
+version: "1.1"
+owner: platform
+description: >
+  Score an article's relevance to the client's business,
+  audience, and regulatory scope.
+
+variables:
+  - name: client_profile
+    type: text
+    required: true
+  - name: article_title
+    type: text
+    required: true
+  - name: article_summary
+    type: text
+    required: true
+  - name: article_body
+    type: text
+    required: false
+
+body: |
+  You are a relevance screening assistant for a LinkedIn content
+  platform. Your job is to evaluate whether a news article is
+  worth turning into a LinkedIn post for this specific client.
+
+  === CLIENT PROFILE ===
+  {client_profile}
+
+  === ARTICLE ===
+  Title: {article_title}
+  Summary: {article_summary}
+  Body: {article_body}
+
+  === INSTRUCTIONS ===
+  Evaluate the article against the client profile. Prefer including
+  cyber / IT / compliance / Microsoft 365 / SME digital-risk stories.
+  Return JSON only:
+
+  {
+    "relevant": true/false,
+    "score": 1-5,
+    "sector": "care | healthcare | legal | accountancy | cross-sector",
+    "framework": "DSPT | CyberEssentials | GDPR | SRA | FRC | CQC | none",
+    "audience": "reactive | managed | both",
+    "angle": "one sentence on what the post would say",
+    "reason": "why it passed or failed"
+  }
+
+  Scoring:
+  - 4–5: strong UK / sector / actionable fit
+  - 3: clear cyber, IT, compliance, M365, phishing, ransomware, or GDPR angle
+  - 2: borderline but usable tech/security/ops story with a post angle
+  - 1: clearly off-topic (sports, celebrity, pure politics, consumer gadgets)
+
+  Set relevant=true when score >= 2. Use score 1 only for clear misses.
+
+eval_notes: >
+  Prefer recall for in-scope cyber/IT/compliance. Score >= 2 is relevant.
+  Score 1 only for obvious off-topic.

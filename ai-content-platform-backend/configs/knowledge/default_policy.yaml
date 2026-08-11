@@ -1,0 +1,46 @@
+policy_id: default
+
+source_priority:
+  - brand
+  - rule
+  - claim
+  - preference
+  - example
+  - article
+  - approved_post
+  - draft
+  - document
+  - template
+  - org_setting
+  - user_note
+
+freshness:
+  max_age_days: 365
+  stale_below_score: 0.2
+
+organization:
+  require_match: true
+
+language:
+  allowed: [en]
+  deny: []
+
+category:
+  allowed_types: []
+
+compliance:
+  min_confidence: 0.05
+  min_reliability: 0.1
+  drop_duplicate_claims: true
+  drop_content_duplicates: true
+  min_rank_score: 0.05
+
+ranking_weights:
+  similarity: 0.35
+  keyword: 0.15
+  reliability: 0.12
+  freshness: 0.10
+  authority: 0.08
+  organization_relevance: 0.08
+  confidence: 0.07
+  feedback: 0.05

@@ -1,0 +1,28 @@
+id: mobile
+name: Mobile Story
+width: 1080
+height: 1920
+margins:
+  top: 0.08
+  right: 0.06
+  bottom: 0.1
+  left: 0.06
+safe_area:
+  x: 0.08
+  y: 0.12
+  width: 0.84
+  height: 0.76
+bleed: 0.0
+render_strategy: svg_html_playwright
+formats:
+  - png
+  - zip
+padding:
+  top: 0.03
+  right: 0.03
+  bottom: 0.03
+  left: 0.03
+grid_columns: 8
+alignment_rules:
+  title: center
+  body: left

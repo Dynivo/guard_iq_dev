@@ -1,0 +1,46 @@
+# Structured feedback reason codes for human review.
+version: "1"
+
+categories:
+  - writing
+  - visual
+  - typography
+  - brand
+  - compliance
+  - fact
+  - tone
+  - general
+
+reason_codes:
+  writing:
+    - hook_weak
+    - too_long
+    - too_short
+    - unclear_cta
+    - tone_mismatch
+  visual:
+    - image_mismatch
+    - low_quality
+    - wrong_aspect
+  typography:
+    - hierarchy_weak
+    - overflow
+    - brand_font_missing
+  brand:
+    - voice_off
+    - color_off
+    - logo_missing
+  compliance:
+    - claim_unverified
+    - prohibited_language
+    - disclosure_missing
+  fact:
+    - inaccurate
+    - outdated
+    - missing_source
+  tone:
+    - too_casual
+    - too_formal
+    - off_brand
+  general:
+    - other

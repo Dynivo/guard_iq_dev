@@ -1,0 +1,17 @@
+id: timeline
+name: Timeline Layout
+preferred_slide_type: timeline
+preferred_layout: timeline
+layers_order:
+  - illustration
+  - title
+  - icons
+  - subtitle
+  - cta
+  - footer
+  - logo
+region_bias:
+  icons:
+    flow: horizontal
+metadata:
+  template_family: timeline

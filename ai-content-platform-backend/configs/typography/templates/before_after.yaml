@@ -1,0 +1,17 @@
+id: before_after
+name: Before After Layout
+preferred_slide_type: before_after
+preferred_layout: before_after
+layers_order:
+  - illustration
+  - title
+  - subtitle
+  - icons
+  - cta
+  - footer
+  - logo
+region_bias:
+  subtitle:
+    columns: 2
+metadata:
+  template_family: before_after

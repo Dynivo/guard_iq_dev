@@ -1,0 +1,46 @@
+workflow:
+  name: carousel
+  version: "1.1"
+  description: Plan → compose → build → optimize → render → export → store
+  entry: plan
+  nodes:
+    - id: plan
+      name: Carousel plan
+      type: carousel.plan
+      transitions:
+        - when: { type: always }
+          to: compose
+    - id: compose
+      name: Slide composition
+      type: carousel.compose
+      transitions:
+        - when: { type: always }
+          to: build
+    - id: build
+      name: Deck build + DeckDefinition
+      type: carousel.build
+      transitions:
+        - when: { type: always }
+          to: optimize
+    - id: optimize
+      name: Deck optimize
+      type: carousel.optimize
+      transitions:
+        - when: { type: always }
+          to: render
+    - id: render
+      name: Render from DeckDefinition
+      type: carousel.render
+      transitions:
+        - when: { type: always }
+          to: export
+    - id: export
+      name: Export artifacts
+      type: carousel.export
+      transitions:
+        - when: { type: always }
+          to: store
+    - id: store
+      name: Store carousel asset
+      type: carousel.store
+      terminal: true

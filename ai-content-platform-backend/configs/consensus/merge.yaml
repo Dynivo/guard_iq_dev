@@ -1,0 +1,19 @@
+# Section merge / winner selection for multi-LLM consensus
+sections:
+  - key: hook
+    prefer_roles: [hooks, writing]
+  - key: body
+    prefer_roles: [writing, style]
+  - key: cta
+    prefer_roles: [cta, writing]
+  - key: hashtags
+    prefer_roles: [hashtags, research]
+  - key: statistics
+    prefer_roles: [statistics, research]
+  - key: visual_prompt
+    prefer_roles: [image_prompt]
+
+# winner_take_all = score every full draft (deterministic eval + AI judge) and keep the best
+# section_best = pick best hook/body/cta from different models (Frankenstein merge)
+strategy: winner_take_all
+min_section_score: 0.0

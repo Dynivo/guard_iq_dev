@@ -1,0 +1,53 @@
+# LinkedIn viral post craft — injected into draft generation
+version: "1.1"
+
+hook_styles:
+  - id: pattern_interrupt
+    label: Pattern interrupt
+    instruction: "Open with a counterintuitive or unexpected line that reframes the news."
+  - id: bold_claim
+    label: Bold claim
+    instruction: "Open with a confident one-line claim grounded in the article facts."
+  - id: stakes
+    label: Stakes
+    instruction: "Open with what is at risk for a care/legal/accountancy practice manager if they ignore this."
+  - id: story_beat
+    label: Story beat
+    instruction: "Open mid-action — a concrete moment from the article, then zoom out."
+  - id: question
+    label: Provoking question
+    instruction: "Open with a sharp question a non-technical practice manager would actually ask."
+  - id: number_lead
+    label: Number lead
+    instruction: "If a number exists in knowledge, lead with it. Never invent numbers."
+
+body_structure: |
+  Use this LinkedIn-native structure (client house style):
+  1) Hook — 1 punchy line (also returned separately as "hook")
+  2) Context — 2–4 short lines: what happened, in plain English
+  3) Insight — why it matters for a regulated 5–70 person practice / what most miss
+  4) Practical takeaway — one thing a manager can do or watch for
+  5) Soft CTA — comment / save / team conversation
+  Keep body under ~160 words. White space over walls of text.
+  Optional: one short scannable list (3 bullets max) when explaining a framework.
+
+cta_styles:
+  - "Ask a specific opinion question people can answer in one sentence."
+  - "Invite saves: 'Worth bookmarking if you work in …'"
+  - "Invite debate: 'Agree or am I missing something?'"
+  - "Invite a team check: 'Would your team catch this?'"
+  - "Soft follow CTA tied to the topic — never generic."
+
+hashtag_rules:
+  - "3–5 max"
+  - "Mix 1–2 broad + 2–3 niche (care, cyber, compliance, Microsoft 365, etc.)"
+  - "No #Success #Motivation spam"
+
+visual_direction: |
+  Prefer LinkedIn-native educational creatives matching client quality:
+  (A) Educational infographic — light off-white/mint background, navy/teal accents,
+      big-stat callouts, connected nodes, process steps, or comparison panels with
+      short 2–4 word labels
+  (B) Flat branded illustration only when the story needs a small human accent —
+      never a dark neon portrait with floating icon halo
+  Avoid stock photos, handshakes, generic AI sludge, cluttered collage, black-void neon.

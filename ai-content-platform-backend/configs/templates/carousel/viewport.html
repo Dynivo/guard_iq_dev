@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: {width}px;
+      height: {height}px;
+      overflow: hidden;
+      background: transparent;
+    }
+    .viewport {
+      width: {width}px;
+      height: {height}px;
+      position: relative;
+    }
+    .viewport svg { width: 100%; height: 100%; display: block; }
+  </style>
+</head>
+<body>
+  <div class="viewport">{svg_content}</div>
+</body>
+</html>

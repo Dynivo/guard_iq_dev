@@ -1,0 +1,18 @@
+policy_id: default
+
+title_similarity_threshold: 0.85
+cluster_similarity_threshold: 0.55
+cluster_time_window_hours: 72
+max_cluster_size: 20
+min_authority: 0.0
+relevant_composite_threshold: 0.45
+
+score_weights:
+  relevance: 0.20
+  importance: 0.12
+  authority: 0.12
+  novelty: 0.10
+  trend: 0.10
+  business_impact: 0.12
+  organization_relevance: 0.14
+  freshness: 0.10

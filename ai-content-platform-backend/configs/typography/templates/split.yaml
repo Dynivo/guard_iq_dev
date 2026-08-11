@@ -1,0 +1,21 @@
+id: split
+name: Split Layout
+preferred_slide_type: split
+preferred_layout: split
+layers_order:
+  - illustration
+  - title
+  - subtitle
+  - cta
+  - footer
+  - logo
+  - icons
+region_bias:
+  title:
+    x_bias: 0.05
+    width_bias: 0.42
+  subtitle:
+    x_bias: 0.52
+    width_bias: 0.42
+metadata:
+  template_family: split

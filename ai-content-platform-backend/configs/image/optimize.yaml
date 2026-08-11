@@ -1,0 +1,6 @@
+thumbnail_max_side: 256
+jpeg_quality: 85
+webp_quality: 80
+enable_webp: true
+enable_jpeg: true
+upscale_enabled: false

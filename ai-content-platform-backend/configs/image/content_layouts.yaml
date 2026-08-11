@@ -1,0 +1,102 @@
+# Body-grounded visual layouts for LinkedIn creatives (client house style).
+# Short labels (2–4 words) are allowed on educational graphics; no paragraphs.
+
+surface: >-
+  bright clean off-white background #F4F7F5 with subtle cool grey paper grain,
+  high-key consulting lighting — NOT muddy beige/olive, NOT black void, NOT neon glow
+
+ban_default_hero: >-
+  NOT a centred portrait with floating decorative icons around the head,
+  NOT angry stock-businessman stare, NOT dark cyberpunk rim-light collage,
+  NOT a long question/headline sentence across the top of the image,
+  NOT truncated or cut-off text at the frame edge
+
+modes:
+  big_stat:
+    visual_elements: >-
+      LARGE central statistic callout card as the hero (bold numeral + short 1–2 word label only),
+      three circular pictogram nodes around it connected by clean lines
+      (Hidden malware / Hidden threats / Compliance risk style),
+      optional small bar or pie accent in a corner, flat SaaS infographic,
+      generous margins, NO full-sentence headlines in the artwork
+    charts: [big_stat_callout, small_pie_accent]
+    graphs: [impact_bars]
+  connected_nodes:
+    visual_elements: >-
+      three connected circular info nodes around a central theme icon,
+      short 2–4 word labels on each node, thin connector lines,
+      educational framework explainer on a light background
+    charts: [triad_nodes]
+    graphs: []
+  process_pictogram:
+    visual_elements: >-
+      horizontal process of 3–5 pictogram steps with short labels and arrows,
+      educational infographic, light background, no portrait hero
+    charts: [process_steps]
+    graphs: []
+  comparison:
+    visual_elements: >-
+      side-by-side comparison panels (left vs right) with clear icons and
+      short labels only — quiz / before-after education style, light background
+    charts: [comparison_panels]
+    graphs: []
+  flow_nodes:
+    visual_elements: >-
+      small information circles linked by arrows showing cause→effect,
+      short labels, flat modern consulting infographic on light background
+    charts: [flow_diagram]
+    graphs: []
+  access_control:
+    visual_elements: >-
+      educational access-control diagram: lock/key or gate icon at centre,
+      network path arrows, short labels for authorize / block / expose,
+      Azure/cloud cue as abstract shape only, light MSP consulting style
+    charts: [access_control_flow]
+    graphs: []
+  legal_context:
+    visual_elements: >-
+      PREMIUM clean 3-CARD horizontal educational infographic (not a cluttered mind-map):
+      Card 1 — scales of justice icon + label "Legal landscape";
+      Card 2 — document checklist icon + label "Due diligence";
+      Card 3 — building/handshake icon + label "Key providers";
+      equal card sizes, generous white space, subtle teal accent underline under each label,
+      ONE optional thin connector line between cards only,
+      NO duplicate labels, NO spiderweb of partner synonyms, NO portrait,
+      bright off-white #F4F7F5 background, polished UK consulting MSP quality
+    charts: [three_equal_cards]
+    graphs: []
+  legal_labels:
+    - Legal landscape
+    - Due diligence
+    - Key providers
+  signal_filter:
+    visual_elements: >-
+      premium decision funnel: many muted grey news cards falling into a large
+      modern funnel; only two highlighted outcome cards inside the funnel;
+      minimal bullseye/target below; generous editorial whitespace; flat SaaS
+    charts: [focus_funnel]
+    graphs: []
+  hero_with_accents:
+    visual_elements: >-
+      one clear educational focal PROP (chart, device, or document) plus 2–3
+      relevant icon accents with short labels — human figure optional and small,
+      never a floating-icon halo portrait
+    charts: []
+    graphs: []
+
+signal_filter_labels:
+  - Compliance risk
+  - UK regulation
+
+legal_labels:
+  - Legal landscape
+  - Due diligence
+  - Key providers
+
+label_rules: >-
+  Prefer 2–4 word labels on nodes/charts (e.g. "Hidden malware", "Access control").
+  Never paragraphs. Never tiny illegible text walls.
+  Spelling must be perfect dictionary English — never invent or misspell words
+  (especially Distributor, Provider, Diligence, Compliance).
+  Never repeat the same label twice in one image.
+  Prefer at most 3 labelled elements total for legal/due-diligence creatives.

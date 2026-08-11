@@ -1,0 +1,61 @@
+# News ingestion intelligence pipeline (M8 + refinements)
+workflow:
+  name: news_ingestion
+  version: "2.1"
+  description: Fetch → parse → normalize → dedupe → cluster → score → enrich → store
+  entry: fetch
+  nodes:
+    - id: fetch
+      name: Fetch news
+      type: news.fetch
+      category: news
+      transitions:
+        - when: { type: always }
+          to: parse
+    - id: parse
+      name: Parse feed items
+      type: news.parse
+      category: news
+      transitions:
+        - when: { type: always }
+          to: normalize
+    - id: normalize
+      name: Normalize articles
+      type: news.normalize
+      category: news
+      transitions:
+        - when: { type: always }
+          to: dedupe
+    - id: dedupe
+      name: Deduplicate and run intelligence
+      type: news.dedupe
+      category: news
+      transitions:
+        - when: { type: always }
+          to: cluster
+    - id: cluster
+      name: Cluster related stories
+      type: news.cluster
+      category: news
+      transitions:
+        - when: { type: always }
+          to: score
+    - id: score
+      name: Score articles
+      type: news.score
+      category: news
+      transitions:
+        - when: { type: always }
+          to: enrich
+    - id: enrich
+      name: Enrich metadata for KE
+      type: news.enrich
+      category: news
+      transitions:
+        - when: { type: always }
+          to: store
+    - id: store
+      name: Persist for Knowledge Engine
+      type: news.store
+      category: news
+      terminal: true

@@ -1,0 +1,9 @@
+template:
+  id: healthcare
+  priority: high
+  required_reviewers: 3
+  quorum: 2
+  topic: healthcare
+  risk: high
+  reason_code_categories: [compliance, fact, brand]
+  specializations: [healthcare, clinical]

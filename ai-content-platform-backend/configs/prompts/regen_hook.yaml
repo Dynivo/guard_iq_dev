@@ -1,0 +1,37 @@
+# regen_hook — section regeneration (Prompt Builder template)
+name: regen_hook
+version: "1.0"
+capability: writing
+status: active
+approval_status: approved
+schema_id: json
+owner: platform
+description: Regenerate LinkedIn hook only.
+
+required_inputs:
+  - task
+optional_inputs:
+  - knowledge
+  - draft_context
+
+variables:
+  - name: task
+    type: text
+    required: true
+  - name: draft_context
+    type: text
+    required: false
+  - name: knowledge
+    type: text
+    required: false
+
+sections:
+  system: |
+    You rewrite only the LinkedIn hook. Do not change CTA or body.
+  task: |
+    {{ task }}
+  context: |
+    {% if draft_context %}Current draft:
+    {{ draft_context }}{% endif %}
+  output: |
+    Respond with JSON only: {"hook":"..."}

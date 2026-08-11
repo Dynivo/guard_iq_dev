@@ -1,0 +1,22 @@
+cases:
+  - case_id: basic_plan_prompt
+    prompt_name: writing_from_plan
+    prompt_version: "1.0"
+    description: Compiles task and knowledge into PromptRequest
+    variables:
+      task: "Write a LinkedIn post about DSPT compliance for care homes."
+      knowledge: "DSPT requires annual assessment for care providers."
+      brand: "Practical, calm, UK spelling."
+      rules: "No emojis. No invented stats."
+      content_type: "insight"
+      hook_style: "question"
+      cta_style: "soft"
+      topic: "DSPT compliance"
+      planner: '{"content_type":"insight","format":"single_image"}'
+    expected_contains:
+      - "DSPT"
+      - "TASK"
+      - "hook"
+    expected_json_keys:
+      - "hook"
+      - "body"

@@ -1,0 +1,4 @@
+brands:
+  - brand_key: default
+    display_name: Default
+    token_profile: defaults

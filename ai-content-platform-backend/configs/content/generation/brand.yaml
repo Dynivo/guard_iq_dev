@@ -1,0 +1,15 @@
+# Brand validation rules (M9)
+forbidden_phrases:
+  - clickbait
+  - you won't believe
+  - miracle cure
+  - guaranteed results overnight
+preferred_vocabulary:
+  - compliance
+  - security
+  - guidance
+  - best practice
+  - professional
+style_guide:
+  avoid_all_caps_hooks: true
+  avoid_emoji_spam: true

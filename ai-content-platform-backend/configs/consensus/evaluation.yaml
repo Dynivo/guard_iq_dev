@@ -1,0 +1,18 @@
+# Deterministic evaluation metrics (no LLM)
+metrics:
+  json_validity: { weight: 0.15 }
+  structure: { weight: 0.12 }          # hook/body/cta/hashtags present
+  length: { weight: 0.08, min_chars: 80, max_chars: 3000 }
+  hook_quality: { weight: 0.10, min_hook_chars: 20, max_hook_chars: 220 }
+  cta_quality: { weight: 0.08, min_cta_chars: 10 }
+  hashtags: { weight: 0.05, min_count: 1, max_count: 8 }
+  readability: { weight: 0.10 }        # proxy: avg sentence length
+  enterprise_tone: { weight: 0.08 }    # penalty for slang/emoji overload
+  linkedin_style: { weight: 0.08 }
+  brand_keywords: { weight: 0.06 }
+  evidence: { weight: 0.05 }           # numbers/citations markers
+  professionalism: { weight: 0.05 }
+
+thresholds:
+  min_composite: 0.35
+  pass_composite: 0.55

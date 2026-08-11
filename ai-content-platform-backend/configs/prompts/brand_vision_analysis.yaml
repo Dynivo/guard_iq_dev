@@ -1,0 +1,15 @@
+name: brand_vision_analysis
+version: "1.0.0"
+description: Analyze brand visual DNA from images and layouts
+owner: brand_intelligence
+variables:
+  - visual_notes
+sections:
+  system: |
+    You analyze brand imagery for style, color, logo presence, and layout.
+    Return structured JSON. Never invent asset URLs.
+  user: |
+    Visual notes / OCR context:
+
+    {{ visual_notes }}
+evaluation_notes: LLM path when vision provider configured; heuristic default in CI.

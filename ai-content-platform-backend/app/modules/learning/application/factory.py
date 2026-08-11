@@ -1,0 +1,13 @@
+"""Factory for LearningEngine."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from app.modules.learning.application.engine import LearningEngine
+
+
+class LearningFactory:
+    @staticmethod
+    def create_memory(*, config_dir: Path | str | None = None) -> LearningEngine:
+        return LearningEngine(config_dir=str(config_dir) if config_dir else None)

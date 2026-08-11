@@ -1,0 +1,123 @@
+# =============================================================================
+# Root .gitignore — AI Content Intelligence Platform
+# =============================================================================
+# Keep in git: source, configs, README, .env.example, alembic, essential scripts.
+# Never commit: secrets, local runtime data, dependencies, caches, session files.
+# =============================================================================
+
+# ─── Secrets & local env (examples stay tracked) ─────────────────────────────
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+!*.pem.example
+certs/**
+!certs/.gitkeep
+
+# ─── Dependencies & virtualenvs ──────────────────────────────────────────────
+.venv/
+venv/
+env/
+**/node_modules/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.Python
+pip-wheel-metadata/
+
+# ─── Build / dist / coverage ─────────────────────────────────────────────────
+**/dist/
+**/build/
+**/coverage/
+**/htmlcov/
+**/.coverage
+**/.coverage.*
+**/.nyc_output/
+**/*.tsbuildinfo
+**/.vite/
+**/.turbo/
+**/.next/
+**/.output/
+
+# ─── Test / type / lint caches ───────────────────────────────────────────────
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.hypothesis/
+**/.tox/
+**/.cache/
+**/.eslintcache/
+
+# ─── Runtime data (local media, DB dumps, Redis, sessions) ───────────────────
+**/data/
+!**/data/.gitkeep
+dump.rdb
+*.rdb
+*.sqlite
+*.sqlite3
+*.db
+!**/schema.sql
+
+# LinkedIn / Playwright / browser session artifacts (never ship credentials)
+**/linkedin_storage_state.json
+**/storage_state.json
+**/*storage_state*.json
+**/playwright/.auth/
+**/.auth/
+**/cookies.json
+
+# Local object-storage mirror / downloads
+**/media/
+!**/public/media/.gitkeep
+tmp/
+temp/
+*.tmp
+*.temp
+*.log
+logs/
+
+# ─── OS / editor junk ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+*.code-workspace
+
+# ─── Large / legacy binary packs (not production source) ─────────────────────
+# Keep Markdown handoff docs; exclude vendor PDFs / Word dumps.
+*.pdf
+*.docx
+*.doc
+*.pptx
+*.ppt
+*.xlsx
+*.xls
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+
+# ─── Local scratch / analysis (do not ship) ──────────────────────────────────
+Analysis/
+analysis/
+scratch/
+scratchpad/
+notes.local.md
+TODO.local.md
+*.local.md
+
+# Cursor / agent local state (rules/skills may be committed separately if desired)
+.cursor/projects/
+**/agent-transcripts/

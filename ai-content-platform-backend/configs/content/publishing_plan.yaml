@@ -1,0 +1,36 @@
+# Publishing Plan — brand-selectable window + mix targets (Mon–Fri workdays).
+
+default_window: fortnight
+
+windows:
+  weekly:
+    # This calendar week Mon–Fri (5 workdays).
+    targets:
+      educational: 3
+      success_story: 1
+      personal_achievement: 1
+  fortnight:
+    # Current + next calendar week Mon–Fri (10 workdays).
+    targets:
+      educational: 6
+      success_story: 3
+      personal_achievement: 1
+
+# Legacy top-level targets (= fortnight defaults) for older callers/tests.
+targets:
+  educational: 6
+  success_story: 3
+  personal_achievement: 1
+
+# Draft statuses that count toward the window quota (rejected excluded).
+counting_statuses:
+  - pending_review
+  - approved
+  - scheduled
+  - published
+  - in_review
+
+# Article statuses eligible for educational fill (already-drafted articles are skipped).
+educational_article_statuses:
+  - relevant
+  - scored

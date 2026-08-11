@@ -1,0 +1,8 @@
+# Azure OpenAI — chat + embeddings deployments (ADR 0056 / 0057)
+provider: azure_openai
+capability: chat
+defaults:
+  api_version: "2024-02-15-preview"
+  chat_deployment: gpt-4
+  embedding_deployment: text-embedding-3-small
+  embedding_dimension: 1536

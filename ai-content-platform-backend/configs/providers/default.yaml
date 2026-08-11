@@ -1,0 +1,227 @@
+# Default provider configuration
+# Maps AI capabilities to provider + model pairs.
+# Override per-org via the provider_configs database table.
+
+capabilities:
+  research:
+    provider: perplexity
+    model: sonar
+    temperature: 0.3
+    max_tokens: 4096
+    cacheable: true
+    cache_ttl_seconds: 3600
+    fallbacks:
+      - { provider: openai, model: gpt-4o-mini }
+      - { provider: mock }
+
+  relevance_scoring:
+    provider: gemini
+    model: gemini-2.5-flash
+    temperature: 0.3
+    max_tokens: 2048
+    cacheable: true
+    cache_ttl_seconds: 7200
+    retry: { max_attempts: 2, strategy: fixed_delay, delay_ms: 200 }
+    fallbacks:
+      - { provider: openai, model: gpt-4o-mini }
+      - { provider: mock }
+
+  # backward-compat alias key (also normalized from "relevance")
+  relevance:
+    provider: gemini
+    model: gemini-2.5-flash
+    temperature: 0.3
+    max_tokens: 2048
+    cacheable: true
+    fallbacks:
+      - { provider: mock }
+
+  knowledge_retrieval:
+    provider: openai
+    model: gpt-4o-mini
+    temperature: 0.2
+    max_tokens: 2048
+    cacheable: true
+    fallbacks:
+      - { provider: mock }
+
+  planning:
+    provider: gemini
+    model: gemini-2.5-flash
+    temperature: 0.5
+    max_tokens: 4096
+    cacheable: true
+    fallbacks:
+      - { provider: mock }
+
+  prompt_building:
+    provider: openai
+    model: gpt-4o-mini
+    temperature: 0.3
+    max_tokens: 4096
+    cacheable: false
+    sensitive: true
+    fallbacks:
+      - { provider: mock }
+
+  writing:
+    # Drafts use CONSENSUS_ENABLED (multi-model generate + score; best wins).
+    provider: openai
+    model: gpt-4o-mini
+    model_id: gpt-4o-mini
+    temperature: 0.7
+    max_tokens: 4096
+    cacheable: true
+    cache_ttl_seconds: 1800
+    fallbacks:
+      - { provider: gemini, model: gemini-2.5-flash }
+      - { provider: grok, model: llama-3.3-70b-versatile }
+      - { provider: azure_openai, model: gpt-4 }
+      - { provider: perplexity, model: sonar }
+      - { provider: mock }
+
+  copywriting:
+    provider: gemini
+    model: gemini-2.5-flash
+    temperature: 0.7
+    max_tokens: 4096
+    cacheable: true
+    fallbacks:
+      - { provider: mock }
+
+  editing:
+    provider: anthropic
+    model: claude-3-5-haiku-latest
+    temperature: 0.4
+    max_tokens: 4096
+    cacheable: false
+    fallbacks:
+      - { provider: openai, model: gpt-4o-mini }
+      - { provider: mock }
+
+  fact_checking:
+    provider: perplexity
+    model: sonar
+    temperature: 0.2
+    max_tokens: 2048
+    cacheable: true
+    fallbacks:
+      - { provider: mock }
+
+  summarization:
+    provider: gemini
+    model: gemini-2.5-flash
+    temperature: 0.3
+    max_tokens: 2048
+    cacheable: true
+    fallbacks:
+      - { provider: mock }
+
+  image_prompting:
+    provider: gemini
+    model: gemini-2.5-flash
+    temperature: 0.6
+    max_tokens: 1024
+    cacheable: true
+    fallbacks:
+      - { provider: mock }
+
+  image_prompt:
+    provider: gemini
+    model: gemini-2.5-flash
+    temperature: 0.6
+    max_tokens: 1024
+    cacheable: true
+    fallbacks:
+      - { provider: mock }
+
+  embeddings:
+    provider: openai
+    model: text-embedding-3-small
+    temperature: 0.0
+    max_tokens: 1
+    cacheable: true
+    cache_ttl_seconds: 86400
+    fallbacks:
+      - { provider: mock }
+
+  preference_learning:
+    provider: gemini
+    model: gemini-2.5-flash
+    temperature: 0.3
+    max_tokens: 2048
+    cacheable: false
+    sensitive: true
+    fallbacks:
+      - { provider: mock }
+
+  preference_summary:
+    provider: gemini
+    model: gemini-2.5-flash
+    temperature: 0.3
+    max_tokens: 2048
+    cacheable: false
+    sensitive: true
+    fallbacks:
+      - { provider: mock }
+
+  translation:
+    provider: openai
+    model: gpt-4o-mini
+    temperature: 0.3
+    max_tokens: 4096
+    cacheable: true
+    fallbacks:
+      - { provider: mock }
+
+  carousel_copy:
+    provider: gemini
+    model: gemini-2.5-flash
+    temperature: 0.5
+    max_tokens: 4096
+    cacheable: true
+    fallbacks:
+      - { provider: mock }
+
+  analysis:
+    provider: openai
+    model: gpt-4o-mini
+    temperature: 0.3
+    max_tokens: 2048
+    cacheable: false
+    fallbacks:
+      - { provider: gemini, model: gemini-2.5-flash }
+      - { provider: grok, model: llama-3.3-70b-versatile }
+      - { provider: mock }
+
+  # M17 Consensus Engine auxiliary capabilities
+  consensus_judge:
+    provider: openai
+    model: gpt-4o-mini
+    temperature: 0.2
+    max_tokens: 2048
+    cacheable: false
+    sensitive: true
+    fallbacks:
+      - { provider: gemini, model: gemini-2.5-flash }
+      - { provider: mock }
+
+  consensus_critique:
+    provider: anthropic
+    model: claude-3-5-haiku-latest
+    temperature: 0.2
+    max_tokens: 2048
+    cacheable: false
+    sensitive: true
+    fallbacks:
+      - { provider: openai, model: gpt-4o-mini }
+      - { provider: mock }
+
+  consensus_revise:
+    provider: openai
+    model: gpt-4o-mini
+    temperature: 0.4
+    max_tokens: 2048
+    cacheable: false
+    fallbacks:
+      - { provider: mock }

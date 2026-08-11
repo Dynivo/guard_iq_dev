@@ -1,0 +1,17 @@
+# Deterministic evaluation thresholds — no LLM.
+version: "1"
+
+evaluation:
+  weights:
+    approval_rate: 0.25
+    edit_distance_inverse: 0.20
+    latency_budget: 0.15
+    learning_growth: 0.15
+    visual_quality: 0.10
+    typography_quality: 0.10
+    carousel_quality: 0.05
+  thresholds:
+    high_edit_distance: 40
+    low_approval_rate: 0.4
+    high_latency_ms: 5000
+  latency_budget_ms: 3000

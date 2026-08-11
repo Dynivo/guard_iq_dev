@@ -1,0 +1,16 @@
+# Review comment / decision templates (human-editable).
+version: "1"
+
+templates:
+  approve_default:
+    title: Approve
+    body: "Looks good — approved for publish."
+  reject_tone:
+    title: Reject — tone
+    body: "Tone does not match brand voice. Please revise."
+  needs_changes_hook:
+    title: Needs changes — hook
+    body: "Hook is weak; strengthen the opening line."
+  partial_visual:
+    title: Partial approve — visual follow-up
+    body: "Copy approved; visual assets need another pass."

@@ -1,0 +1,15 @@
+defaults:
+  theme: security_led_consulting
+  purpose: support_linkedin_post
+  audience: regulated_practice_managers_uk
+  brand_direction: clean_modern_brand_kit_trustworthy
+  visual_tone_by_emotion:
+    calm_confidence: confident_calm
+    urgency: urgent_focused
+    warmth: approachable_warm
+    clarity: clear_educational
+purpose_by_intent:
+  inform_and_engage: educate_and_engage
+  scroll_stop_and_educate: educate_and_engage
+  warn_and_guide: warn_and_guide
+  default: support_message

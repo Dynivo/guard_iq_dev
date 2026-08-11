@@ -1,0 +1,16 @@
+id: default
+name: Default LinkedIn Portrait
+preferred_slide_type: single
+preferred_layout: default
+layers_order:
+  - illustration
+  - title_bg
+  - title
+  - subtitle
+  - cta
+  - footer
+  - logo
+  - icons
+region_bias: {}
+metadata:
+  template_family: default

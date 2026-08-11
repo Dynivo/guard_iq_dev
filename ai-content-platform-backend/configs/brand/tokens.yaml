@@ -1,0 +1,76 @@
+defaults:
+  text_primary: "#FFFFFF"
+  text_secondary: "#C5D5E0"
+  text_muted: "#8FA3B5"
+  accent: "#1A5CB0"
+  min_contrast_ratio: 4.5
+variants:
+  dark:
+    text_primary: "#FFFFFF"
+    text_secondary: "#C5D5E0"
+    text_muted: "#8FA3B5"
+    surface: "#0A1F2B"
+  light:
+    text_primary: "#0A1F2B"
+    text_secondary: "#334E63"
+    text_muted: "#5A7184"
+    surface: "#E8F1F8"
+allowed_fonts:
+  - Inter
+  - Arial
+  - Helvetica
+  - Roboto
+  - system-ui
+typography:
+  families:
+    heading: Inter
+    body: Inter
+  scale:
+    xs: 12
+    sm: 14
+    md: 18
+    lg: 24
+    xl: 36
+    display: 56
+  line_height:
+    tight: 1.1
+    normal: 1.25
+    relaxed: 1.45
+spacing:
+  xs: 4
+  sm: 8
+  md: 16
+  lg: 24
+  xl: 40
+  xxl: 64
+radius:
+  none: 0
+  sm: 4
+  md: 8
+  lg: 12
+  xl: 20
+  pill: 999
+elevation:
+  flat: 0
+  raised: 1
+  floating: 2
+  modal: 3
+shadows:
+  none: "none"
+  sm: "0 1px 2px rgba(0,0,0,0.12)"
+  md: "0 4px 12px rgba(0,0,0,0.18)"
+  lg: "0 12px 32px rgba(0,0,0,0.24)"
+borders:
+  hairline: 1
+  thin: 2
+  thick: 4
+opacity:
+  muted: 0.48
+  overlay: 0.72
+  solid: 1.0
+animation:
+  duration_ms:
+    fast: 120
+    normal: 240
+    slow: 400
+  easing: ease-out

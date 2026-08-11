@@ -1,0 +1,51 @@
+# Positive prompt — senior LinkedIn designer quality (planning-driven).
+# Short 2–4 word labels allowed; paragraphs banned. Brand hexes injected at runtime.
+template: >-
+  Create a premium LinkedIn infographic with a clean editorial style.
+  style {style}.
+  Theme: {content_subject}.
+  MUST DEPICT (do not ignore): {must_depict}.
+  VISUAL PLANNING: {planning_clause}.
+  Visual hierarchy: {visual_hierarchy}.
+  Pattern story: {visual_story}.
+  BODY-GROUNDED VISUAL SYSTEM: {visual_elements}.
+  charts/graphs/objects to include: {charts} {graphs} {objects}.
+  SHORT LABELS on nodes/cards (2–4 words, correct English spelling): {body_key_ideas}.
+  scene details: {scene},
+  focal composition: {foreground},
+  environment: {background},
+  relevant icons only (never decorative halo spam): {icons},
+  composition {composition}, camera {camera}, focus {focus},
+  intent {intent}, brand {brand_direction},
+  target audience / business tone: thought-leadership for regulated UK practices,
+  STRICT brand colour palette: {palette},
+  Style inspiration: {style_inspiration},
+  Flat vector illustration. Minimal. Corporate. Premium SaaS.
+  Large whitespace. Rounded cards. Subtle professional gradients. Soft shadows.
+  Professional iconography. No decorative clutter. No AI fantasy. No humans. No robots.
+  LIGHT off-white / mint-grey paper-grain background, bright professional lighting,
+  square 1:1 LinkedIn framing, scroll-stopping but professional,
+  leave a clean typography-safe area in the upper ~30% for headline overlay,
+  leave bottom ~15% for CTA,
+  NOT a marketing banner, NOT a centred angry portrait with floating icons,
+  NOT a black void with neon glow
+default_workflow_id: flux_dev
+default_workflow_version: "1"
+default_negative: >-
+  No text paragraphs, no watermark, no signatures, no blurry image, no extra fingers,
+  no distorted objects, no AI artifacts, no random symbols, no spelling, no floating UI,
+  no fake logos, no unrealistic humans, no meme style, no cartoon,
+  LinkedIn logo, LinkedIn UI, social network logos, photorealistic stock photo,
+  handshake, blurry faces, low quality, watermark, logo spam, cluttered collage,
+  neon cyberpunk glow, black void background, rim-light portrait, plastic 3d CGI,
+  distorted anatomy, robots, glowing brains, holograms, hooded hackers,
+  floating padlock spam, binary rain, futuristic cities, abstract polygons, 3d blobs,
+  paragraphs of body copy, tiny illegible text walls, misspelled or garbled text,
+  long question headline across the top, truncated cut-off text at edges,
+  floating icon halo around businessman head, angry stock portrait as the whole creative,
+  cluttered mind-map spiderweb, duplicate repeated labels, misspelled words,
+  Distrubur, synonym spam of Vendor Provider Reseller Distributor,
+  unrelated decorative icons, muddy brown backgrounds, muddy beige olive gradient,
+  dull washed-out colours
+style_prefix: premium flat branded LinkedIn educational infographic
+avoid_prefix: "Strictly avoid"

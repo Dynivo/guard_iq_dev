@@ -1,0 +1,10 @@
+# Learning capture policy — which review events become LearningEvents.
+version: "1"
+
+capture:
+  event_types:
+    - DraftApproved
+    - DraftRejected
+    - DraftEdited
+  require_organization_id: true
+  store_raw_payload: true

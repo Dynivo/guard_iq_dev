@@ -1,0 +1,19 @@
+id: problem_solution
+name: Problem Solution Layout
+preferred_slide_type: problem_solution
+preferred_layout: problem_solution
+layers_order:
+  - illustration
+  - title
+  - subtitle
+  - cta
+  - icons
+  - footer
+  - logo
+region_bias:
+  title:
+    y_bias: 0.2
+  cta:
+    y_bias: 0.85
+metadata:
+  template_family: problem_solution

@@ -1,0 +1,29 @@
+industries:
+  healthcare:
+    topics:
+      compliance:
+        subtopics: [dspt, care-homes, nhs]
+      security:
+        subtopics: [ransomware, phishing, vulnerability]
+  finance:
+    topics:
+      compliance:
+        subtopics: [pci-dss, fraud]
+      security:
+        subtopics: [breach, fraud]
+  technology:
+    topics:
+      cloud:
+        subtopics: [azure, aws, identity]
+      security:
+        subtopics: [patch, vulnerability, zero-day]
+  government:
+    topics:
+      regulation:
+        subtopics: [nis2, gdpr]
+      security:
+        subtopics: [advisory, incident]
+  general:
+    topics:
+      general:
+        subtopics: [industry, update]

@@ -1,0 +1,13 @@
+sync:
+  incremental: true
+  max_new_posts: 50
+  linkedin_watermark_field: last_post_external_id
+
+connectors:
+  linkedin:
+    use_playwright_default: false
+  website:
+    max_pages_default: 8
+    timeout_seconds: 20
+  upload:
+    max_artifact_bytes: 52428800

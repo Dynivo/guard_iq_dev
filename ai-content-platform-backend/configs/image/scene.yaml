@@ -1,0 +1,20 @@
+defaults:
+  layout: educational_infographic
+  white_space: generous
+  reading_direction: ltr_top_to_bottom
+  background:
+    - soft_off_white_gradient
+    - light_mint_grey_paper_grain
+    - clean_workspace_negative_space
+  people: []
+  graphs: []
+layout_by_style:
+  branded_flat_illustration: educational_infographic
+  branded_illustration: educational_infographic
+  educational_infographic: stacked_sections
+  dark_cyber_brand_graphic: triad_nodes
+  infographic: stacked_sections
+  icon_focused: icon_grid
+carousel_charts:
+  - simple_bar
+  - process_flow

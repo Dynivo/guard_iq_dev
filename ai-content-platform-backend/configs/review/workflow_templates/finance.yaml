@@ -1,0 +1,9 @@
+template:
+  id: finance
+  priority: high
+  required_reviewers: 2
+  quorum: 2
+  topic: finance
+  risk: high
+  reason_code_categories: [compliance, fact, writing]
+  specializations: [finance, risk]

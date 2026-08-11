@@ -1,0 +1,11 @@
+# Learning store policy — history preservation + lifecycle on create.
+version: "1"
+
+store:
+  never_overwrite_in_place: true
+  preference_history: true
+  deactivate_superseded: true
+  example_versioning: true
+  rule_versioning: true
+  initial_lifecycle: candidate
+  never_activate_on_create: true

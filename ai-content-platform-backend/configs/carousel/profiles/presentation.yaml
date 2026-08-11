@@ -1,0 +1,29 @@
+id: presentation
+name: Presentation Landscape
+width: 1920
+height: 1080
+margins:
+  top: 0.06
+  right: 0.08
+  bottom: 0.06
+  left: 0.08
+safe_area:
+  x: 0.08
+  y: 0.1
+  width: 0.84
+  height: 0.8
+bleed: 0.0
+render_strategy: svg_html_playwright
+formats:
+  - png
+  - pdf
+  - zip
+padding:
+  top: 0.04
+  right: 0.04
+  bottom: 0.04
+  left: 0.04
+grid_columns: 16
+alignment_rules:
+  title: left
+  body: left

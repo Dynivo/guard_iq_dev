@@ -1,0 +1,15 @@
+name: brand_writing_analysis
+version: "1.0.0"
+description: Analyze brand writing DNA from canonical posts
+owner: brand_intelligence
+variables:
+  - posts_text
+sections:
+  system: |
+    You analyze LinkedIn and brand writing samples. Return structured tone, authority,
+    reading level, CTA patterns, and vocabulary notes. Never invent facts.
+  user: |
+    Analyze the following posts and brand text:
+
+    {{ posts_text }}
+evaluation_notes: Used when LLM analyzers are enabled; heuristic path is default in CI.

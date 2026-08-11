@@ -1,0 +1,41 @@
+# Slide composition hints for M12 — never renders carousels/PDF.
+default_slide_type: single
+default_reading_flow: ltr_top_to_bottom
+split_reading_flow: ltr_columns
+default_transition: none
+continuation_char_threshold: 180
+continuation_hint_long: continue_next
+continuation_hint_default: none
+template_to_slide_type:
+  default: single
+  hero: hero
+  split: split
+  timeline: timeline
+  checklist: checklist
+  quote: quote
+  comparison: comparison
+  statistics: statistics
+  problem_solution: problem_solution
+  before_after: before_after
+template_to_layout:
+  default: default
+  hero: hero
+  split: split
+  timeline: timeline
+  checklist: checklist
+  quote: quote
+  comparison: comparison
+  statistics: statistics
+  problem_solution: problem_solution
+  before_after: before_after
+transitions:
+  default: none
+  hero: fade
+  split: wipe
+  timeline: push
+  checklist: none
+  quote: fade
+  comparison: wipe
+  statistics: none
+  problem_solution: push
+  before_after: wipe

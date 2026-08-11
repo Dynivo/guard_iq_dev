@@ -1,0 +1,28 @@
+id: instagram
+name: Instagram Square
+width: 1080
+height: 1080
+margins:
+  top: 0.05
+  right: 0.05
+  bottom: 0.05
+  left: 0.05
+safe_area:
+  x: 0.08
+  y: 0.08
+  width: 0.84
+  height: 0.84
+bleed: 0.0
+render_strategy: svg_html_playwright
+formats:
+  - png
+  - zip
+padding:
+  top: 0.03
+  right: 0.03
+  bottom: 0.03
+  left: 0.03
+grid_columns: 12
+alignment_rules:
+  title: center
+  body: center

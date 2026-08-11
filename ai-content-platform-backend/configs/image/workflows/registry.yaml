@@ -1,0 +1,26 @@
+default_workflow_id: flux_dev
+workflows:
+  - workflow_id: flux_dev
+    version: "1"
+    provider: comfyui
+    model: flux-dev
+    path: flux_dev.v1.json
+    parameters:
+      steps: 20
+      cfg: 3.5
+  - workflow_id: flux_schnell
+    version: "1"
+    provider: comfyui
+    model: flux-schnell
+    path: flux_schnell.v1.json
+    parameters:
+      steps: 4
+      cfg: 1.0
+  - workflow_id: sdxl
+    version: "1"
+    provider: comfyui
+    model: sdxl
+    path: sdxl.v1.json
+    parameters:
+      steps: 25
+      cfg: 7.0

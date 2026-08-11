@@ -1,0 +1,11 @@
+min_width: 512
+min_height: 512
+expected_aspect_tolerance: 0.22
+blur_variance_threshold: 10.0
+require_png_magic: true
+palette_sample_pixels: 96
+min_quality_score: 0.50
+# Soft-fail aspect so OpenAI size buckets (1024x1024 / 1024x1536) still accept LinkedIn 4:5 plans
+aspect_mismatch_is_hard_fail: false
+# Fraction of sampled pixels that should sit near Brand Kit hexes
+min_brand_pixel_ratio: 0.08

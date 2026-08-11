@@ -1,0 +1,55 @@
+# Knowledge preparation scaffold — plan → retrieve → rank → filter → compress → context
+workflow:
+  name: knowledge_prepare
+  version: "1.1"
+  description: Plan → retrieve → rank → filter → compress → context
+  entry: plan
+  nodes:
+    - id: plan
+      name: Plan query
+      type: knowledge.plan
+      category: knowledge
+      config:
+        top_k: 10
+        token_budget: 2000
+        search_mode: hybrid
+      transitions:
+        - when: { type: always }
+          to: retrieve
+    - id: retrieve
+      name: Retrieve knowledge
+      type: knowledge.retrieve
+      category: knowledge
+      config:
+        top_k: 10
+        token_budget: 2000
+        search_mode: hybrid
+      transitions:
+        - when: { type: always }
+          to: rank
+    - id: rank
+      name: Rank knowledge
+      type: knowledge.rank
+      category: knowledge
+      transitions:
+        - when: { type: always }
+          to: filter
+    - id: filter
+      name: Filter knowledge
+      type: knowledge.filter
+      category: knowledge
+      transitions:
+        - when: { type: always }
+          to: compress
+    - id: compress
+      name: Compress knowledge
+      type: knowledge.compress
+      category: knowledge
+      transitions:
+        - when: { type: always }
+          to: context
+    - id: context
+      name: Build context
+      type: knowledge.context
+      category: knowledge
+      terminal: true

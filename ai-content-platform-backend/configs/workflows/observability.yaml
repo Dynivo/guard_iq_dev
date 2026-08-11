@@ -1,0 +1,42 @@
+workflow:
+  name: observability
+  version: "1.0"
+  description: Capture metrics, evaluate, store traces, aggregate analytics
+  entry: metrics_capture
+  nodes:
+    - id: metrics_capture
+      name: Capture metrics
+      type: metrics.capture
+      transitions:
+        - when: { type: always }
+          to: metrics_aggregate
+    - id: metrics_aggregate
+      name: Aggregate metrics
+      type: metrics.aggregate
+      transitions:
+        - when: { type: always }
+          to: evaluation_run
+    - id: evaluation_run
+      name: Run deterministic evaluation
+      type: evaluation.run
+      transitions:
+        - when: { type: always }
+          to: trace_store
+    - id: trace_store
+      name: Store traces
+      type: trace.store
+      transitions:
+        - when: { type: always }
+          to: analytics_aggregate
+    - id: analytics_aggregate
+      name: Aggregate analytics status
+      type: analytics.aggregate
+      transitions:
+        - when: { type: always }
+          to: done
+    - id: done
+      name: Done
+      type: set_context
+      config:
+        set: { stage: observability_done }
+      terminal: true

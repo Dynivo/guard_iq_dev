@@ -1,0 +1,55 @@
+# Consensus cost / quality policies
+default_policy: balanced
+
+policies:
+  development:
+    max_providers: 2
+    budget_usd: 0.05
+    max_latency_ms: 60000
+    quality_threshold: 0.3
+    consensus_threshold: 0.2
+    allow_mock: true
+    force_providers: [mock]
+    fallback: single_mock
+
+  cheap:
+    max_providers: 1
+    budget_usd: 0.02
+    max_latency_ms: 20000
+    quality_threshold: 0.4
+    consensus_threshold: 0.0
+    allow_mock: true
+    preferred: [gemini, openai, mock]
+    fallback: single
+
+  balanced:
+    max_providers: 5
+    budget_usd: 1.0
+    max_latency_ms: 90000
+    quality_threshold: 0.5
+    consensus_threshold: 0.35
+    allow_mock: false
+    # Order = panel order for scoring (all keyed preferred are always included)
+    # azure_openai stays listed but needs a real chat deployment name in .env
+    preferred: [openai, gemini, grok, perplexity, azure_openai, anthropic]
+    fallback: best_single
+
+  premium:
+    max_providers: 5
+    budget_usd: 1.0
+    max_latency_ms: 90000
+    quality_threshold: 0.6
+    consensus_threshold: 0.45
+    allow_mock: false
+    preferred: [openai, gemini, grok, azure_openai, perplexity, anthropic]
+    fallback: best_single
+
+  enterprise:
+    max_providers: 5
+    budget_usd: 1.5
+    max_latency_ms: 120000
+    quality_threshold: 0.65
+    consensus_threshold: 0.5
+    allow_mock: false
+    preferred: [openai, gemini, grok, azure_openai, perplexity, anthropic]
+    fallback: best_single

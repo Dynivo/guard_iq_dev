@@ -1,0 +1,45 @@
+min_font_size: 18
+max_font_size: 96
+roles:
+  title:
+    base_size: 52
+    weight: 700
+    line_height: 1.15
+    letter_spacing: -0.02
+    alignment: left
+    color_token: text_primary
+  subtitle:
+    base_size: 28
+    weight: 500
+    line_height: 1.3
+    letter_spacing: 0.0
+    alignment: left
+    color_token: text_secondary
+  cta:
+    base_size: 24
+    weight: 600
+    line_height: 1.2
+    letter_spacing: 0.01
+    alignment: left
+    color_token: accent
+  footer:
+    base_size: 18
+    weight: 400
+    line_height: 1.25
+    letter_spacing: 0.0
+    alignment: left
+    color_token: text_muted
+  logo:
+    base_size: 20
+    weight: 600
+    line_height: 1.0
+    letter_spacing: 0.04
+    alignment: right
+    color_token: accent
+scale_by_chars:
+  title:
+    soft_limit: 60
+    shrink_factor: 0.85
+  subtitle:
+    soft_limit: 120
+    shrink_factor: 0.9

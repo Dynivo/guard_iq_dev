@@ -1,0 +1,9 @@
+template:
+  id: engineering
+  priority: normal
+  required_reviewers: 1
+  quorum: 1
+  topic: engineering
+  risk: medium
+  reason_code_categories: [writing, fact, tone]
+  specializations: [engineering, technical]

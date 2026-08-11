@@ -1,0 +1,524 @@
+version: 1
+sources:
+- catalog_id: ncsc_uk
+  name: NCSC UK
+  category: government
+  connector_type: rss
+  schedule_cron: 0 */4 * * *
+  credibility_score: 100
+  priority: 100
+  enabled: true
+  config:
+    feed_url: https://www.ncsc.gov.uk/api/1/services/v1/report-rss-feed.xml
+    max_items: 40
+- catalog_id: msrc_security
+  name: Microsoft Security (MSRC)
+  category: government
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 100
+  priority: 95
+  enabled: true
+  config:
+    feed_url: https://api.msrc.microsoft.com/update-guide/rss
+    max_items: 40
+- catalog_id: cisa_news
+  name: CISA
+  category: government
+  connector_type: rss
+  schedule_cron: 0 */2 * * *
+  credibility_score: 100
+  priority: 100
+  enabled: true
+  config:
+    feed_url: https://www.cisa.gov/news.xml
+    max_items: 40
+- catalog_id: cert_eu
+  name: CERT-EU
+  category: government
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 95
+  priority: 90
+  enabled: true
+  config:
+    feed_url: https://cert.europa.eu/publications/security-advisories/rss.xml
+    max_items: 40
+- catalog_id: enisa
+  name: ENISA
+  category: government
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 95
+  priority: 90
+  enabled: true
+  config:
+    feed_url: https://www.enisa.europa.eu/news/enisa-news/RSS
+    max_items: 40
+- catalog_id: acsc
+  name: Australian Cyber Security Centre
+  category: government
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 95
+  priority: 90
+  enabled: true
+  config:
+    feed_url: https://www.cyber.gov.au/rss.xml
+    max_items: 40
+- catalog_id: cccs
+  name: Canadian Centre for Cyber Security
+  category: government
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 95
+  priority: 90
+  enabled: true
+  config:
+    feed_url: https://cyber.gc.ca/rss.xml
+    max_items: 40
+- catalog_id: ms_security_blog
+  name: Microsoft Security Blog
+  category: vendor
+  connector_type: rss
+  schedule_cron: 0 */4 * * *
+  credibility_score: 90
+  priority: 80
+  enabled: true
+  config:
+    feed_url: https://www.microsoft.com/en-us/security/blog/feed/
+    max_items: 40
+- catalog_id: gcp_security_blog
+  name: Google Cloud Security Blog
+  category: vendor
+  connector_type: rss
+  schedule_cron: 0 */4 * * *
+  credibility_score: 88
+  priority: 75
+  enabled: true
+  config:
+    feed_url: https://cloud.google.com/blog/products/identity-security/rss/
+    max_items: 40
+- catalog_id: google_project_zero
+  name: Google Project Zero
+  category: vendor
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 95
+  priority: 85
+  enabled: true
+  config:
+    feed_url: https://googleprojectzero.blogspot.com/feeds/posts/default
+    max_items: 40
+- catalog_id: cisco_talos
+  name: Cisco Talos
+  category: vendor
+  connector_type: rss
+  schedule_cron: 0 */4 * * *
+  credibility_score: 92
+  priority: 85
+  enabled: true
+  config:
+    feed_url: https://blog.talosintelligence.com/feeds/posts/default
+    max_items: 40
+- catalog_id: crowdstrike
+  name: CrowdStrike
+  category: vendor
+  connector_type: rss
+  schedule_cron: 0 */4 * * *
+  credibility_score: 90
+  priority: 80
+  enabled: true
+  config:
+    feed_url: https://www.crowdstrike.com/blog/feed/
+    max_items: 40
+- catalog_id: unit42
+  name: Palo Alto Unit42
+  category: vendor
+  connector_type: rss
+  schedule_cron: 0 */4 * * *
+  credibility_score: 92
+  priority: 85
+  enabled: true
+  config:
+    feed_url: https://unit42.paloaltonetworks.com/feed/
+    max_items: 40
+- catalog_id: sentinelone
+  name: SentinelOne
+  category: vendor
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 85
+  priority: 70
+  enabled: true
+  config:
+    feed_url: https://www.sentinelone.com/blog/feed/
+    max_items: 40
+- catalog_id: sophos
+  name: Sophos
+  category: vendor
+  connector_type: rss
+  schedule_cron: 0 */4 * * *
+  credibility_score: 85
+  priority: 70
+  enabled: true
+  config:
+    feed_url: https://news.sophos.com/en-us/feed/
+    max_items: 40
+- catalog_id: trend_micro
+  name: Trend Micro
+  category: vendor
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 85
+  priority: 70
+  enabled: true
+  config:
+    feed_url: https://www.trendmicro.com/rss/index.xml
+    max_items: 40
+- catalog_id: fortinet
+  name: Fortinet
+  category: vendor
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 85
+  priority: 70
+  enabled: true
+  config:
+    feed_url: https://www.fortinet.com/blog/feed
+    max_items: 40
+- catalog_id: cloudflare
+  name: Cloudflare
+  category: vendor
+  connector_type: rss
+  schedule_cron: 0 */4 * * *
+  credibility_score: 90
+  priority: 80
+  enabled: true
+  config:
+    feed_url: https://blog.cloudflare.com/rss/
+    max_items: 40
+- catalog_id: rapid7
+  name: Rapid7
+  category: vendor
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 85
+  priority: 70
+  enabled: true
+  config:
+    feed_url: https://www.rapid7.com/blog/rss/
+    max_items: 40
+- catalog_id: tenable
+  name: Tenable
+  category: vendor
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 85
+  priority: 70
+  enabled: true
+  config:
+    feed_url: https://www.tenable.com/blog/feed
+    max_items: 40
+- catalog_id: github_security
+  name: GitHub Security Blog
+  category: vendor
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 88
+  priority: 75
+  enabled: true
+  config:
+    feed_url: https://github.blog/security/feed/
+    max_items: 40
+- catalog_id: the_hacker_news
+  name: The Hacker News
+  category: threat_intelligence
+  connector_type: rss
+  schedule_cron: 0 */2 * * *
+  credibility_score: 75
+  priority: 80
+  enabled: true
+  config:
+    feed_url: https://feeds.feedburner.com/TheHackersNews
+    max_items: 40
+- catalog_id: bleepingcomputer
+  name: BleepingComputer
+  category: threat_intelligence
+  connector_type: rss
+  schedule_cron: 0 */2 * * *
+  credibility_score: 80
+  priority: 85
+  enabled: true
+  config:
+    feed_url: https://www.bleepingcomputer.com/feed/
+    max_items: 40
+- catalog_id: krebs
+  name: Krebs on Security
+  category: threat_intelligence
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 90
+  priority: 85
+  enabled: true
+  config:
+    feed_url: https://krebsonsecurity.com/feed/
+    max_items: 40
+- catalog_id: dark_reading
+  name: Dark Reading
+  category: threat_intelligence
+  connector_type: rss
+  schedule_cron: 0 */4 * * *
+  credibility_score: 80
+  priority: 75
+  enabled: true
+  config:
+    feed_url: https://www.darkreading.com/rss.xml
+    max_items: 40
+- catalog_id: securityweek
+  name: SecurityWeek
+  category: threat_intelligence
+  connector_type: rss
+  schedule_cron: 0 */4 * * *
+  credibility_score: 78
+  priority: 70
+  enabled: true
+  config:
+    feed_url: https://feeds.feedburner.com/securityweek
+    max_items: 40
+- catalog_id: help_net_security
+  name: Help Net Security
+  category: threat_intelligence
+  connector_type: rss
+  schedule_cron: 0 */4 * * *
+  credibility_score: 75
+  priority: 65
+  enabled: true
+  config:
+    feed_url: https://www.helpnetsecurity.com/feed/
+    max_items: 40
+- catalog_id: hackread
+  name: HackRead
+  category: threat_intelligence
+  connector_type: rss
+  schedule_cron: 0 */4 * * *
+  credibility_score: 65
+  priority: 55
+  enabled: true
+  config:
+    feed_url: https://www.hackread.com/feed/
+    max_items: 40
+- catalog_id: openai_blog
+  name: OpenAI Blog
+  category: ai
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 85
+  priority: 70
+  enabled: true
+  config:
+    feed_url: https://openai.com/news/rss.xml
+    max_items: 40
+- catalog_id: anthropic_news
+  name: Anthropic News
+  category: ai
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 85
+  priority: 70
+  enabled: true
+  config:
+    feed_url: https://www.anthropic.com/news/rss.xml
+    max_items: 40
+- catalog_id: huggingface
+  name: Hugging Face
+  category: ai
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 80
+  priority: 65
+  enabled: true
+  config:
+    feed_url: https://huggingface.co/blog/feed.xml
+    max_items: 40
+- catalog_id: deepmind
+  name: Google DeepMind
+  category: ai
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 88
+  priority: 70
+  enabled: true
+  config:
+    feed_url: https://deepmind.google/blog/rss.xml
+    max_items: 40
+- catalog_id: nvidia_ai
+  name: NVIDIA AI
+  category: ai
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 80
+  priority: 65
+  enabled: true
+  config:
+    feed_url: https://blogs.nvidia.com/feed/
+    max_items: 40
+- catalog_id: aws_security
+  name: AWS Security
+  category: cloud
+  connector_type: rss
+  schedule_cron: 0 */4 * * *
+  credibility_score: 92
+  priority: 85
+  enabled: true
+  config:
+    feed_url: https://aws.amazon.com/blogs/security/feed/
+    max_items: 40
+- catalog_id: azure_updates
+  name: Azure Updates
+  category: cloud
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 88
+  priority: 75
+  enabled: true
+  config:
+    feed_url: https://azure.microsoft.com/updates/feed/
+    max_items: 40
+- catalog_id: google_cloud
+  name: Google Cloud
+  category: cloud
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 85
+  priority: 70
+  enabled: true
+  config:
+    feed_url: https://cloud.google.com/blog/products/rss/
+    max_items: 40
+- catalog_id: ars_technica
+  name: Ars Technica
+  category: technology
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 80
+  priority: 60
+  enabled: true
+  config:
+    feed_url: https://feeds.arstechnica.com/arstechnica/index
+    max_items: 40
+- catalog_id: techcrunch_ai
+  name: TechCrunch AI
+  category: technology
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 75
+  priority: 55
+  enabled: true
+  config:
+    feed_url: https://techcrunch.com/category/artificial-intelligence/feed/
+    max_items: 40
+- catalog_id: venturebeat_ai
+  name: VentureBeat AI
+  category: technology
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 72
+  priority: 55
+  enabled: true
+  config:
+    feed_url: https://venturebeat.com/ai/feed/
+    max_items: 40
+- catalog_id: wired_security
+  name: Wired Security
+  category: technology
+  connector_type: rss
+  schedule_cron: 0 */6 * * *
+  credibility_score: 78
+  priority: 60
+  enabled: true
+  config:
+    feed_url: https://www.wired.com/feed/category/security/latest/rss
+    max_items: 40
+- catalog_id: hacker_news_rss
+  name: Hacker News (RSS)
+  category: developer
+  connector_type: rss
+  schedule_cron: 0 */2 * * *
+  credibility_score: 70
+  priority: 60
+  enabled: true
+  config:
+    feed_url: https://hnrss.org/newest?points=100
+    max_items: 40
+- catalog_id: newsdata_latest
+  name: NewsData Latest
+  category: technology
+  connector_type: news_api
+  api_key_name: NEWSDATA_API_KEY
+  schedule_cron: 30 */4 * * *
+  credibility_score: 70
+  priority: 60
+  enabled: true
+  config:
+    query: ''
+    language: en
+    categories: []
+    max_items: 30
+    paid_plan: false
+    api_endpoint: https://newsdata.io/api/1/latest
+- catalog_id: gnews_search
+  name: GNews
+  category: technology
+  connector_type: gnews
+  api_key_name: GNEWS_API_KEY
+  schedule_cron: 0 */6 * * *
+  credibility_score: 70
+  priority: 55
+  enabled: true
+  config:
+    query: cybersecurity OR AI
+    language: en
+    max_items: 25
+    api_endpoint: https://gnews.io/api/v4/search
+- catalog_id: guardian_search
+  name: The Guardian
+  category: technology
+  connector_type: guardian
+  api_key_name: GUARDIAN_API_KEY
+  schedule_cron: 0 */6 * * *
+  credibility_score: 85
+  priority: 65
+  enabled: true
+  config:
+    query: cybersecurity OR artificial intelligence
+    section: technology
+    max_items: 25
+    api_endpoint: https://content.guardianapis.com/search
+- catalog_id: currents_latest
+  name: Currents API
+  category: technology
+  connector_type: currents
+  api_key_name: CURRENTS_API_KEY
+  schedule_cron: 0 */6 * * *
+  credibility_score: 65
+  priority: 50
+  enabled: true
+  config:
+    language: en
+    category: technology
+    max_items: 25
+    api_endpoint: https://api.currentsapi.services/v1/latest-news
+- catalog_id: hacker_news_api
+  name: Hacker News (API)
+  category: developer
+  connector_type: hackernews
+  schedule_cron: 0 */2 * * *
+  credibility_score: 75
+  priority: 65
+  enabled: true
+  config:
+    story_type: topstories
+    max_items: 30
+    min_score: 50
+    api_endpoint: https://hacker-news.firebaseio.com/v0

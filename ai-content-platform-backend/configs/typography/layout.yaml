@@ -1,0 +1,21 @@
+defaults:
+  grid_columns: 12
+  grid_gutter: 0.02
+  margins:
+    top: 0.04
+    right: 0.06
+    bottom: 0.04
+    left: 0.06
+  hierarchy:
+    - title
+    - subtitle
+    - cta
+    - footer
+    - logo
+sizes:
+  portrait:
+    width: 1080
+    height: 1350
+  square:
+    width: 1080
+    height: 1080

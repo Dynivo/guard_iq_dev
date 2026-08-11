@@ -1,0 +1,18 @@
+version: "1.0"
+# Planning-time scores (0–1). Generation still proceeds; low scores trigger plan upgrade.
+threshold: 0.72
+fail_closed: false
+weights:
+  visual_quality: 0.14
+  linkedin_score: 0.14
+  readability: 0.12
+  whitespace: 0.12
+  brand_consistency: 0.12
+  hierarchy: 0.12
+  contrast: 0.08
+  accessibility: 0.06
+  professionalism: 0.05
+  scroll_stopper: 0.03
+  curiosity: 0.02
+
+upgrade_fallback_pattern: modern_infographic

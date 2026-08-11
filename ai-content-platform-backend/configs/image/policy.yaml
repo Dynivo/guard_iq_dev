@@ -1,0 +1,24 @@
+fail_closed: true
+max_width: 4096
+max_height: 4096
+min_width: 512
+min_height: 512
+forbidden_symbols:
+  - swastika
+  - hate_symbol
+# Short 2–4 word infographic labels are allowed. Ban paragraph/body-copy walls only.
+restricted_elements:
+  - real_person_likeness
+  - trademark_logo_copy
+  - paragraph_body_text
+unsafe_keywords:
+  - gore
+  - nude
+  - weaponized
+require_typography_safe_area: true
+# Negative must ban paragraphs / illegible / misspelled text (short labels OK)
+require_negative_ban_paragraphs: true
+require_negative_no_text: false
+allowed_brand_hex_prefixes:
+  - "#"
+logo_policy: no_generated_logo_in_diffusion

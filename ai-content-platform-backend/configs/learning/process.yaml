@@ -1,0 +1,32 @@
+# Learning processor mapping — event → knowledge artifact kinds.
+version: "1"
+
+process:
+  DraftApproved:
+    artifacts:
+      - kind: example
+        weight: 1.0
+        tags: [approved]
+        confidence: 0.7
+  DraftRejected:
+    artifacts:
+      - kind: negative_rule
+        priority: 10
+        confidence: 0.75
+  DraftEdited:
+    artifacts:
+      - kind: writing_preference
+        confidence: 0.55
+      - kind: knowledge_signal
+        signal: edit_diff
+        confidence: 0.45
+  recommendations:
+    enabled: true
+    min_edit_ratio_for_signal: 0.15
+  confidence_defaults:
+    example: 0.7
+    negative_rule: 0.75
+    writing_preference: 0.55
+    brand_preference: 0.5
+    knowledge_signal: 0.45
+    recommendation: 0.4

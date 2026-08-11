@@ -1,0 +1,9 @@
+template:
+  id: marketing
+  priority: normal
+  required_reviewers: 1
+  quorum: 1
+  topic: marketing
+  risk: low
+  reason_code_categories: [writing, brand, tone]
+  specializations: [marketing, brand]

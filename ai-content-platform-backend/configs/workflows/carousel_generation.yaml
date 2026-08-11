@@ -1,0 +1,26 @@
+workflow:
+  name: carousel_generation
+  version: "1.0"
+  description: Plan slides → render → export
+  entry: plan_slides
+  nodes:
+    - id: plan_slides
+      name: Plan slides
+      type: set_context
+      config:
+        set: { stage: slide_plan }
+      transitions:
+        - when: { type: always }
+          to: render
+    - id: render
+      name: Render slides
+      type: noop
+      transitions:
+        - when: { type: always }
+          to: export
+    - id: export
+      name: Export deck
+      type: set_context
+      config:
+        set: { stage: carousel_exported }
+      terminal: true

@@ -1,0 +1,27 @@
+# Cost optimizer thresholds before fan-out
+estimates_usd_per_call:
+  openai: 0.02
+  gemini: 0.01
+  anthropic: 0.03
+  perplexity: 0.02
+  grok: 0.02
+  azure_openai: 0.03
+  openrouter: 0.02
+  ollama: 0.0
+  mock: 0.0
+
+latency_ms_estimate:
+  openai: 2500
+  gemini: 2000
+  anthropic: 3000
+  perplexity: 3500
+  grok: 2500
+  azure_openai: 2800
+  mock: 50
+
+# Prefer higher composite weight when selecting panel under budget
+selection:
+  weight_reliability: 0.35
+  weight_writing: 0.35
+  weight_cost: 0.15
+  weight_latency: 0.15

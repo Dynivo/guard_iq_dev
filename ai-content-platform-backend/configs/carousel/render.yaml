@@ -1,0 +1,16 @@
+# Render planner — no pixels.
+default_width: 1080
+default_height: 1350
+sizes:
+  portrait:
+    width: 1080
+    height: 1350
+  square:
+    width: 1080
+    height: 1080
+strategy: svg_html_playwright
+optimize: true
+formats:
+  - svg
+  - png
+  - pdf

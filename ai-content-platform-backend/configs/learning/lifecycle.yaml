@@ -1,0 +1,21 @@
+# Knowledge lifecycle transitions — never skip candidate on create.
+version: "1"
+
+lifecycle:
+  initial: candidate
+  consumable: approved
+  transitions:
+    candidate:
+      - verified
+      - archived
+    verified:
+      - approved
+      - deprecated
+      - archived
+    approved:
+      - deprecated
+      - archived
+    deprecated:
+      - archived
+      - approved
+    archived: []

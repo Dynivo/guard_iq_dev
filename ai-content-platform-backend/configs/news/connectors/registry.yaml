@@ -1,0 +1,27 @@
+connectors:
+  - type: rss
+    status: production
+    description: Generic RSS/Atom feed connector
+  - type: news_api
+    status: production
+    description: NewsData.io latest news API
+  - type: gnews
+    status: production
+    description: GNews search API (free tier)
+  - type: guardian
+    status: production
+    description: Guardian Open Platform search API
+  - type: currents
+    status: production
+    description: Currents API latest news
+  - type: hackernews
+    status: production
+    description: Hacker News Firebase API (no key)
+  - type: ncsc
+    status: registered
+    description: NCSC feed (extends RSS)
+  - type: msrc
+    status: registered
+    description: Microsoft Security Response Center
+  - type: gdelt
+    status: future

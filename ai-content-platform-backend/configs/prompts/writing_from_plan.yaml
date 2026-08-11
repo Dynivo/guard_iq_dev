@@ -1,0 +1,139 @@
+# Writing from ContentPlan + OptimizedContext (M7)
+name: writing_from_plan
+version: "1.1"
+capability: writing_from_plan
+status: active
+approval_status: approved
+schema_id: json
+owner: platform
+description: >
+  Compose a versioned prompt for LinkedIn draft generation from a ContentPlan
+  and OptimizedContext. Does not write the post — only the PromptRequest.
+
+required_inputs:
+  - task
+optional_inputs:
+  - knowledge
+  - brand
+  - rules
+  - examples
+  - claims
+  - preferences
+  - planner
+
+variables:
+  - name: task
+    type: text
+    required: true
+  - name: knowledge
+    type: text
+    required: false
+  - name: brand
+    type: text
+    required: false
+  - name: rules
+    type: text
+    required: false
+  - name: examples
+    type: text
+    required: false
+  - name: planner
+    type: text
+    required: false
+  - name: content_type
+    type: text
+    required: false
+  - name: hook_style
+    type: text
+    required: false
+  - name: cta_style
+    type: text
+    required: false
+  - name: topic
+    type: text
+    required: false
+  - name: viral_style
+    type: text
+    required: false
+
+sections:
+  system: |
+    {% include 'system_ghostwriter' %}
+  brand: |
+    {% if brand %}
+    Brand voice (tone/style only — do not change the article topic):
+    {{brand}}
+    {% endif %}
+  rules: |
+    {% if rules %}
+    Rules (must follow):
+    {{rules}}
+    {% endif %}
+  preferences: |
+    {% if preferences %}
+    Preferences:
+    {{preferences}}
+    {% endif %}
+  examples: |
+    {% if examples %}
+    Approved examples (tone/structure only):
+    {{examples}}
+    {% endif %}
+  claims: |
+    {% if claims %}
+    Approved claims only:
+    {{claims}}
+    {% endif %}
+  knowledge: |
+    {% if knowledge %}
+    Knowledge context (source of truth):
+    {{knowledge}}
+    {% endif %}
+  planner: |
+    {% if planner %}
+    Content plan (strategy already decided — do not change strategy):
+    {{planner}}
+    {% endif %}
+  viral: |
+    {% if viral_style %}
+    LinkedIn viral craft guide:
+    {{viral_style}}
+    {% endif %}
+  task: |
+    Topic: {{topic}}
+    Content type: {{content_type}}
+    Hook style: {{hook_style}}
+    CTA style: {{cta_style}}
+
+    {{task}}
+  output_format: |
+    Respond with a single JSON object only (no markdown fences):
+    {
+      "hook": "string — one scroll-stopping first line",
+      "body": "string — LinkedIn post body with short line breaks (\\n\\n between beats)",
+      "cta": "string — comment/save/follow invite",
+      "hashtags": ["string"]
+    }
+  validation: |
+    Constraints:
+    - Ground every claim in the Knowledge context / article facts only
+    - Hook must be eye-catching and specific to THIS article (not generic motivation)
+    - Body must read like a native LinkedIn post: short paragraphs, white space, concrete insight
+    - Never invent statistics not present in knowledge
+    - Never name specific clients
+    - UK spelling
+    - Match client example rhythm: short lines, punchy hook, plain English
+    - Do not change the content type or strategy from the plan
+    - Do not invent cyber/phishing stories when the article is unrelated news
+    - When article is care/healthcare sector news, speak to regulated operators without fluff
+    - 3–5 hashtags max
+    - At most 2 emoji in the whole post
+
+metadata:
+  require_output_format: true
+
+tags:
+  - writing
+  - m7
+  - linkedin
+  - viral

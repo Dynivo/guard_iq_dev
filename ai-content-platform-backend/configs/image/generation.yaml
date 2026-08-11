@@ -1,0 +1,4 @@
+# Default image generation policy (admin can override via brand kit extra_settings)
+default_count: 1
+max_count: 4
+min_count: 1

@@ -1,0 +1,273 @@
+# Visual Pattern Library — senior LinkedIn designer patterns (YAML-configurable).
+version: "1.0"
+default_pattern: modern_infographic
+
+patterns:
+  decision_funnel:
+    usage: Filter noise into a few relevant outcomes
+    ideal_content_types: [educational, explainer, industry_update]
+    icon_suggestions: [funnel, clipboard, target, building]
+    whitespace: generous_editorial
+    visual_hierarchy: headline_band → noise_cards → funnel → 2 outcome cards → target
+    cta_placement: bottom_15_percent
+    story_beats:
+      - Many muted inputs enter
+      - Funnel filters to 2 focused cards
+      - Target / focused outcome
+    prompt_focus: >-
+      Top: many muted grey news cards falling into a large modern funnel.
+      Inside funnel: only two highlighted cards with short labels.
+      Bottom: minimal bullseye/target icon. Premium SaaS editorial. No humans.
+
+  key_statistics:
+    usage: Lead with one dominant number / fact
+    ideal_content_types: [educational, statistics, warning, case_study]
+    icon_suggestions: [stat_card, node, chart, shield]
+    whitespace: generous
+    visual_hierarchy: big_stat_center → 3 support nodes
+    cta_placement: bottom_band
+    story_beats:
+      - Hero numeral callout
+      - Three connected insight nodes
+    prompt_focus: >-
+      Large central statistic card, three circular nodes with short labels,
+      optional small pie accent, bright off-white, no portrait hero.
+
+  three_step_process:
+    usage: Simple sequential guidance
+    ideal_content_types: [checklist, framework, decision_guide, educational]
+    icon_suggestions: [step, arrow, check]
+    whitespace: generous_horizontal
+    visual_hierarchy: three_equal_cards_left_to_right
+    cta_placement: bottom_band
+    story_beats:
+      - Step 1 card
+      - Step 2 card
+      - Step 3 card
+    prompt_focus: >-
+      Exactly three equal horizontal cards with short labels and icons,
+      thin connectors, generous whitespace, no mind-map clutter.
+
+  comparison:
+    usage: Side-by-side contrast (myth vs reality, before vs after)
+    ideal_content_types: [comparison, explainer, educational]
+    icon_suggestions: [panel_a, panel_b, vs]
+    whitespace: split_balanced
+    visual_hierarchy: left_panel vs right_panel
+    cta_placement: bottom_band
+    story_beats:
+      - Left state
+      - Right state
+    prompt_focus: >-
+      Clean split-screen or two equal panels with short labels only,
+      soft divider, premium SaaS style.
+
+  before_vs_after:
+    usage: Transformation narrative
+    ideal_content_types: [success_story, case_study, educational]
+    icon_suggestions: [before, after, arrow]
+    whitespace: split_balanced
+    visual_hierarchy: before → arrow → after
+    cta_placement: bottom_band
+    story_beats: [Before state, After state]
+    prompt_focus: Before/after cards with a clear arrow, short labels, light background.
+
+  myth_vs_reality:
+    usage: Correct a misconception
+    ideal_content_types: [opinion, explainer, educational]
+    icon_suggestions: [cross, check]
+    whitespace: split_balanced
+    visual_hierarchy: myth_panel vs reality_panel
+    cta_placement: bottom_band
+    story_beats: [Myth, Reality]
+    prompt_focus: Two panels labelled Myth and Reality with icons only, clean corporate.
+
+  framework:
+    usage: Named model / pillars
+    ideal_content_types: [framework, educational, explainer]
+    icon_suggestions: [node, connector, pillar]
+    whitespace: generous
+    visual_hierarchy: central_theme → 3 pillars
+    cta_placement: bottom_band
+    story_beats: [Pillar A, Pillar B, Pillar C]
+    prompt_focus: Three connected framework nodes with short labels, light consulting style.
+
+  checklist:
+    usage: Actionable list
+    ideal_content_types: [checklist, educational, compliance]
+    icon_suggestions: [checkbox, clipboard]
+    whitespace: list_airy
+    visual_hierarchy: 3_to_5_check_rows
+    cta_placement: bottom_band
+    story_beats: [Item 1, Item 2, Item 3]
+    prompt_focus: Vertical checklist of 3–4 rows with check icons and short labels.
+
+  compliance_checklist:
+    usage: Regulated practice compliance
+    ideal_content_types: [educational, warning, checklist]
+    icon_suggestions: [clipboard, badge, building]
+    whitespace: list_airy
+    visual_hierarchy: title_band → checklist → badge
+    cta_placement: bottom_band
+    story_beats: [Requirement, Evidence, Outcome]
+    prompt_focus: Compliance checklist cards with badge accent, UK practice tone.
+
+  timeline:
+    usage: Sequence over time
+    ideal_content_types: [industry_update, announcement, case_study]
+    icon_suggestions: [dot, line, milestone]
+    whitespace: horizontal_timeline
+    visual_hierarchy: 3_milestones_on_axis
+    cta_placement: bottom_band
+    story_beats: [Start, Middle, End]
+    prompt_focus: Horizontal timeline with 3 milestone dots and short labels.
+
+  flow_chart:
+    usage: Cause → effect process
+    ideal_content_types: [explainer, warning, educational]
+    icon_suggestions: [box, arrow]
+    whitespace: generous
+    visual_hierarchy: 3_to_4_flow_boxes
+    cta_placement: bottom_band
+    story_beats: [Cause, Mechanism, Impact]
+    prompt_focus: Linear flowchart boxes with arrows and short labels.
+
+  process_diagram:
+    usage: Access control / technical process simplified
+    ideal_content_types: [warning, educational, explainer]
+    icon_suggestions: [gate, lock, cloud, arrow]
+    whitespace: generous
+    visual_hierarchy: input → control → outcome
+    cta_placement: bottom_band
+    story_beats: [Authorize, Expose, Protect]
+    prompt_focus: Access-control style process diagram, abstract shapes, short labels.
+
+  circular_process:
+    usage: Continuous cycle
+    ideal_content_types: [framework, educational]
+    icon_suggestions: [cycle, node]
+    whitespace: centered
+    visual_hierarchy: 3_cycle_nodes
+    cta_placement: bottom_band
+    story_beats: [Plan, Act, Review]
+    prompt_focus: Three nodes in a circle with arrows, short labels.
+
+  layer_stack:
+    usage: Defence in depth / stacked layers
+    ideal_content_types: [educational, framework]
+    icon_suggestions: [layer, shield]
+    whitespace: stacked
+    visual_hierarchy: 3_horizontal_layers
+    cta_placement: bottom_band
+    story_beats: [Layer 1, Layer 2, Layer 3]
+    prompt_focus: Three stacked rounded layers with short labels.
+
+  decision_tree:
+    usage: Branching choice
+    ideal_content_types: [decision_guide, explainer]
+    icon_suggestions: [branch, check, cross]
+    whitespace: tree_airy
+    visual_hierarchy: root → two_branches
+    cta_placement: bottom_band
+    story_beats: [Question, Path A, Path B]
+    prompt_focus: Minimal decision tree with two branches and short labels.
+
+  warning_card:
+    usage: Risk / urgency without fear-mongering
+    ideal_content_types: [warning, industry_update]
+    icon_suggestions: [alert, shield]
+    whitespace: card_centered
+    visual_hierarchy: alert_icon → risk_label → mitigation_label
+    cta_placement: bottom_band
+    story_beats: [Risk, Why it matters, Action]
+    prompt_focus: Single premium warning card with shield/alert icon and two short labels.
+
+  security_shield:
+    usage: Protection outcome (still minimal, not neon cyber)
+    ideal_content_types: [educational, announcement]
+    icon_suggestions: [shield, check]
+    whitespace: centered_hero_prop
+    visual_hierarchy: shield_prop → 2 support icons
+    cta_placement: bottom_band
+    story_beats: [Protect, Verify]
+    prompt_focus: Flat shield with check, two support icons, light background — no neon.
+
+  dashboard:
+    usage: KPI / monitoring metaphor
+    ideal_content_types: [statistics, trend, educational]
+    icon_suggestions: [card, bar, gauge]
+    whitespace: dashboard_grid
+    visual_hierarchy: 2x2_metric_cards
+    cta_placement: bottom_band
+    story_beats: [Metric A, Metric B]
+    prompt_focus: Clean 2×2 metric cards, no fake UI chrome, short labels.
+
+  growth_chart:
+    usage: Positive trajectory / investment
+    ideal_content_types: [success_story, trend, announcement]
+    icon_suggestions: [bars, arrow_up]
+    whitespace: chart_airy
+    visual_hierarchy: simple_bars → insight_label
+    cta_placement: bottom_band
+    story_beats: [Baseline, Growth]
+    prompt_focus: Simple ascending bar chart, one short insight label, light background.
+
+  risk_meter:
+    usage: Risk level communication
+    ideal_content_types: [warning, educational]
+    icon_suggestions: [gauge, needle]
+    whitespace: centered
+    visual_hierarchy: meter → risk_label → action_label
+    cta_placement: bottom_band
+    story_beats: [Risk level, Action]
+    prompt_focus: Minimal risk gauge with short labels, corporate not cartoon.
+
+  modern_infographic:
+    usage: Default premium infographic
+    ideal_content_types: [educational, explainer, opinion]
+    icon_suggestions: [card, icon, connector]
+    whitespace: generous_editorial
+    visual_hierarchy: focal_diagram → 2_to_3_labels
+    cta_placement: bottom_band
+    story_beats: [Core idea, Support, Outcome]
+    prompt_focus: >-
+      Premium LinkedIn infographic, Stripe/Cloudflare/Microsoft Security inspired,
+      flat vector, large whitespace, rounded cards, subtle gradients, no fantasy AI art.
+
+  matrix:
+    usage: 2×2 prioritisation
+    ideal_content_types: [decision_guide, framework]
+    icon_suggestions: [cell, axis]
+    whitespace: grid
+    visual_hierarchy: 2x2_cells
+    cta_placement: bottom_band
+    story_beats: [Quadrant A, Quadrant B]
+    prompt_focus: Clean 2×2 matrix with short cell labels.
+
+  architecture_diagram:
+    usage: Simplified system relationships
+    ideal_content_types: [explainer, educational]
+    icon_suggestions: [box, line]
+    whitespace: diagram_airy
+    visual_hierarchy: 3_boxes_connected
+    cta_placement: bottom_band
+    story_beats: [Component A, Link, Component B]
+    prompt_focus: Minimal architecture boxes with connectors, short labels, no clutter.
+
+# Generic AI art bans (always appended)
+always_avoid:
+  - robots
+  - glowing brains
+  - cyber people
+  - holograms
+  - hooded hackers
+  - floating padlock spam
+  - random server rooms
+  - abstract polygons
+  - 3d blobs
+  - futuristic cities
+  - binary rain
+  - neon cyberpunk
+  - meme style
+  - cartoon clipart
+  - photorealistic stock handshake

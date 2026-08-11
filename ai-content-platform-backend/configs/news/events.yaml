@@ -1,0 +1,39 @@
+patterns:
+  breach:
+    - data breach
+    - breached
+    - exposed records
+  acquisition:
+    - acquires
+    - acquisition
+    - merger
+  product_launch:
+    - launches
+    - announces
+    - introduces
+  patch_release:
+    - patch
+    - patches
+    - security update
+  vulnerability:
+    - vulnerability
+    - cve-
+    - zero-day
+    - exploit
+  funding:
+    - raises
+    - funding
+    - series a
+  regulation:
+    - regulation
+    - regulatory
+    - legislation
+  compliance:
+    - compliance
+    - dspt
+    - nis2
+    - audit
+  incident:
+    - incident
+    - outage
+    - disruption

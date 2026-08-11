@@ -1,0 +1,8 @@
+# Sampling for high-volume observability paths.
+version: "1"
+
+sampling:
+  ai_trace_rate: 1.0
+  workflow_trace_rate: 1.0
+  evaluation_rate: 1.0
+  always_sample_failures: true

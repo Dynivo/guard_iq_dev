@@ -1,0 +1,19 @@
+# Prompt benchmark suite scaffold — provider comparison without code changes.
+# Live vendor execution is out of scope until M9 Writer/Orchestrator wiring.
+suite_id: writing_from_plan_bench
+providers:
+  - gemini
+  - openai
+  - anthropic
+  - perplexity
+compare_versions: []
+cases:
+  - case_id: basic_insight
+    prompt_name: writing_from_plan
+    prompt_version: "1.0"
+    description: Baseline insight post prompt
+    variables:
+      task: "Write a LinkedIn insight about DSPT compliance."
+      knowledge: "DSPT requires annual assessment."
+      topic: "DSPT"
+      content_type: "insight"

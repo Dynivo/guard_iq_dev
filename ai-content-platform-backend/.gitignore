@@ -1,0 +1,76 @@
+# =============================================================================
+# Backend .gitignore
+# =============================================================================
+
+# Virtualenv & Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.Python
+
+!scripts/run_worker.sh
+!scripts/run_backend.sh
+!scripts/setup.sh
+
+# Secrets — never commit real keys (keep .env.example)
+.env
+.env.*
+!.env.example
+
+# Caches & coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.cache/
+
+# Build
+dist/
+build/
+*.egg
+
+# Runtime / local storage (images land in S3 or STORAGE_LOCAL_ROOT)
+data/
+!data/.gitkeep
+media/
+tmp/
+temp/
+*.log
+logs/
+dump.rdb
+*.rdb
+*.sqlite
+*.sqlite3
+
+# TLS / private keys dropped locally
+certs/**
+!certs/.gitkeep
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Browser / LinkedIn session (scripts/linkedin_session_login.py writes these)
+linkedin_storage_state.json
+*storage_state*.json
+playwright/.auth/
+.auth/
+cookies.json
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local scratch scripts / notebooks (committed scripts/ stay tracked)
+scripts/_local/
+scripts/scratch/
+*.ipynb
+.ipynb_checkpoints/

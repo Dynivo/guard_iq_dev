@@ -1,0 +1,11 @@
+# Export engine config.
+formats:
+  - png
+  - pdf
+  - zip
+include_svg_in_zip: true
+include_deck_metadata: true
+future_formats:
+  - pptx
+  - figma
+  - canva

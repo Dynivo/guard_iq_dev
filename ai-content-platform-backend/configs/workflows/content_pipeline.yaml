@@ -1,0 +1,79 @@
+# Migrated from linear stages to node-based Workflow Engine schema (M3).
+workflow:
+  name: content_pipeline
+  version: "2.0"
+  description: Article-to-draft pipeline scaffold
+  entry: normalize
+  nodes:
+    - id: normalize
+      name: Normalize
+      type: set_context
+      config:
+        set: { stage: normalize }
+      transitions:
+        - when: { type: always }
+          to: deduplicate
+    - id: deduplicate
+      name: Deduplicate
+      type: noop
+      transitions:
+        - when: { type: always }
+          to: embed
+    - id: embed
+      name: Embed
+      type: noop
+      transitions:
+        - when: { type: always }
+          to: score
+    - id: score
+      name: Score relevance
+      type: set_context
+      config:
+        set: { score: 4, stage: score }
+      transitions:
+        - when:
+            type: expression
+            expression: "data.score >= 3"
+          to: plan
+        - when:
+            type: expression
+            expression: "data.score < 3"
+          to: reject
+    - id: plan
+      name: Plan
+      type: content.plan
+      category: content
+      transitions:
+        - when: { type: always }
+          to: validate_plan
+    - id: validate_plan
+      name: Validate plan
+      type: content.validate
+      category: content
+      transitions:
+        - when: { type: always }
+          to: generate
+    - id: generate
+      name: Generate
+      type: noop
+      transitions:
+        - when: { type: always }
+          to: claims_guard
+    - id: claims_guard
+      name: Claims guard
+      type: noop
+      transitions:
+        - when: { type: always }
+          to: draft
+    - id: draft
+      name: Store draft
+      type: set_context
+      config:
+        set: { stage: draft }
+      terminal: true
+    - id: reject
+      name: Reject low score
+      type: set_context
+      config:
+        set: { stage: rejected }
+      terminal: true

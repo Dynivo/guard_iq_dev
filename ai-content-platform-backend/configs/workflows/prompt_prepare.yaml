@@ -1,0 +1,31 @@
+# Prompt prepare scaffold (M7) — prepare → compile → validate
+workflow:
+  name: prompt_prepare
+  version: "1.0"
+  description: Assemble PromptRequest from plan + knowledge (no provider calls)
+  entry: prepare
+  nodes:
+    - id: prepare
+      name: Prepare prompt
+      type: prompt.prepare
+      category: prompt
+      config:
+        capability: writing_from_plan
+        token_budget: 6000
+        variables:
+          task: "Draft a LinkedIn insight post from the content plan."
+      transitions:
+        - when: { type: always }
+          to: compile
+    - id: compile
+      name: Compile prompt
+      type: prompt.compile
+      category: prompt
+      transitions:
+        - when: { type: always }
+          to: validate
+    - id: validate
+      name: Validate prompt
+      type: prompt.validate
+      category: prompt
+      terminal: true

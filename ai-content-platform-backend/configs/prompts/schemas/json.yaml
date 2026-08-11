@@ -1,0 +1,15 @@
+schema_id: json
+format: json
+description: Structured JSON LinkedIn draft payload
+json_schema:
+  type: object
+  required: [hook, body, cta]
+  properties:
+    hook: { type: string }
+    body: { type: string }
+    cta: { type: string }
+    hashtags:
+      type: array
+      items: { type: string }
+instructions: |
+  Respond with a single JSON object only containing hook, body, cta, and optional hashtags.

@@ -1,0 +1,13 @@
+# Slide composition — arrange existing layers; no render.
+grid_columns: 12
+default_balance: 0.55
+default_whitespace: 0.6
+layer_source_priority:
+  - illustration
+  - title_bg
+  - title
+  - subtitle
+  - icons
+  - cta
+  - footer
+  - logo

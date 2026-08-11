@@ -1,0 +1,9 @@
+template:
+  id: cybersecurity
+  priority: high
+  required_reviewers: 3
+  quorum: 3
+  topic: cybersecurity
+  risk: high
+  reason_code_categories: [compliance, fact, writing]
+  specializations: [cybersecurity, security]

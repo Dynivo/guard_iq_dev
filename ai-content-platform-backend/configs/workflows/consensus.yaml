@@ -1,0 +1,62 @@
+workflow:
+  name: consensus
+  version: "1.0"
+  description: Multi-LLM consensus generate → evaluate → rank → merge → critique → revise → finalize
+  entry: consensus_generate
+  nodes:
+    - id: consensus_generate
+      name: Parallel generate
+      type: consensus.generate
+      transitions:
+        - when: { type: success }
+          to: consensus_evaluate
+        - when: { type: failure }
+          to: failed
+    - id: consensus_evaluate
+      name: Deterministic evaluate
+      type: consensus.evaluate
+      transitions:
+        - when: { type: always }
+          to: consensus_rank
+    - id: consensus_rank
+      name: AI judge rank
+      type: consensus.rank
+      transitions:
+        - when: { type: always }
+          to: consensus_merge
+    - id: consensus_merge
+      name: Merge best sections
+      type: consensus.merge
+      transitions:
+        - when: { type: always }
+          to: consensus_critique
+    - id: consensus_critique
+      name: Self critique
+      type: consensus.critique
+      transitions:
+        - when: { type: always }
+          to: consensus_revise
+    - id: consensus_revise
+      name: Revise affected sections
+      type: consensus.revise
+      transitions:
+        - when: { type: always }
+          to: consensus_finalize
+    - id: consensus_finalize
+      name: Finalize
+      type: consensus.finalize
+      transitions:
+        - when: { type: always }
+          to: done
+    - id: done
+      name: Done
+      type: set_context
+      config:
+        set: { stage: consensus_done }
+      terminal: true
+    - id: failed
+      name: Failed
+      type: set_context
+      config:
+        set: { stage: consensus_failed }
+      terminal: true

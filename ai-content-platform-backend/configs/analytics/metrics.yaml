@@ -1,0 +1,14 @@
+# Metrics engine defaults.
+version: "1"
+
+metrics:
+  namespace: aicp
+  counters:
+    - ai_requests_total
+    - workflow_nodes_total
+    - evaluations_total
+    - provider_failures_total
+  histograms:
+    - ai_latency_ms
+    - workflow_node_duration_ms
+    - cost_usd

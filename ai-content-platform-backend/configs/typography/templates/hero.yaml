@@ -1,0 +1,21 @@
+id: hero
+name: Hero Layout
+preferred_slide_type: hero
+preferred_layout: hero
+layers_order:
+  - illustration
+  - title_bg
+  - title
+  - subtitle
+  - cta
+  - logo
+  - footer
+  - icons
+region_bias:
+  title:
+    y_bias: 0.55
+    scale: 1.15
+  subtitle:
+    y_bias: 0.72
+metadata:
+  template_family: hero

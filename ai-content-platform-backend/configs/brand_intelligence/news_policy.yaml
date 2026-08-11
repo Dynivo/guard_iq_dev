@@ -1,0 +1,82 @@
+# Brand → news fetch / relevance / opportunity defaults.
+# Per-org Brand Memory overrides these via BrandNewsPolicyService.
+
+version: 1
+
+# Max OR-clauses in a connector search query
+max_query_terms: 8
+
+# Connector types whose config.query is overwritten on brand sync
+query_connector_types:
+  - gnews
+  - guardian
+  - news_api
+  - currents
+
+# Extra synonyms expanded when brand industries/topics match these keys
+industry_expansions:
+  cybersecurity:
+    - cybersecurity
+    - ransomware
+    - phishing
+    - malware
+    - data breach
+    - endpoint security
+  managed_it:
+    - managed IT
+    - MSP
+    - Microsoft 365
+    - backup
+    - VoIP
+  healthcare_care:
+    - DSPT
+    - CQC
+    - care home
+    - NHS
+    - health data
+  legal:
+    - SRA
+    - law firm
+    - legal practice
+    - client data
+  financial_services:
+    - FCA
+    - financial services
+    - open banking
+    - payment fraud
+
+# Always merge into in-scope boost list (product-safe baseline for MSP/cyber brands)
+baseline_in_scope:
+  - cyber
+  - ransomware
+  - phishing
+  - malware
+  - breach
+  - gdpr
+  - cyber essentials
+  - dspt
+  - cqc
+  - microsoft 365
+  - m365
+  - mfa
+  - endpoint
+  - msp
+  - infosec
+  - bec
+  - vulnerability
+  - backup
+  - voip
+
+# Default excludes when brand never-say / DNA has none
+baseline_exclude:
+  - celebrity
+  - sports score
+  - crypto pump
+  - meme coin
+
+# Opportunity ranking: boost audience_fit when title overlaps brand topics
+audience_topic_boost: 0.35
+
+default_strategic_goal: >
+  Become the trusted managed IT & security voice for regulated SMEs —
+  practical LinkedIn content on DSPT, Cyber Essentials, M365, and real threats.

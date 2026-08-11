@@ -1,0 +1,31 @@
+pipeline:
+  stages:
+    - collect
+    - normalize
+    - ocr
+    - vision
+    - nlp
+    - merge
+    - completeness
+    - health
+    - awaiting_validation
+    - finalize
+
+sync:
+  incremental: true
+  max_new_posts: 50
+
+completeness_weights:
+  writing: 1.0
+  visual: 1.0
+  logo: 1.0
+  topics: 1.0
+  audience: 0.8
+  vocabulary: 1.0
+  cta: 0.8
+  guidelines: 1.0
+  website: 0.9
+  linkedin: 1.0
+
+health:
+  advisory_only: true

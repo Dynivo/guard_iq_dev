@@ -1,0 +1,79 @@
+# Visual brief defaults (never generates images)
+# Tuned to client LinkedIn creative quality (branded illustration + educational graphics)
+defaults:
+  illustration_style: branded_flat_illustration
+  composition: centered_hero_with_safe_margin
+  camera_angle: eye_level
+  typography_safe_area: top_third_or_bottom_band
+  negative_prompt: >-
+    photorealistic stock photo, handshake, corporate meeting blur, watermark,
+    logo spam, low quality, blurry, distorted hands, cluttered collage,
+    neon cyberpunk glow, black void background, rim-light angry portrait,
+    floating icon halo, 3d render plastic look, paragraphs of body copy,
+    tiny illegible text, misspelled text, muddy brown background
+  color_palette:
+    - "#0A1F2B"
+    - "#1A5CB0"
+    - "#0D7377"
+    - "#F4F7F5"
+    - "#FFFFFF"
+emotion_by_tone:
+  professional: calm_confidence
+  educational: clarity
+  authority: resolve
+  friendly: warmth
+  technical: precision
+  conversational: approachability
+  urgent: vigilance
+  viral: curiosity_tension
+intent_by_type:
+  security_alert: warn_and_guide
+  compliance_update: clarify_obligation
+  checklist: stepwise_clarity
+  faq: answer_focused
+  carousel: sequential_story
+  educational: scroll_stop_and_educate
+  default: scroll_stop_and_engage
+icons_by_type:
+  security_alert: [shield, lock, alert]
+  compliance_update: [clipboard, check, seal]
+  checklist: [checklist, checkmark, steps]
+  educational: [lightbulb, chart, network]
+  default: [shield, chart, people]
+infographic_by_format:
+  carousel: [slide_flow, numbered_steps]
+  single: [key_stat_callout, bold_focal_subject]
+# Keyword → scene templates (article/hook matching)
+scene_templates:
+  acquisition_investment: >-
+    Premium flat branded LinkedIn illustration about senior living / care-sector investment:
+    professional care operator or advisor in navy blazer presenting an upward growth chart,
+    modern senior community / care facility cues, soft off-white paper-grain background,
+    floating lightbulb and network icons only if subtle, teal accents — NOT cybersecurity,
+    NOT padlocks, NOT shields, NOT LinkedIn logo
+  care_healthcare: >-
+    Premium flat vector illustration for senior care / healthcare operators — trustworthy
+    professional figure, soft care-setting cues, navy blazer, growth or quality chart prop,
+    grain texture, high-end B2B LinkedIn creative — no LinkedIn logo, no hacking imagery
+  security_bec: >-
+    Clean educational LinkedIn graphic layout: soft mint-grey background, two side-by-side
+    email mock cards labelled A and B, teal accents, magnifying glass cue, ample white space,
+    SaaS infographic style (typography will carry headline)
+  cia_framework: >-
+    Dark navy high-tech brand graphic with subtle circuit motifs, three glowing circular nodes
+    in a triad (confidentiality, integrity, availability), cyan accents, central shield mark
+    space, premium cybersecurity LinkedIn creative
+  default_branded: >-
+    Premium flat educational infographic on soft off-white paper-grain background,
+    navy/teal accents, bold outlines, chart or connected nodes with short labels,
+    generous negative space — NOT a neon portrait with floating icons
+style_by_keywords:
+  bec: educational_infographic
+  phishing: educational_infographic
+  invoice: educational_infographic
+  triad: educational_infographic
+  confidentiality: educational_infographic
+  ransomware: educational_infographic
+  malware: educational_infographic
+  vulnerability: educational_infographic
+  default: educational_infographic

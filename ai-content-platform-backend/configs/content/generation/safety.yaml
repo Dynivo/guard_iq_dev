@@ -1,0 +1,22 @@
+# Content safety policy (post-generation, not prompt security)
+fail_on_unsafe_claims: true
+fail_on_legal_flags: true
+fail_on_sensitive_language: true
+fail_on_high_hallucination: true
+sensitive_phrases:
+  - kill yourself
+  - racial slur
+  - hate speech
+legal_phrases:
+  - guaranteed legal advice
+  - this constitutes legal counsel
+  - medical diagnosis guaranteed
+compliance_phrases:
+  - ignore the regulation
+  - bypass the audit
+  - fake certification
+unsafe_claim_phrases:
+  - 100% secure forever
+  - never be breached
+  - cures all threats
+hallucination_number_threshold: 1

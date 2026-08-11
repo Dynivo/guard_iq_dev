@@ -1,0 +1,67 @@
+# Post intent → preferred visual patterns (ordered).
+version: "1.0"
+
+intents:
+  educational:
+    preferred: [decision_funnel, key_statistics, three_step_process, modern_infographic, framework]
+  opinion:
+    preferred: [myth_vs_reality, modern_infographic, comparison]
+  industry_update:
+    preferred: [timeline, warning_card, key_statistics, modern_infographic]
+  success_story:
+    preferred: [before_vs_after, growth_chart, three_step_process]
+  personal:
+    preferred: [modern_infographic, three_step_process]
+  framework:
+    preferred: [framework, circular_process, layer_stack]
+  checklist:
+    preferred: [checklist, compliance_checklist, three_step_process]
+  warning:
+    preferred: [warning_card, risk_meter, process_diagram, key_statistics]
+  trend:
+    preferred: [growth_chart, timeline, dashboard]
+  explainer:
+    preferred: [decision_funnel, flow_chart, comparison, process_diagram]
+  comparison:
+    preferred: [comparison, myth_vs_reality, before_vs_after]
+  announcement:
+    preferred: [key_statistics, warning_card, modern_infographic]
+  case_study:
+    preferred: [before_vs_after, timeline, key_statistics]
+  decision_guide:
+    preferred: [decision_tree, decision_funnel, matrix]
+
+# Heuristic keyword → intent (first match wins after content_type hints)
+keyword_intent:
+  - keywords: [myth, misconception, people think]
+    intent: opinion
+  - keywords: [checklist, steps to, do this]
+    intent: checklist
+  - keywords: [framework, triad, pillars]
+    intent: framework
+  - keywords: [warning, critical, urgent, expose, vulnerability, cve-]
+    intent: warning
+  - keywords: [vs , versus, compared to, rather than]
+    intent: comparison
+  - keywords: [before, after, we helped, outcome]
+    intent: case_study
+  - keywords: [trend, rising, growing]
+    intent: trend
+  - keywords: [filtering, noise, what does matter, genuinely matters]
+    intent: explainer
+  - keywords: [lawsuit, due diligence, class action]
+    intent: decision_guide
+  - keywords: [announcing, launched, released]
+    intent: announcement
+
+# Map legacy visual_mode → pattern id
+legacy_mode_patterns:
+  signal_filter: decision_funnel
+  big_stat: key_statistics
+  connected_nodes: framework
+  process_pictogram: three_step_process
+  comparison: comparison
+  flow_nodes: flow_chart
+  access_control: process_diagram
+  legal_context: three_step_process
+  hero_with_accents: modern_infographic

@@ -1,0 +1,26 @@
+# Deterministic carousel planner (no LLM).
+min_slides: 3
+max_slides: 12
+default_sequence:
+  - hook
+  - problem
+  - educational
+  - solution
+  - summary
+  - cta
+purpose_aliases:
+  hook: hook
+  context: educational
+  problem: problem
+  explanation: educational
+  recommendation: solution
+  solution: solution
+  summary: summary
+  cta: cta
+  educational: educational
+role_to_purpose:
+  hook: hook
+  problem: problem
+  solution: solution
+  cta: cta
+  summary: summary

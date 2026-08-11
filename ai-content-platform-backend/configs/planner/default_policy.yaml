@@ -1,0 +1,75 @@
+policy_id: default
+
+min_relevance: 0.3
+max_duplicate_score: 0.85
+min_confidence: 0.4
+
+preferred_audiences:
+  - business_owners
+  - it_managers
+  - security_teams
+
+preferred_content_types:
+  - educational
+  - compliance_update
+  - checklist
+  - thought_leadership
+
+force_carousel_types:
+  - checklist
+  - best_practices
+  - faq
+  - weekly_roundup
+  - educational
+
+default_tone: professional
+default_goal: educate
+default_cta: comment
+default_audience: business_owners
+
+min_slide_count: 5
+max_slide_count: 10
+default_slide_count: 7
+max_reading_time_minutes: 3
+
+require_image_style: true
+require_visual_direction: true
+
+allowed_ctas:
+  - follow
+  - comment
+  - download
+  - visit_website
+  - book_demo
+  - read_guide
+
+diversity_max_type_share: 0.5
+diversity_max_audience_share: 0.6
+diversity_max_cta_share: 0.6
+
+industry_rules:
+  healthcare:
+    preferred_audience: healthcare
+  finance:
+    preferred_audience: finance
+
+organization_rules: {}
+
+brand_rules:
+  tone: professional
+  image_style: branded_illustration
+  visual_style: clean_professional
+
+priorities:
+  industry_default: 0.5
+  frameworks_default: 0.5
+  compliance_default: 0.55
+  brand_default: 0.55
+  compliance_boost: 0.85
+  brand_boost: 0.7
+  industries:
+    healthcare: 0.8
+    finance: 0.75
+  preferred_types:
+    healthcare: compliance_update
+    finance: educational

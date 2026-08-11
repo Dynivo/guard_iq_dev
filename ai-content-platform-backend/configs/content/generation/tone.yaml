@@ -1,0 +1,20 @@
+# Tone profiles (M9)
+profiles:
+  professional:
+    required_signals: []
+    forbidden_signals: ["lol", "omg", "wtf"]
+  educational:
+    required_signals: []
+    forbidden_signals: ["lol"]
+  authority:
+    required_signals: []
+    forbidden_signals: ["maybe just guessing"]
+  friendly:
+    required_signals: []
+    forbidden_signals: ["demand immediately"]
+  technical:
+    required_signals: []
+    forbidden_signals: ["lol"]
+  conversational:
+    required_signals: []
+    forbidden_signals: ["hereby decree"]

@@ -1,0 +1,98 @@
+# Token pricing for CostEstimator.
+#
+# Units: USD per 1,000 tokens (input_per_1k / output_per_1k).
+# Vendors usually publish USD per 1,000,000 tokens — divide by 1,000.
+# Example: GPT-4o-mini $0.15 / $0.60 per 1M → 0.00015 / 0.0006 per 1K.
+#
+# Sources (Aug 2026): OpenAI API pricing, Google Gemini API pricing,
+# xAI Grok docs, Perplexity Sonar pricing. Update when vendors change rates.
+
+providers:
+  openai:
+    models:
+      # Official: $0.15 / $0.60 per 1M tokens
+      default: { input_per_1k: 0.00015, output_per_1k: 0.0006 }
+      gpt-4o-mini: { input_per_1k: 0.00015, output_per_1k: 0.0006 }
+      gpt-4o-mini-2024-07-18: { input_per_1k: 0.00015, output_per_1k: 0.0006 }
+      # Official: $2.50 / $10.00 per 1M tokens
+      gpt-4o: { input_per_1k: 0.0025, output_per_1k: 0.01 }
+      gpt-4o-2024-08-06: { input_per_1k: 0.0025, output_per_1k: 0.01 }
+      # Official: $0.02 per 1M embedding tokens
+      text-embedding-3-small: { input_per_1k: 0.00002, output_per_1k: 0.0 }
+      text-embedding-3-large: { input_per_1k: 0.00013, output_per_1k: 0.0 }
+
+  anthropic:
+    models:
+      # Claude 3.5 Haiku class ~$0.80 / $4.00 per 1M
+      default: { input_per_1k: 0.0008, output_per_1k: 0.004 }
+      claude-3-5-haiku-latest: { input_per_1k: 0.0008, output_per_1k: 0.004 }
+      claude-3-5-sonnet-latest: { input_per_1k: 0.003, output_per_1k: 0.015 }
+
+  gemini:
+    models:
+      # Gemini 2.5 Flash-Lite: $0.10 / $0.40 per 1M
+      default: { input_per_1k: 0.0001, output_per_1k: 0.0004 }
+      gemini-2.0-flash: { input_per_1k: 0.0001, output_per_1k: 0.0004 }
+      gemini-2.0-flash-lite: { input_per_1k: 0.0001, output_per_1k: 0.0004 }
+      gemini-2.5-flash-lite: { input_per_1k: 0.0001, output_per_1k: 0.0004 }
+      # Gemini 2.5 Flash: $0.30 / $2.50 per 1M
+      gemini-2.5-flash: { input_per_1k: 0.0003, output_per_1k: 0.0025 }
+      gemini-1.5-flash: { input_per_1k: 0.000075, output_per_1k: 0.0003 }
+
+  perplexity:
+    models:
+      # Sonar (standard): ~$1 / $1 per 1M (+ search included in tier)
+      default: { input_per_1k: 0.001, output_per_1k: 0.001 }
+      sonar: { input_per_1k: 0.001, output_per_1k: 0.001 }
+      sonar-pro: { input_per_1k: 0.003, output_per_1k: 0.015 }
+      sonar-small-online: { input_per_1k: 0.0002, output_per_1k: 0.0002 }
+
+  openrouter:
+    models:
+      default: { input_per_1k: 0.00015, output_per_1k: 0.0006 }
+
+  ollama:
+    models:
+      default: { input_per_1k: 0.0, output_per_1k: 0.0 }
+
+  vllm:
+    models:
+      default: { input_per_1k: 0.0, output_per_1k: 0.0 }
+
+  mock:
+    models:
+      default: { input_per_1k: 0.0, output_per_1k: 0.0 }
+      mock-v1: { input_per_1k: 0.0, output_per_1k: 0.0 }
+
+  grok:
+    models:
+      # xAI Grok 4.3 class: $1.25 / $2.50 per 1M (prompts < 200k)
+      default: { input_per_1k: 0.00125, output_per_1k: 0.0025 }
+      grok-2-latest: { input_per_1k: 0.002, output_per_1k: 0.01 }
+      grok-3: { input_per_1k: 0.00125, output_per_1k: 0.0025 }
+      grok-4.3: { input_per_1k: 0.00125, output_per_1k: 0.0025 }
+      # Grok 4.5 flagship: $2.00 / $6.00 per 1M
+      grok-4.5: { input_per_1k: 0.002, output_per_1k: 0.006 }
+
+  azure_openai:
+    models:
+      default: { input_per_1k: 0.0025, output_per_1k: 0.01 }
+      gpt-4: { input_per_1k: 0.03, output_per_1k: 0.06 }
+      gpt-4o: { input_per_1k: 0.0025, output_per_1k: 0.01 }
+      gpt-4o-mini: { input_per_1k: 0.000165, output_per_1k: 0.00066 }
+      text-embedding-3-small: { input_per_1k: 0.00002, output_per_1k: 0.0 }
+
+# Image generation USD estimates (per image). Used by OpenAI image adapter only.
+image_generation:
+  openai:
+    models:
+      gpt-image-1:
+        quality:
+          low: 0.02
+          medium: 0.07
+          high: 0.19
+      default:
+        quality:
+          low: 0.02
+          medium: 0.07
+          high: 0.19

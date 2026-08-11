@@ -1,0 +1,5 @@
+duplicate_cosine_threshold: 0.97
+recommend_top_k: 5
+dimensions: 384
+model_id: visual-hash-v1
+collection_name: visual_embeddings

@@ -1,0 +1,49 @@
+# Initial provider weights (overridden by DB over time)
+defaults:
+  reliability: 0.7
+  latency: 0.7
+  cost: 0.7
+  historical_success: 0.5
+  domain_score: 0.5
+  brand_score: 0.5
+  writing_score: 0.5
+  research_score: 0.5
+  image_prompt_score: 0.5
+
+providers:
+  openai:
+    reliability: 0.85
+    writing_score: 0.8
+    cost: 0.6
+  gemini:
+    reliability: 0.8
+    writing_score: 0.75
+    cost: 0.8
+  anthropic:
+    reliability: 0.85
+    writing_score: 0.9
+    style: 0.9
+    cost: 0.5
+  perplexity:
+    reliability: 0.75
+    research_score: 0.95
+    cost: 0.55
+  grok:
+    reliability: 0.7
+    writing_score: 0.7
+    cost: 0.65
+  azure_openai:
+    reliability: 0.85
+    writing_score: 0.8
+    cost: 0.55
+  mock:
+    reliability: 1.0
+    writing_score: 0.4
+    cost: 1.0
+
+learning:
+  approve_delta: 0.05
+  reject_delta: -0.08
+  edit_delta: -0.03
+  min_weight: 0.05
+  max_weight: 1.0

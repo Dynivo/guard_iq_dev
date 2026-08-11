@@ -1,0 +1,35 @@
+# LinkedIn organic single-image post framing
+# LinkedIn feed shows native uploads full-width and preserves aspect ratio (no forced crop).
+# Recommended square creative for client-style posts: 1080×1080 (maps to OpenAI 1024×1024).
+defaults:
+  camera: eye_level
+  perspective: mild_depth
+  balance: centered_with_margin
+  spacing: generous
+  aspect_ratio: "1:1"
+  width: 1080
+  height: 1080
+  focus: center_subject
+  contrast: high
+  depth: layered
+  platform: linkedin
+  linkedin_safe:
+    min_width: 552
+    recommended: "1080x1080"
+    notes: "Square 1:1 is the client default. Avoid portrait crops in preview."
+aspect_presets:
+  "1:1":
+    width: 1080
+    height: 1080
+    linkedin: single_image
+  "4:5":
+    width: 1080
+    height: 1350
+    linkedin: portrait_optional
+  "1.91:1":
+    width: 1200
+    height: 627
+    linkedin: link_share_card
+  "16:9":
+    width: 1920
+    height: 1080

@@ -1,0 +1,15 @@
+name: brand_topic_vocabulary
+version: "1.0.0"
+description: Extract brand topics and vocabulary preferences
+owner: brand_intelligence
+variables:
+  - corpus_text
+sections:
+  system: |
+    Extract primary/secondary/emerging topics and preferred vocabulary from brand corpus.
+    Respect Never-Say lists when provided in context.
+  user: |
+    Corpus:
+
+    {{ corpus_text }}
+evaluation_notes: Used by Orchestrator-backed analyzers when enabled.

@@ -1,0 +1,52 @@
+workflow:
+  name: typography
+  version: "1.1"
+  description: Layout enrich → plan → brand → SVG render → validate → compose metadata → store
+  entry: layout
+  nodes:
+    - id: layout
+      name: Layout plan enrich
+      type: layout.plan
+      transitions:
+        - when: { type: always }
+          to: brand
+    - id: brand
+      name: Brand apply
+      type: brand.apply
+      transitions:
+        - when: { type: always }
+          to: plan
+    - id: plan
+      name: Typography plan
+      type: typography.plan
+      transitions:
+        - when: { type: always }
+          to: render
+    - id: render
+      name: Typography render
+      type: typography.render
+      transitions:
+        - when: { type: always }
+          to: overlay
+    - id: overlay
+      name: Overlay validate
+      type: overlay.validate
+      transitions:
+        - when: { type: always }
+          to: brand_validate
+    - id: brand_validate
+      name: Brand validate
+      type: brand.validate
+      transitions:
+        - when: { type: always }
+          to: compose
+    - id: compose
+      name: Slide composition metadata
+      type: typography.compose
+      transitions:
+        - when: { type: always }
+          to: store
+    - id: store
+      name: Store typography asset
+      type: typography.store
+      terminal: true

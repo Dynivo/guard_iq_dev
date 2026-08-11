@@ -1,0 +1,29 @@
+id: print
+name: Print Letter
+width: 2550
+height: 3300
+margins:
+  top: 0.08
+  right: 0.08
+  bottom: 0.08
+  left: 0.08
+safe_area:
+  x: 0.1
+  y: 0.1
+  width: 0.8
+  height: 0.8
+bleed: 0.0125
+render_strategy: svg_html_playwright
+formats:
+  - pdf
+  - png
+  - zip
+padding:
+  top: 0.04
+  right: 0.04
+  bottom: 0.04
+  left: 0.04
+grid_columns: 12
+alignment_rules:
+  title: left
+  body: left

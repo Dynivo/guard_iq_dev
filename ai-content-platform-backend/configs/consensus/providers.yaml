@@ -1,0 +1,45 @@
+# Consensus panel + routing modes (ADR 0058)
+mode: hybrid  # single | parallel | voting | weighted | specialist | hybrid
+
+panel:
+  - provider: openai
+    model: gpt-4o-mini
+    roles: [writing, hooks, formatting]
+  - provider: gemini
+    model: gemini-2.5-flash
+    roles: [writing, hooks, image_prompt]
+  - provider: anthropic
+    model: claude-3-5-haiku-latest
+    roles: [writing, style]
+  - provider: perplexity
+    model: sonar
+    roles: [research, statistics, citations]
+  - provider: grok
+    model: llama-3.3-70b-versatile
+    roles: [writing]
+  - provider: azure_openai
+    model: gpt-4
+    roles: [writing]
+  - provider: mock
+    model: mock-v1
+    roles: [writing]
+
+specialists:
+  research: perplexity
+  writing: anthropic
+  hooks: openai
+  statistics: perplexity
+  image_prompt: gemini
+  formatting: openai
+  style: anthropic
+  cta: openai
+  hashtags: perplexity
+
+# Capabilities that may opt into consensus when CONSENSUS_ENABLED
+opt_in_capabilities:
+  - writing
+  - writing_from_plan
+  - copywriting
+  - editing
+  - image_prompting
+  - prompt_building

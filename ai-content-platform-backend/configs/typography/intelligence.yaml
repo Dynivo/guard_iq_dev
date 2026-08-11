@@ -1,0 +1,9 @@
+# Typography Intelligence scoring thresholds (deterministic / CI-safe).
+headline_soft_chars: 60
+headline_hard_chars: 120
+weights:
+  readability: 1.0
+  scanability: 1.0
+  density: 1.0
+  hierarchy: 1.0
+  whitespace: 1.0

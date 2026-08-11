@@ -1,0 +1,19 @@
+id: checklist
+name: Checklist Layout
+preferred_slide_type: checklist
+preferred_layout: checklist
+layers_order:
+  - illustration
+  - title
+  - icons
+  - subtitle
+  - cta
+  - footer
+  - logo
+region_bias:
+  icons:
+    y_bias: 0.35
+  subtitle:
+    y_bias: 0.55
+metadata:
+  template_family: checklist

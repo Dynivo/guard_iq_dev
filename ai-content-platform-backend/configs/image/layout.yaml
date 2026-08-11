@@ -1,0 +1,27 @@
+defaults:
+  reading_direction: ltr_top_to_bottom
+  alignment_guides: [0.08, 0.5, 0.92]
+  safe_area_presets:
+    bottom_third:
+      title: { x: 0.08, y: 0.68, width: 0.84, height: 0.10 }
+      subtitle: { x: 0.08, y: 0.78, width: 0.84, height: 0.06 }
+      cta: { x: 0.08, y: 0.86, width: 0.50, height: 0.06 }
+      logo: { x: 0.78, y: 0.04, width: 0.14, height: 0.08 }
+      footer: { x: 0.08, y: 0.93, width: 0.84, height: 0.05 }
+      illustration_safe: { x: 0.06, y: 0.08, width: 0.88, height: 0.55 }
+    top_third:
+      title: { x: 0.08, y: 0.06, width: 0.84, height: 0.10 }
+      subtitle: { x: 0.08, y: 0.16, width: 0.84, height: 0.06 }
+      cta: { x: 0.08, y: 0.88, width: 0.50, height: 0.06 }
+      logo: { x: 0.78, y: 0.88, width: 0.14, height: 0.08 }
+      footer: { x: 0.08, y: 0.94, width: 0.84, height: 0.04 }
+      illustration_safe: { x: 0.06, y: 0.28, width: 0.88, height: 0.55 }
+  icon_slot:
+    x: 0.08
+    y: 0.58
+    width: 0.12
+    height: 0.08
+    gap: 0.02
+  whitespace:
+    - { role: margin_left, x: 0.0, y: 0.0, width: 0.06, height: 1.0 }
+    - { role: margin_right, x: 0.94, y: 0.0, width: 0.06, height: 1.0 }

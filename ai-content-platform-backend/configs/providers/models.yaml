@@ -1,0 +1,63 @@
+# Model Registry — capability routing resolves model_id → provider + model + limits
+
+models:
+  gemini-flash:
+    provider: gemini
+    model: gemini-2.0-flash
+    context_window: 1000000
+    supports_streaming: false
+    supports_json: true
+    supports_images: true
+    supports_vision: true
+    max_output_tokens: 8192
+    latency_class: fast
+    cost_tier: low
+
+  gpt-4o-mini:
+    provider: openai
+    model: gpt-4o-mini
+    context_window: 128000
+    supports_streaming: true
+    supports_json: true
+    supports_images: true
+    supports_vision: true
+    supports_function_calling: true
+    max_output_tokens: 16384
+    latency_class: fast
+    cost_tier: low
+
+  claude-haiku:
+    provider: anthropic
+    model: claude-3-5-haiku-latest
+    context_window: 200000
+    supports_streaming: false
+    supports_json: true
+    max_output_tokens: 8192
+    latency_class: fast
+    cost_tier: medium
+
+  sonar:
+    provider: perplexity
+    model: sonar
+    context_window: 127000
+    supports_json: true
+    latency_class: standard
+    cost_tier: medium
+
+  mock-v1:
+    provider: mock
+    model: mock-v1
+    context_window: 32000
+    supports_streaming: true
+    supports_json: true
+    latency_class: fast
+    cost_tier: free
+
+  llama3-local:
+    provider: ollama
+    model: llama3
+    context_window: 8192
+    supports_streaming: true
+    supports_json: false
+    latency_class: standard
+    cost_tier: free

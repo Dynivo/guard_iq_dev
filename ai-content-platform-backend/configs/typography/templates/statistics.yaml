@@ -1,0 +1,17 @@
+id: statistics
+name: Statistics Layout
+preferred_slide_type: statistics
+preferred_layout: statistics
+layers_order:
+  - illustration
+  - title
+  - subtitle
+  - icons
+  - cta
+  - logo
+  - footer
+region_bias:
+  subtitle:
+    scale: 1.2
+metadata:
+  template_family: statistics

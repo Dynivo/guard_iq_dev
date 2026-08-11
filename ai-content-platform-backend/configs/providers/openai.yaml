@@ -1,0 +1,48 @@
+# OpenAI Images API — development pixel provider (ADR 0055).
+# Domain never imports this file; only the OpenAI image adapter loads it.
+
+provider: openai
+capability: image_generation
+
+models:
+  - gpt-image-1
+
+defaults:
+  model: gpt-image-1
+  quality: high
+  output_format: png
+  background: auto
+  moderation: auto
+  response_format: b64_json
+
+# GPT Image allowed sizes (API enum). LinkedIn WxH map to nearest.
+allowed_sizes:
+  - "1024x1024"
+  - "1024x1536"
+  - "1536x1024"
+  - "auto"
+
+# Aspect-ratio buckets → API size (request WxH compared via width/height ratio).
+size_map:
+  - name: square
+    min_ratio: 0.85
+    max_ratio: 1.15
+    size: "1024x1024"
+  - name: portrait
+    min_ratio: 0.0
+    max_ratio: 0.85
+    size: "1024x1536"
+  - name: landscape
+    min_ratio: 1.15
+    max_ratio: 99.0
+    size: "1536x1024"
+
+quality_levels:
+  - low
+  - medium
+  - high
+
+output_formats:
+  - png
+  - jpeg
+  - webp

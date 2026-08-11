@@ -1,0 +1,19 @@
+id: quote
+name: Quote Layout
+preferred_slide_type: quote
+preferred_layout: quote
+layers_order:
+  - illustration
+  - title_bg
+  - title
+  - subtitle
+  - logo
+  - footer
+  - cta
+  - icons
+region_bias:
+  title:
+    align: center
+    y_bias: 0.4
+metadata:
+  template_family: quote

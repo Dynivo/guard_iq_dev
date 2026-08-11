@@ -1,0 +1,30 @@
+workflow:
+  name: learning
+  version: "1.1"
+  description: Learning capture → process → store from review domain signals
+  entry: learning_capture
+  nodes:
+    - id: learning_capture
+      name: Capture learning event
+      type: learning.capture
+      transitions:
+        - when: { type: always }
+          to: learning_process
+    - id: learning_process
+      name: Process into artifacts
+      type: learning.process
+      transitions:
+        - when: { type: always }
+          to: learning_store
+    - id: learning_store
+      name: Store knowledge artifacts
+      type: learning.store
+      transitions:
+        - when: { type: always }
+          to: done
+    - id: done
+      name: Done
+      type: set_context
+      config:
+        set: { stage: learning_done }
+      terminal: true

@@ -1,0 +1,42 @@
+# LinkedIn thought-leadership design tokens (not marketing banners).
+version: "1.0"
+style_targets:
+  - CrowdStrike
+  - Microsoft Security
+  - Cloudflare
+  - Stripe
+  - Linear
+  - Vanta
+  - Notion
+
+spacing:
+  margin_outer: 0.08
+  card_gap: 0.04
+  section_gap: 0.06
+padding:
+  card: 0.035
+  label: 0.02
+icon_size:
+  primary: 0.12
+  secondary: 0.08
+corner_radius: soft_rounded
+shadow: subtle_soft
+grid: 12_column_mental
+alignment: left_or_center_balanced
+visual_rhythm: consistent_card_heights
+background_styles:
+  - bright_off_white_paper
+  - cool_mint_grey_soft
+accent_styles:
+  - teal_underline
+  - navy_card
+  - single_accent_highlight
+
+typography_safe:
+  top_band: 0.30
+  bottom_cta_band: 0.15
+
+density: low_to_medium
+icon_style: flat_line_minimal
+illustration_style: flat_vector_premium_saas
+gradient: subtle_professional_only

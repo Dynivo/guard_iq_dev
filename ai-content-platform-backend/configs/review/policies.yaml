@@ -1,0 +1,72 @@
+# Review approval policies — static defaults + dynamic conditional rules.
+version: "1"
+
+approval:
+  default_mode: manual
+  auto_approve_enabled: false
+  required_reviewers: 1
+  quorum: 1
+  allow_partial_approve: true
+  require_reason_on_reject: true
+  require_reason_codes_on_reject: false
+  compliance_gate_enabled: true
+  compliance_required_categories:
+    - compliance
+    - brand
+  escalate_after_hours: 48
+  priority_weights:
+    low: 1
+    normal: 2
+    high: 3
+    urgent: 5
+
+# First matching rule wins (YAML order = priority).
+dynamic_rules:
+  - when:
+      topic: cybersecurity
+      risk: high
+    require:
+      required_reviewers: 3
+      quorum: 3
+  - when:
+      topic: healthcare
+      risk: high
+    require:
+      required_reviewers: 3
+      quorum: 2
+  - when:
+      topic: finance
+      risk: high
+    require:
+      required_reviewers: 2
+      quorum: 2
+  - when:
+      topic: compliance
+    require:
+      required_reviewers: 2
+      quorum: 2
+
+status_transitions:
+  pending:
+    - in_review
+    - archived
+  in_review:
+    - approved
+    - rejected
+    - needs_changes
+    - partial_approved
+    - archived
+  needs_changes:
+    - in_review
+    - approved
+    - rejected
+    - archived
+  partial_approved:
+    - approved
+    - needs_changes
+    - archived
+  approved:
+    - archived
+  rejected:
+    - archived
+    - in_review

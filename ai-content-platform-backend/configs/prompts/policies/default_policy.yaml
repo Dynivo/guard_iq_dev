@@ -1,0 +1,29 @@
+# Default Prompt Policy (M7 refinement)
+policy_id: default
+
+max_prompt_tokens: 12000
+max_section_tokens: 4000
+
+# Empty allowed_capabilities = all allowed (except denied)
+allowed_capabilities: []
+denied_capabilities: []
+
+restricted_variables:
+  - api_key
+  - secret
+  - password
+  - private_key
+
+forbidden_sections: []
+
+provider_constraints:
+  allowed_providers:
+    - openai
+    - anthropic
+    - gemini
+    - perplexity
+  allowed_models: []
+
+compliance:
+  forbidden_substrings: []
+  required_sections: []

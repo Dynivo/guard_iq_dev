@@ -1,0 +1,28 @@
+# Content planning scaffold (M6) — strategy → plan → validate
+workflow:
+  name: content_plan
+  version: "1.0"
+  description: Strategy → plan → validate (no writing)
+  entry: strategy
+  nodes:
+    - id: strategy
+      name: Evaluate strategy
+      type: content.strategy
+      category: content
+      config:
+        relevance_score: 0.7
+      transitions:
+        - when: { type: always }
+          to: plan
+    - id: plan
+      name: Build content plan
+      type: content.plan
+      category: content
+      transitions:
+        - when: { type: always }
+          to: validate
+    - id: validate
+      name: Validate content plan
+      type: content.validate
+      category: content
+      terminal: true

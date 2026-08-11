@@ -1,0 +1,75 @@
+workflow:
+  name: image_generation
+  version: "2.1"
+  description: Visual Intelligence — brief → scene → compose → prompt → generate → validate → layout → analyze → embed → optimize → store
+  entry: brief
+  nodes:
+    - id: brief
+      name: Visual brief
+      type: visual.brief
+      transitions:
+        - when: { type: always }
+          to: scene
+    - id: scene
+      name: Scene plan
+      type: visual.scene
+      transitions:
+        - when: { type: always }
+          to: compose
+    - id: compose
+      name: Composition plan
+      type: visual.compose
+      transitions:
+        - when: { type: always }
+          to: prompt
+    - id: prompt
+      name: Image prompt
+      type: image.prompt
+      transitions:
+        - when: { type: always }
+          to: generate
+    - id: generate
+      name: Generate image
+      type: image.generate
+      retry:
+        strategy: exponential_backoff
+        max_attempts: 2
+        delay_ms: 1
+        max_delay_ms: 10
+      transitions:
+        - when: { type: always }
+          to: validate
+    - id: validate
+      name: Validate image
+      type: image.validate
+      transitions:
+        - when: { type: always }
+          to: layout
+    - id: layout
+      name: Layout intelligence
+      type: visual.layout
+      transitions:
+        - when: { type: always }
+          to: analyze
+    - id: analyze
+      name: Asset intelligence
+      type: image.analyze
+      transitions:
+        - when: { type: always }
+          to: embed
+    - id: embed
+      name: Visual embeddings
+      type: image.embed
+      transitions:
+        - when: { type: always }
+          to: optimize
+    - id: optimize
+      name: Optimize image
+      type: image.optimize
+      transitions:
+        - when: { type: always }
+          to: store
+    - id: store
+      name: Store assets
+      type: image.store
+      terminal: true

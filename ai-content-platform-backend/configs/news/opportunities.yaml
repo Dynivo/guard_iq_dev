@@ -1,0 +1,14 @@
+# Opportunity detection weights (metadata enrichment only)
+weights:
+  educational: 0.1
+  thought_leadership: 0.15
+  checklist: 0.1
+  best_practices: 0.1
+  weekly_roundup_candidate: 0.12
+  industry_alert: 0.15
+  security_advisory: 0.2
+  compliance_update: 0.18
+  myth_vs_fact: 0.08
+  faq: 0.08
+  comparison: 0.1
+  multi_article_merge: 0.14

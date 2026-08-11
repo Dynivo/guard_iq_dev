@@ -1,0 +1,9 @@
+template:
+  id: compliance
+  priority: high
+  required_reviewers: 2
+  quorum: 2
+  topic: compliance
+  risk: high
+  reason_code_categories: [compliance, brand, fact]
+  specializations: [compliance, legal]

@@ -1,0 +1,68 @@
+workflow:
+  name: review_learning
+  version: "1.0"
+  description: Human review queue → decision → learning capture/process/store
+  entry: review_queue
+  nodes:
+    - id: review_queue
+      name: Enqueue for review
+      type: review.queue
+      transitions:
+        - when: { type: always }
+          to: review_assign
+    - id: review_assign
+      name: Assign reviewers
+      type: review.assign
+      transitions:
+        - when:
+            type: expression
+            expression: "data.action == 'reject'"
+          to: review_reject
+        - when:
+            type: expression
+            expression: "data.action == 'edit'"
+          to: review_edit
+        - when: { type: always }
+          to: review_approve
+    - id: review_approve
+      name: Approve
+      type: review.approve
+      transitions:
+        - when: { type: always }
+          to: learning_capture
+    - id: review_reject
+      name: Reject
+      type: review.reject
+      transitions:
+        - when: { type: always }
+          to: learning_capture
+    - id: review_edit
+      name: Edit
+      type: review.edit
+      transitions:
+        - when: { type: always }
+          to: learning_capture
+    - id: learning_capture
+      name: Capture learning event
+      type: learning.capture
+      transitions:
+        - when: { type: always }
+          to: learning_process
+    - id: learning_process
+      name: Process into artifacts
+      type: learning.process
+      transitions:
+        - when: { type: always }
+          to: learning_store
+    - id: learning_store
+      name: Store knowledge artifacts
+      type: learning.store
+      transitions:
+        - when: { type: always }
+          to: done
+    - id: done
+      name: Done
+      type: set_context
+      config:
+        set: { stage: review_learning_done }
+      terminal: true

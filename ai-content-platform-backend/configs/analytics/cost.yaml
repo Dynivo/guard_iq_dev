@@ -1,0 +1,17 @@
+# Cost aggregation categories and defaults.
+version: "1"
+
+cost:
+  categories:
+    - provider
+    - generation
+    - image
+    - render
+    - storage
+    - workflow
+  default_image_usd: 0.02
+  default_render_usd: 0.01
+  default_storage_usd: 0.001
+  rollup_periods:
+    - daily
+    - monthly
