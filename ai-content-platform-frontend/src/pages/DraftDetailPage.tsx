@@ -11,7 +11,9 @@ import {
   Image as ImageIcon,
   Layers,
   Loader2,
+  Monitor,
   RefreshCw,
+  Smartphone,
   ThumbsDown,
   ThumbsUp,
   Type,
@@ -170,6 +172,7 @@ export function DraftDetailPage() {
   const [showReject, setShowReject] = useState(false);
   const [contentNote, setContentNote] = useState('');
   const [regenSection, setRegenSection] = useState<'full' | 'hook' | 'body'>('full');
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('mobile');
   const [imageNote, setImageNote] = useState('');
   const [includeLogo, setIncludeLogo] = useState(false);
   const [logoPosition, setLogoPosition] = useState('brand_default');
@@ -581,19 +584,25 @@ export function DraftDetailPage() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title={draft.title || draft.hook || 'Draft'}
-        description="Left: your post. Right: image. Approve when the copy looks right, then generate a visual."
+        title={
+          <span className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => navigate(routes.drafts)}
+              aria-label="All drafts"
+              title="All drafts"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <span className="truncate">{draft.title || draft.hook || 'Draft'}</span>
+          </span>
+        }
         actions={
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => navigate(routes.drafts)}>
-              <ArrowLeft className="h-4 w-4" />
-              All drafts
-            </Button>
-            <Button variant="outline" onClick={copyPost}>
-              <Copy className="h-4 w-4" />
-              Copy post
-            </Button>
-          </div>
+          <Button variant="outline" onClick={copyPost}>
+            <Copy className="h-4 w-4" />
+            Copy post
+          </Button>
         }
       />
 
@@ -736,18 +745,57 @@ export function DraftDetailPage() {
 
           <Card className="overflow-hidden">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">LinkedIn preview</CardTitle>
-              <CardDescription>How the post will look in the feed</CardDescription>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <CardTitle className="text-base">LinkedIn preview</CardTitle>
+                  <CardDescription>How the post will look in the feed</CardDescription>
+                </div>
+                <div className="flex shrink-0 gap-1 rounded-lg border border-border p-0.5">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={previewDevice === 'mobile' ? 'default' : 'ghost'}
+                    className="h-7 px-2"
+                    onClick={() => setPreviewDevice('mobile')}
+                  >
+                    <Smartphone className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Mobile</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={previewDevice === 'desktop' ? 'default' : 'ghost'}
+                    className="h-7 px-2"
+                    onClick={() => setPreviewDevice('desktop')}
+                  >
+                    <Monitor className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Desktop</span>
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="p-0">
-              <LinkedInPreview
-                authorName={user?.name || user?.email || 'You'}
-                authorHeadline="Content Intelligence"
-                hook={draft.hook}
-                body={body}
-                hashtags={draft.hashtags}
-                imageUrl={previewImage}
-              />
+            <CardContent className={previewDevice === 'mobile' ? 'flex justify-center bg-muted/30 py-6' : 'p-0'}>
+              {(() => {
+                const preview = (
+                  <LinkedInPreview
+                    authorName={user?.name || user?.email || 'You'}
+                    authorHeadline="Content Intelligence"
+                    hook={draft.hook}
+                    body={body}
+                    hashtags={draft.hashtags}
+                    imageUrl={previewImage}
+                  />
+                );
+                if (previewDevice !== 'mobile') return preview;
+                return (
+                  <div className="w-[393px] max-w-full rounded-[2.5rem] border-[6px] border-neutral-900 bg-neutral-900 shadow-xl">
+                    <div className="relative overflow-hidden rounded-[2rem] bg-white">
+                      <div className="absolute left-1/2 top-2 z-10 h-7 w-24 -translate-x-1/2 rounded-full bg-neutral-900" />
+                      <div className="max-h-[852px] overflow-y-auto pt-8">{preview}</div>
+                    </div>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
 

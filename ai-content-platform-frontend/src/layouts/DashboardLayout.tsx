@@ -282,10 +282,13 @@ export function AppShell() {
             <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
               <span className="text-muted-foreground">Workspace</span>
               <span className="text-muted-foreground">/</span>
-              <span className="truncate font-medium">
-                {crumbs[location.pathname] ||
-                  (location.pathname.startsWith(`${routes.drafts}/`) ? 'Draft flow' : 'Page')}
-              </span>
+              {location.pathname.startsWith(`${routes.drafts}/`) ? (
+                <Link to={routes.drafts} className="truncate font-medium hover:text-accent hover:underline">
+                  Drafts
+                </Link>
+              ) : (
+                <span className="truncate font-medium">{crumbs[location.pathname] || 'Page'}</span>
+              )}
             </nav>
 
             <div className="ml-auto flex items-center gap-2">
