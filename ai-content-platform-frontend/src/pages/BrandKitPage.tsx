@@ -706,7 +706,7 @@ export function BrandKitPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-xs text-muted-foreground">
-                  Content Intelligence Plan uses this mix. Weekly = this Mon–Fri; fortnight = this week + next.
+                  The Plan tab uses this mix. Weekly = this Mon–Fri; fortnight = this week + next.
                 </p>
                 <fieldset className="space-y-2">
                   <legend className="text-sm font-medium text-foreground">Window</legend>

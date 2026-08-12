@@ -312,7 +312,7 @@ export function BrandIntelligenceDashboardPage() {
             </Button>
             <Button size="sm" asChild>
               <Link to={routes.plan}>
-                <Sparkles className="h-3.5 w-3.5" /> Content Intelligence
+                <Sparkles className="h-3.5 w-3.5" /> Plan
               </Link>
             </Button>
           </div>
@@ -323,7 +323,7 @@ export function BrandIntelligenceDashboardPage() {
         <div className="min-w-0">
           <p className="text-sm font-semibold tracking-tight">Ready to post?</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Open Content Intelligence to regenerate your weekly/fortnight LinkedIn mix from the backend
+            Open Plan to regenerate your weekly/fortnight LinkedIn mix from the backend
             (copy + image), then approve.
           </p>
         </div>

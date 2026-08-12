@@ -70,7 +70,7 @@ const crumbs: Record<string, string> = {
   [routes.app]: 'Dashboard',
   [routes.news]: 'News',
   [routes.capture]: 'Capture',
-  [routes.plan]: 'Content Intelligence',
+  [routes.plan]: 'Plan',
   [routes.toPost]: 'To Post',
   [routes.drafts]: 'Drafts',
   [routes.generation]: 'Generate',

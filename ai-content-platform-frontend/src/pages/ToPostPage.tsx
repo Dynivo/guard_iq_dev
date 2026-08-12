@@ -33,7 +33,7 @@ export function ToPostCalendar({
         description="Monthly calendar of scheduled LinkedIn posts and plan slots — like Google Calendar."
         actions={
           <Button variant="outline" size="sm" onClick={() => navigate(routes.plan)}>
-            Content Intelligence
+            Plan
           </Button>
         }
       />
