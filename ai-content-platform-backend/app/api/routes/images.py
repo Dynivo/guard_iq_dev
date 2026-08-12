@@ -23,6 +23,7 @@ from app.infrastructure.storage.factory import get_delivery_strategy
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.image.application.factory import VisualIntelligenceFactory
 from app.modules.image.application.gallery_assets import (
+    job_id_and_role_from_object_key,
     media_belongs_to_jobs,
     select_gallery_media,
 )
@@ -127,6 +128,11 @@ async def list_draft_images(
             .limit(20)
         )
     ).scalars().all()
+
+    provider_by_job_id = {str(j.id): j.provider for j in jobs if j.provider}
+    for item in items:
+        job_id, _role = job_id_and_role_from_object_key(item.get("object_key") or "")
+        item["provider"] = provider_by_job_id.get(job_id or "")
 
     # After uvicorn --reload (or pre-commit race), batch rows stay pending/running.
     # Never-started jobs are re-dispatched; long-running workers are expired.
@@ -254,6 +260,8 @@ async def generate_image(
         count=payload.count,
         guidance=(payload.guidance or "").strip() or None,
         reason="manual",
+        provider=(payload.provider or "").strip() or None,
+        providers=payload.providers,
     )
     # Commit so after_commit schedules the worker against a visible ImageJob row.
     await session.commit()
@@ -273,6 +281,8 @@ async def _inline_generate_images(
     count: int,
     batch_job_id: uuid.UUID,
     guidance: str | None = None,
+    provider: str | None = None,
+    providers: list[str] | None = None,
 ) -> None:
     """Run VisualWorkflow in a standalone session so the HTTP request can return."""
     import asyncio
@@ -312,7 +322,12 @@ async def _inline_generate_images(
             try:
                 workflow = VisualWorkflow(session, engine=_engine)
                 result = await workflow.execute(
-                    org_id, draft_id, count=count, guidance=guidance
+                    org_id,
+                    draft_id,
+                    count=count,
+                    guidance=guidance,
+                    provider=provider,
+                    providers=providers,
                 )
                 await session.commit()
 

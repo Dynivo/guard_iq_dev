@@ -7,7 +7,7 @@ import { Skeleton } from '@/design-system/ui/skeleton';
 import { Button } from '@/design-system/ui/button';
 import { WorkflowStageRail, type WorkflowStage } from '@/components/ai/WorkflowStageRail';
 import { StatusChip } from '@/components/ai/StatusChip';
-import type { ApiEnvelope, Draft, HealthResponse, Job } from '@/api/types';
+import type { ApiEnvelope, Draft, Job } from '@/api/types';
 import { routes } from '@/lib/routes';
 import {
   CalendarRange,
@@ -17,7 +17,6 @@ import {
   DollarSign,
   CheckCircle,
   AlertTriangle,
-  ArrowRight,
 } from 'lucide-react';
 import {
   Area,
@@ -67,12 +66,15 @@ function dayKey(iso?: string | null) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function last7DayLabels() {
+function workWeekLabels() {
   const labels: { key: string; day: string }[] = [];
   const now = startOfLocalDay();
-  for (let i = 6; i >= 0; i -= 1) {
-    const d = new Date(now);
-    d.setDate(now.getDate() - i);
+  const daysSinceMonday = (now.getDay() + 6) % 7;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - daysSinceMonday);
+  for (let i = 0; i < 5; i += 1) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
     labels.push({
       key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
       day: d.toLocaleDateString(undefined, { weekday: 'short' }),
@@ -91,9 +93,6 @@ const RUNNING = new Set(['running', 'pending', 'queued', 'generating', 'retrying
 export function DashboardPage() {
   const navigate = useNavigate();
 
-  const health = useApiQuery<ApiEnvelope<HealthResponse>>(['health'], '/health', {
-    staleTime: 30_000,
-  });
   const draftsQ = useApiQuery<ApiEnvelope<Draft[] | { items?: Draft[] }>>(
     ['dashboard-drafts'],
     '/drafts',
@@ -173,7 +172,7 @@ export function DashboardPage() {
   );
 
   const trendSeries = useMemo(() => {
-    const labels = last7DayLabels();
+    const labels = workWeekLabels();
     const counts: Record<string, number> = Object.fromEntries(labels.map((l) => [l.key, 0]));
     for (const d of drafts) {
       const key = dayKey(d.created_at);
@@ -192,42 +191,6 @@ export function DashboardPage() {
     if (articleTotal > 0) return 'News';
     return 'News';
   }, [drafts, articleTotal]);
-
-  const actions = useMemo(() => {
-    type ActionStatus = 'queued' | 'running' | 'pending' | 'waiting' | 'completed';
-    const list: { label: string; path: string; status: ActionStatus }[] = [
-      {
-        label: articleTotal ? 'Refresh / ingest news' : 'Ingest news sources',
-        path: routes.sources,
-        status: articleTotal ? 'completed' : 'queued',
-      },
-      {
-        label: 'Pick an article & draft',
-        path: routes.news,
-        status: articleTotal ? 'running' : 'pending',
-      },
-      {
-        label: planGapSum
-          ? `Fill Publishing Plan (${planTotal}/${planTarget})`
-          : 'Open Publishing Plan',
-        path: routes.plan,
-        status: planGapSum ? 'running' : 'completed',
-      },
-      {
-        label: approvalQueue
-          ? `Review ${approvalQueue} draft${approvalQueue === 1 ? '' : 's'}`
-          : 'Review drafts',
-        path: `${routes.drafts}?status=pending_review`,
-        status: approvalQueue ? 'waiting' : 'completed',
-      },
-      {
-        label: cost || llmCalls ? 'Inspect live cost & traces' : 'Open analytics',
-        path: routes.analytics,
-        status: cost || llmCalls ? 'running' : 'pending',
-      },
-    ];
-    return list;
-  }, [articleTotal, approvalQueue, cost, llmCalls, planGapSum, planTotal, planTarget]);
 
   if (loading) {
     return (
@@ -324,67 +287,33 @@ export function DashboardPage() {
         <Kpi label="Failures" value={failedJobs} icon={<AlertTriangle size={18} />} hint="Jobs failed" />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Drafts this week</CardTitle>
-            <CardDescription>
-              {hasTrendData
-                ? 'Drafts created per day (last 7 days).'
-                : 'No drafts in the last 7 days yet — generate from News to populate.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendSeries}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Area
-                  type="monotone"
-                  dataKey="generated"
-                  stroke="var(--accent)"
-                  fill="var(--accent)"
-                  fillOpacity={0.15}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>What can I do?</CardTitle>
-            <CardDescription>Based on your current workspace</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {actions.map((a) => (
-              <button
-                key={a.path + a.label}
-                type="button"
-                onClick={() => navigate(a.path)}
-                className="flex w-full items-center justify-between rounded-lg border border-border px-3 py-2.5 text-left text-sm hover:bg-hover"
-              >
-                <span className="flex items-center gap-2">
-                  <StatusChip status={a.status} />
-                  {a.label}
-                </span>
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
-              </button>
-            ))}
-            <div className="pt-2 text-xs text-muted-foreground">
-              API:{' '}
-              {health.data?.data?.status === 'ok' || health.data?.data?.status === 'healthy'
-                ? 'Healthy'
-                : health.isError
-                  ? 'Unavailable'
-                  : 'Checking…'}
-              {health.data?.data?.version ? ` · v${health.data.data.version}` : ''}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Drafts this week</CardTitle>
+          <CardDescription>
+            {hasTrendData
+              ? 'Drafts created per day (Mon–Fri, this week).'
+              : 'No drafts yet this week — generate from News to populate.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={trendSeries}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+              <Tooltip />
+              <Area
+                type="monotone"
+                dataKey="generated"
+                stroke="var(--accent)"
+                fill="var(--accent)"
+                fillOpacity={0.15}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 }

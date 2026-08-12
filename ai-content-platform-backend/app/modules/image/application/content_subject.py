@@ -6,15 +6,19 @@ charts/nodes/process — not dark neon “person + floating icons” cards.
 
 from __future__ import annotations
 
+import json
 import re
 from functools import lru_cache
 from typing import Any
 
+from app.core.logging import get_logger
 from app.modules.image.application.config_loader import load_yaml
 from app.modules.image.application.visual_planning import (
     format_planning_prompt_clause,
     plan_visual,
 )
+
+logger = get_logger(__name__)
 
 # Phrases that signal “this anecdote is NOT the visual subject”
 _NOISE_EXAMPLE = re.compile(
@@ -47,9 +51,22 @@ def _mode_spec(mode: str) -> dict[str, Any]:
     return dict(spec) if isinstance(spec, dict) else {}
 
 
+# Trailing words that make a hard word-count cutoff read as mid-sentence
+# (e.g. "Ensure your systems are" / "Train your team to") rather than a label.
+_TRAILING_STOPWORDS = {
+    "a", "an", "the", "and", "or", "but", "nor", "for", "so", "yet",
+    "of", "in", "on", "at", "by", "to", "with", "from", "into", "onto",
+    "about", "over", "under", "per", "via", "as", "than", "then", "if",
+    "that", "this", "these", "those", "is", "are", "was", "were", "be",
+    "been", "being", "your", "our", "their", "its", "his", "her", "my",
+}
+
+
 def _short_label(text: str, max_words: int = 4) -> str:
-    words = [w for w in re.findall(r"[A-Za-z0-9%-]+", text or "") if w]
-    return " ".join(words[:max_words])
+    words = [w for w in re.findall(r"[A-Za-z0-9%-]+", text or "") if w][:max_words]
+    while len(words) > 1 and words[-1].lower() in _TRAILING_STOPWORDS:
+        words.pop()
+    return " ".join(words)
 
 
 def _curated_legal_labels() -> list[str]:
@@ -66,12 +83,59 @@ def _curated_legal_labels() -> list[str]:
     return out[:3]
 
 
-def _extract_short_labels(
+async def _author_bullet_labels(
+    bullets: list[str], *, orchestrator: Any, organization_id: str | None
+) -> list[str] | None:
+    """Ask the AI orchestrator for genuine short labels (not truncated sentences).
+
+    Best-effort: returns None on any failure so the caller falls back to the
+    deterministic word-cap extraction. Uses the existing `image_prompting`
+    capability (cheap, cacheable) — no new provider/routing config needed.
+    """
+    if orchestrator is None or not bullets:
+        return None
+    items = "\n".join(f"{i + 1}. {b}" for i, b in enumerate(bullets[:3]))
+    prompt = (
+        "You write short labels for boxes/icons in a LinkedIn infographic.\n"
+        "For each numbered action item below, write a 2-4 word label that "
+        "captures its actual point as a short noun or imperative phrase "
+        "(e.g. 'Ensure your systems are updated' -> 'System updates', "
+        "'Train your team to spot potential threats' -> 'Team training'). "
+        "Never truncate mid-sentence; the label must stand alone and make sense.\n\n"
+        f"{items}\n\n"
+        'Respond with ONLY a JSON array of strings, one label per item, same order, '
+        'e.g. ["System updates", "Team training"].'
+    )
+    try:
+        result = await orchestrator.complete(
+            "image_prompting",
+            prompt,
+            organization_id=organization_id,
+            response_format="json",
+            max_tokens=200,
+        )
+        data = json.loads(result.text)
+        if not isinstance(data, list):
+            return None
+        out: list[str] = []
+        for item in data:
+            lab = _clean(str(item), 40).strip(" .")
+            if lab and len(lab.split()) <= 5 and lab.lower() not in {x.lower() for x in out}:
+                out.append(lab)
+        return out or None
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("AI label authoring failed, using deterministic fallback: %s", exc)
+        return None
+
+
+async def _extract_short_labels(
     *,
     hook: str,
     body: str,
     stats: list[str],
     visual_mode: str = "",
+    orchestrator: Any = None,
+    organization_id: str | None = None,
 ) -> list[str]:
     """2–4 word labels for nodes/charts — never full sentences."""
     # Legal / due-diligence: fixed whitelist only (avoids clutter + misspellings).
@@ -90,8 +154,10 @@ def _extract_short_labels(
         labels.append(_short_label(f"{s} found", 3) if s.isdigit() else _short_label(s, 3))
 
     bullets = re.findall(r"(?:^|\n)\s*(?:[-•*]|\d+[.)])\s+(.+)", body or "")
-    for b in bullets:
-        lab = _short_label(b, 4)
+    ai_labels = await _author_bullet_labels(
+        bullets, orchestrator=orchestrator, organization_id=organization_id
+    )
+    for lab in ai_labels if ai_labels is not None else [_short_label(b, 4) for b in bullets]:
         if lab and lab.lower() not in {x.lower() for x in labels}:
             labels.append(lab)
         if len(labels) >= 3:
@@ -252,7 +318,63 @@ def _extract_body_cues(body: str, hook: str = "") -> dict[str, Any]:
     }
 
 
-def build_content_subject(
+async def _author_visual_concept(
+    *,
+    hook: str,
+    body: str,
+    orchestrator: Any,
+    organization_id: str | None,
+) -> dict[str, Any] | None:
+    """Ask the AI for a specific visual concept grounded in this exact post,
+    instead of the generic "cybersecurity education infographic" template.
+
+    Best-effort: returns None on any failure (including no orchestrator) so
+    the caller falls back to the deterministic template unchanged — same
+    safety-net pattern as ``_author_bullet_labels``.
+    """
+    if orchestrator is None or not (hook or body):
+        return None
+    prompt = (
+        "You are planning a LinkedIn infographic image for a security-led UK "
+        "IT/cybersecurity MSP. Given this post, describe a SPECIFIC visual "
+        "concept — not a generic security-clipart scene. Avoid default padlocks, "
+        "hooded hackers, or vague 'threat' icons unless that is literally the "
+        "post's main point; ground the concept in the actual mechanism or "
+        "objects the post describes.\n\n"
+        f"HOOK: {hook}\n"
+        f"BODY: {(body or '')[:1500]}\n\n"
+        "Respond with ONLY JSON:\n"
+        '{"subject": "one short phrase naming the specific topic", '
+        '"must_depict": "1-2 sentences describing a specific scene/diagram '
+        "that visually represents this post's actual point, referencing the "
+        'real mechanism or objects it mentions", '
+        '"labels": ["2-4 word label", "up to 3 total"]}'
+    )
+    try:
+        result = await orchestrator.complete(
+            "image_prompting",
+            prompt,
+            organization_id=organization_id,
+            response_format="json",
+            max_tokens=300,
+        )
+        data = json.loads(result.text)
+        subject = _clean(str(data.get("subject") or ""), 160)
+        must_depict = _clean(str(data.get("must_depict") or ""), 400)
+        if not subject or not must_depict:
+            return None
+        labels: list[str] = []
+        for item in data.get("labels") or []:
+            lab = _clean(str(item), 40).strip(" .")
+            if lab and len(lab.split()) <= 5 and lab.lower() not in {x.lower() for x in labels}:
+                labels.append(lab)
+        return {"subject": subject, "must_depict": must_depict, "labels": labels[:3]}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("AI visual concept authoring failed, using template fallback: %s", exc)
+        return None
+
+
+async def build_content_subject(
     *,
     hook: str = "",
     body: str = "",
@@ -260,6 +382,8 @@ def build_content_subject(
     title: str = "",
     article_title: str = "",
     content_type: str = "",
+    orchestrator: Any = None,
+    organization_id: str | None = None,
 ) -> dict[str, str]:
     """Return prompt fragments grounded in the post text (hook + theme)."""
     blob = " ".join(p for p in (hook, body, cta, title, article_title) if p)
@@ -269,11 +393,13 @@ def build_content_subject(
     icon_themes = _icon_themes_from_text(blob, content_type=content_type or "")
     ideas = ", ".join(icon_themes)
     stats = ", ".join(cues["stat_hints"][:3]) if cues["stat_hints"] else ""
-    labels = _extract_short_labels(
+    labels = await _extract_short_labels(
         hook=hook,
         body=body,
         stats=list(cues["stat_hints"]),
         visual_mode=str(cues.get("visual_mode") or ""),
+        orchestrator=orchestrator,
+        organization_id=organization_id,
     )
     labels_s = "; ".join(labels)
     ctype = (content_type or "educational").strip().lower()
@@ -316,7 +442,9 @@ def build_content_subject(
             f"{palette_note}. {ban_hero}. NOT padlock spam unless the post is about security"
         )
         style_note = "care_sector_investment"
-    elif any(k in lower for k in ("bec", "invoice", "phishing", "lookalike", "fake email")):
+    elif any(k in lower for k in ("bec", "invoice", "lookalike", "fake email")) or (
+        "phishing" in lower and "phishing-resistant" not in lower and "phishing resistant" not in lower
+    ):
         must = (
             "educational BEC / fake invoice graphic: two side-by-side email mock cards "
             "with short panel labels (e.g. Real / Fake), magnifying glass cue, "
@@ -376,11 +504,22 @@ def build_content_subject(
             "vulnerability",
         )
     ):
-        must = (
-            "cybersecurity education infographic matching THIS post body — "
-            f"layout ({cues['visual_elements']}), short labels: {labels_s or ideas}. "
-            f"{palette_note}. {ban_hero}. {label_rules}. NO LinkedIn logo"
+        concept = await _author_visual_concept(
+            hook=hook, body=body, orchestrator=orchestrator, organization_id=organization_id
         )
+        if concept and concept["labels"]:
+            labels_s = "; ".join(concept["labels"])
+        if concept:
+            must = (
+                f"{concept['must_depict']} {palette_note}. {ban_hero}. {label_rules}. "
+                "NO LinkedIn logo"
+            )
+        else:
+            must = (
+                "cybersecurity education infographic matching THIS post body — "
+                f"layout ({cues['visual_elements']}), short labels: {labels_s or ideas}. "
+                f"{palette_note}. {ban_hero}. {label_rules}. NO LinkedIn logo"
+            )
         style_note = "cyber_education"
     elif ctype == "success_story":
         must = (
@@ -389,11 +528,19 @@ def build_content_subject(
         )
         style_note = "success_story"
     else:
-        must = (
-            f"Educational LinkedIn infographic for: '{hook_short or 'professional insight'}'. "
-            f"Visual system: {cues['visual_elements']}. Short labels: {labels_s or ideas}. "
-            f"{palette_note}. {ban_hero}. {label_rules}"
+        concept = await _author_visual_concept(
+            hook=hook, body=body, orchestrator=orchestrator, organization_id=organization_id
         )
+        if concept and concept["labels"]:
+            labels_s = "; ".join(concept["labels"])
+        if concept:
+            must = f"{concept['must_depict']} {palette_note}. {ban_hero}. {label_rules}"
+        else:
+            must = (
+                f"Educational LinkedIn infographic for: '{hook_short or 'professional insight'}'. "
+                f"Visual system: {cues['visual_elements']}. Short labels: {labels_s or ideas}. "
+                f"{palette_note}. {ban_hero}. {label_rules}"
+            )
         style_note = "content_grounded"
 
     subject = hook_short or "LinkedIn educational post"
@@ -420,7 +567,7 @@ def build_content_subject(
     }
 
 
-def inject_content_into_brief(
+async def inject_content_into_brief(
     visual_brief: dict[str, Any] | None,
     *,
     hook: str = "",
@@ -433,15 +580,19 @@ def inject_content_into_brief(
     brand: dict[str, Any] | None = None,
     linkedin_image_type: str = "single_post",
     variant_index: int = 0,
+    orchestrator: Any = None,
+    organization_id: str | None = None,
 ) -> dict[str, Any]:
     """Merge content-grounded scene into an existing visual brief dict."""
-    subject = build_content_subject(
+    subject = await build_content_subject(
         hook=hook,
         body=body,
         cta=cta,
         title=title,
         article_title=article_title,
         content_type=content_type,
+        orchestrator=orchestrator,
+        organization_id=organization_id,
     )
     brand_ctx = dict(brand or {})
     if brand_palette and not brand_ctx.get("primary_color"):

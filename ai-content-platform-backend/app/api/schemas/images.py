@@ -19,3 +19,13 @@ class GenerateImagesRequest(BaseModel):
         max_length=2000,
         description="Optional image direction, e.g. 'show a care home manager with a growth chart'",
     )
+    provider: str | None = Field(
+        default=None,
+        max_length=40,
+        description="Override which image model to use for this generation, e.g. 'openai' or 'gemini'. Defaults to IMAGE_PROVIDER.",
+    )
+    providers: list[str] | None = Field(
+        default=None,
+        max_length=4,
+        description="Generate one variant per provider (e.g. ['openai', 'gemini']) so they can be compared side by side. Overrides count and provider when set.",
+    )

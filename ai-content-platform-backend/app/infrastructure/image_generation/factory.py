@@ -21,6 +21,10 @@ def get_image_generator(provider_name: str | None = None) -> ImageProvider:
         from app.infrastructure.image_generation.openai_provider import OpenAIImageProvider
 
         return OpenAIImageProvider()
+    if name == "gemini":
+        from app.infrastructure.image_generation.gemini_provider import GeminiImageProvider
+
+        return GeminiImageProvider()
     if name and name not in {"mock", ""}:
         logger.warning("Unknown IMAGE_PROVIDER=%s; falling back to mock", name)
     return MockImageGenerator()

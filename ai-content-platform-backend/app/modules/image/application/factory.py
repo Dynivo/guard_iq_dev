@@ -61,13 +61,19 @@ class VisualIntelligenceFactory:
         )
 
     @staticmethod
-    def create(*, config_dir: Path | None = None) -> DefaultVisualIntelligenceEngine:
-        """Production engine — pixels persist via STORAGE_PROVIDER (local disk)."""
+    def create(
+        *, config_dir: Path | None = None, provider_name: str | None = None
+    ) -> DefaultVisualIntelligenceEngine:
+        """Production engine — pixels persist via STORAGE_PROVIDER (local disk).
+
+        ``provider_name`` overrides the IMAGE_PROVIDER env var for this one engine
+        instance (used for per-request provider selection, e.g. "gemini").
+        """
         from app.infrastructure.storage.factory import get_storage_provider
 
         settings = get_settings()
-        primary = get_image_provider()
-        name = (settings.IMAGE_PROVIDER or "mock").lower().strip()
+        primary = get_image_provider(provider_name)
+        name = (provider_name or settings.IMAGE_PROVIDER or "mock").lower().strip()
         provider: ImageProvider = primary
         if name not in {"mock", ""}:
             provider = FallbackImageProvider(primary, get_image_provider("mock"))

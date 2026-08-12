@@ -161,6 +161,7 @@ export function DraftDetailPage() {
   );
   const [busy, setBusy] = useState<string | null>(null);
   const [imageCount, setImageCount] = useState(1);
+  const [imageProvider, setImageProvider] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showImageOptions, setShowImageOptions] = useState(false);
@@ -453,9 +454,15 @@ export function DraftDetailPage() {
             }
     );
     try {
+      const compare = imageProvider === '__compare__';
       await apiClient.post<ApiEnvelope<Record<string, unknown>>>(
         `/drafts/${draft.id}/images/generate`,
-        { count: imageCount, guidance: guidance || undefined },
+        {
+          count: compare ? undefined : imageCount,
+          guidance: guidance || undefined,
+          provider: compare ? undefined : imageProvider || undefined,
+          providers: compare ? ['openai', 'gemini'] : undefined,
+        },
         { timeout: 30_000 }
       );
       toast.success('Image generation started — leave anytime and return');
@@ -962,6 +969,20 @@ export function DraftDetailPage() {
                         setImageCount(Math.max(1, Math.min(4, Number(e.target.value) || 1)))
                       }
                     />
+                  </label>
+                  <label className="block space-y-1 text-sm">
+                    <span className="text-muted-foreground">Image model</span>
+                    <select
+                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      disabled={generating}
+                      value={imageProvider}
+                      onChange={(e) => setImageProvider(e.target.value)}
+                    >
+                      <option value="">Default</option>
+                      <option value="openai">OpenAI (gpt-image-1)</option>
+                      <option value="gemini">Gemini (nano banana)</option>
+                      <option value="__compare__">Compare (OpenAI + Gemini)</option>
+                    </select>
                   </label>
                   <Textarea
                     placeholder='Optional tip — e.g. "senior living", "no padlocks"'

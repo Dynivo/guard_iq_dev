@@ -8,7 +8,6 @@ import {
   Rss,
   Sun,
   UserRound,
-  Users,
   Monitor,
   Sparkles,
 } from 'lucide-react';
@@ -56,12 +55,6 @@ const SHORTCUTS = [
     description: 'Which models are configured and in use',
     to: routes.providers,
     icon: Cpu,
-  },
-  {
-    title: 'Team',
-    description: 'Organization members and roles',
-    to: routes.users,
-    icon: Users,
   },
 ];
 

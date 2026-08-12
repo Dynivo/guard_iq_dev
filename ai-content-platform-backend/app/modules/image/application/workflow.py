@@ -22,6 +22,7 @@ from app.modules.image.application.assets import (
     persist_png,
     storage_backend_name,
 )
+from app.modules.ai.application.factory import AIOrchestratorFactory
 from app.modules.image.application.count_policy import resolve_image_count
 from app.modules.image.application.content_subject import inject_content_into_brief
 from app.modules.image.application.factory import VisualIntelligenceFactory
@@ -50,11 +51,13 @@ class VisualWorkflow:
         storage: StorageProvider | None = None,
         delivery: DeliveryStrategy | None = None,
         engine=None,
+        orchestrator=None,
     ) -> None:
         self._session = session
         self._storage = storage or get_storage_provider()
         self._delivery = delivery or get_delivery_strategy()
         self._engine = engine or VisualIntelligenceFactory.create()
+        self._orchestrator = orchestrator or AIOrchestratorFactory.create()
         # Always bind durable storage (local disk via STORAGE_PROVIDER)
         self._engine._assets = MemoryImageAssetStore(
             storage=self._storage, require_storage=True
@@ -71,7 +74,23 @@ class VisualWorkflow:
         *,
         count: int | None = None,
         guidance: str | None = None,
+        provider: str | None = None,
+        providers: list[str] | None = None,
     ) -> dict[str, Any]:
+        provider_list = [p.strip() for p in (providers or []) if p and p.strip()] or None
+
+        def _engine_for(provider_name: str | None):
+            if not provider_name:
+                return self._engine
+            # Per-request provider override (e.g. user picked "gemini", or a
+            # multi-provider compare) — build a one-off engine instead of the
+            # process default.
+            eng = VisualIntelligenceFactory.create(provider_name=provider_name)
+            eng._assets = MemoryImageAssetStore(storage=self._storage, require_storage=True)
+            return eng
+
+        engine = _engine_for(provider.strip() if provider and provider.strip() else None)
+
         draft = await self._session.get(Draft, draft_id)
         if draft is None or draft.organization_id != org_id:
             raise NotFoundError("Draft", str(draft_id))
@@ -82,7 +101,9 @@ class VisualWorkflow:
             )
         ).scalar_one_or_none()
         brand_extra = dict(brand_row.extra_settings or {}) if brand_row else {}
-        image_count = resolve_image_count(count, brand_extra=brand_extra)
+        image_count = (
+            len(provider_list) if provider_list else resolve_image_count(count, brand_extra=brand_extra)
+        )
         brand = {
             "name": brand_row.name if brand_row else "Brand",
             "primary_color": brand_row.primary_color if brand_row else "#0A1F2B",
@@ -105,7 +126,7 @@ class VisualWorkflow:
             if c
         ]
 
-        visual = inject_content_into_brief(
+        visual = await inject_content_into_brief(
             draft.visual_brief_json
             or (draft.metadata_json or {}).get("visual_brief")
             or (draft.metadata_json or {}).get("image_brief"),
@@ -122,6 +143,8 @@ class VisualWorkflow:
             brand_palette=brand_palette,
             brand=brand,
             linkedin_image_type="single_post",
+            orchestrator=self._orchestrator,
+            organization_id=str(org_id),
         )
         if guidance and guidance.strip():
             g = guidance.strip()
@@ -145,6 +168,9 @@ class VisualWorkflow:
 
         jobs: list[dict[str, Any]] = []
         for variant in range(image_count):
+            variant_engine = (
+                _engine_for(provider_list[variant]) if provider_list else engine
+            )
             jobs.append(
                 await self._execute_one(
                     org_id=org_id,
@@ -153,6 +179,7 @@ class VisualWorkflow:
                     brand=brand,
                     variant_index=variant,
                     image_count=image_count,
+                    engine=variant_engine,
                 )
             )
 
@@ -173,7 +200,9 @@ class VisualWorkflow:
         brand: dict[str, Any],
         variant_index: int,
         image_count: int,
+        engine=None,
     ) -> dict[str, Any]:
+        engine = engine or self._engine
         job = ImageJob(
             organization_id=org_id,
             draft_id=draft_id,
@@ -182,7 +211,7 @@ class VisualWorkflow:
         self._session.add(job)
         await self._session.flush()
 
-        result = await self._engine.run(
+        result = await engine.run(
             ImagePipelineRequest(
                 organization_id=str(org_id),
                 draft_id=str(draft_id),
@@ -282,7 +311,7 @@ class VisualWorkflow:
                     break
 
         backend = storage_backend_name(self._storage)
-        blobs = getattr(self._engine._assets, "blobs", {}) or {}
+        blobs = getattr(engine._assets, "blobs", {}) or {}
         gallery_size = 0
 
         try:
@@ -368,7 +397,7 @@ class VisualWorkflow:
         job.status = "completed"
         if result.embedding is not None:
             result.embedding.job_id = str(job.id)
-            self._engine.embedding_service.store.put(result.embedding)  # type: ignore[attr-defined]
+            engine.embedding_service.store.put(result.embedding)  # type: ignore[attr-defined]
             job.embedding_json = _json_safe(result.embedding.to_dict())
 
         await self._session.flush()

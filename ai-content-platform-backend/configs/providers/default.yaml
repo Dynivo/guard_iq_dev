@@ -16,7 +16,7 @@ capabilities:
 
   relevance_scoring:
     provider: gemini
-    model: gemini-2.5-flash
+    model: gemini-flash-latest
     temperature: 0.3
     max_tokens: 2048
     cacheable: true
@@ -29,7 +29,7 @@ capabilities:
   # backward-compat alias key (also normalized from "relevance")
   relevance:
     provider: gemini
-    model: gemini-2.5-flash
+    model: gemini-flash-latest
     temperature: 0.3
     max_tokens: 2048
     cacheable: true
@@ -47,7 +47,7 @@ capabilities:
 
   planning:
     provider: gemini
-    model: gemini-2.5-flash
+    model: gemini-flash-latest
     temperature: 0.5
     max_tokens: 4096
     cacheable: true
@@ -74,7 +74,7 @@ capabilities:
     cacheable: true
     cache_ttl_seconds: 1800
     fallbacks:
-      - { provider: gemini, model: gemini-2.5-flash }
+      - { provider: gemini, model: gemini-flash-latest }
       - { provider: grok, model: llama-3.3-70b-versatile }
       - { provider: azure_openai, model: gpt-4 }
       - { provider: perplexity, model: sonar }
@@ -82,7 +82,7 @@ capabilities:
 
   copywriting:
     provider: gemini
-    model: gemini-2.5-flash
+    model: gemini-flash-latest
     temperature: 0.7
     max_tokens: 4096
     cacheable: true
@@ -110,7 +110,7 @@ capabilities:
 
   summarization:
     provider: gemini
-    model: gemini-2.5-flash
+    model: gemini-flash-latest
     temperature: 0.3
     max_tokens: 2048
     cacheable: true
@@ -119,7 +119,7 @@ capabilities:
 
   image_prompting:
     provider: gemini
-    model: gemini-2.5-flash
+    model: gemini-flash-latest
     temperature: 0.6
     max_tokens: 1024
     cacheable: true
@@ -128,7 +128,7 @@ capabilities:
 
   image_prompt:
     provider: gemini
-    model: gemini-2.5-flash
+    model: gemini-flash-latest
     temperature: 0.6
     max_tokens: 1024
     cacheable: true
@@ -147,7 +147,7 @@ capabilities:
 
   preference_learning:
     provider: gemini
-    model: gemini-2.5-flash
+    model: gemini-flash-latest
     temperature: 0.3
     max_tokens: 2048
     cacheable: false
@@ -157,7 +157,7 @@ capabilities:
 
   preference_summary:
     provider: gemini
-    model: gemini-2.5-flash
+    model: gemini-flash-latest
     temperature: 0.3
     max_tokens: 2048
     cacheable: false
@@ -176,7 +176,7 @@ capabilities:
 
   carousel_copy:
     provider: gemini
-    model: gemini-2.5-flash
+    model: gemini-flash-latest
     temperature: 0.5
     max_tokens: 4096
     cacheable: true
@@ -190,7 +190,7 @@ capabilities:
     max_tokens: 2048
     cacheable: false
     fallbacks:
-      - { provider: gemini, model: gemini-2.5-flash }
+      - { provider: gemini, model: gemini-flash-latest }
       - { provider: grok, model: llama-3.3-70b-versatile }
       - { provider: mock }
 
@@ -203,7 +203,7 @@ capabilities:
     cacheable: false
     sensitive: true
     fallbacks:
-      - { provider: gemini, model: gemini-2.5-flash }
+      - { provider: gemini, model: gemini-flash-latest }
       - { provider: mock }
 
   consensus_critique:

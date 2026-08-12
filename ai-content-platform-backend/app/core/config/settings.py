@@ -78,10 +78,18 @@ class Settings(BaseSettings):
     COMFYUI_BASE_URL: str = "http://localhost:8188"
     # Dev-only cloud pixels via OpenAI Images API (IMAGE_PROVIDER=openai)
     OPENAI_IMAGE_MODEL: str = "gpt-image-1"
+    # Gemini native image generation (IMAGE_PROVIDER=gemini) — uses GEMINI_API_KEY
+    GEMINI_IMAGE_MODEL: str = "gemini-2.5-flash-image"
 
     # ── Job Backend ───────────────────────────────────────────
     # "inline" runs work in-process; "dramatiq" requires Redis workers.
     JOB_BACKEND: str = "inline"
+
+    # Self-heals articles orphaned at status=scored (relevance task lost to a
+    # restart before it ran) by re-dispatching them on a timer. Off by default
+    # since flipping it on immediately re-scores every existing orphan — each
+    # is a real LLM call. Enable once you're ready to pay for the backlog.
+    RELEVANCE_RECOVERY_ENABLED: bool = False
 
     # ── LLM Provider Keys ────────────────────────────────────
     OPENAI_API_KEY: str = ""

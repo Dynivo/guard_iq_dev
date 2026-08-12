@@ -17,14 +17,6 @@ class OrganizationRecord:
 
 
 @dataclass(frozen=True)
-class OrgMemberRecord:
-    user_id: uuid.UUID
-    email: str
-    display_name: str
-    role: str
-
-
-@dataclass(frozen=True)
 class BrandKitRecord:
     id: uuid.UUID
     organization_id: uuid.UUID

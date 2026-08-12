@@ -59,15 +59,15 @@ def test_plan_visual_scores_and_tokens() -> None:
     assert "robots" in plan["always_avoid"] or "robots" in str(plan["always_avoid"])
 
 
-def test_noise_filter_labels_and_inject_plan() -> None:
-    subject = build_content_subject(
+async def test_noise_filter_labels_and_inject_plan() -> None:
+    subject = await build_content_subject(
         hook=NOISE_HOOK, body=NOISE_BODY, content_type="educational"
     )
     assert subject["visual_mode"] == "signal_filter"
     assert "Compliance risk" in subject["short_labels"]
     assert "UK regulation" in subject["short_labels"]
 
-    brief = inject_content_into_brief(
+    brief = await inject_content_into_brief(
         {},
         hook=NOISE_HOOK,
         body=NOISE_BODY,
@@ -84,8 +84,8 @@ def test_noise_filter_labels_and_inject_plan() -> None:
     assert meta.get("visual_quality_score") is not None
 
 
-def test_golden_prompt_contains_designer_clauses() -> None:
-    brief_dict = inject_content_into_brief(
+async def test_golden_prompt_contains_designer_clauses() -> None:
+    brief_dict = await inject_content_into_brief(
         {},
         hook=NOISE_HOOK,
         body=NOISE_BODY,

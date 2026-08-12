@@ -20,7 +20,8 @@ from app.modules.image.application.count_policy import resolve_image_count
 logger = get_logger(__name__)
 
 _inflight_batches: set[uuid.UUID] = set()
-_ImageRunner = Any  # async (org_id, draft_id, count, batch_job_id, guidance) -> None
+# async (org_id, draft_id, count, batch_job_id, guidance, provider, providers) -> None
+_ImageRunner = Any
 _image_runner: _ImageRunner | None = None
 
 
@@ -81,6 +82,8 @@ def _schedule_after_commit(
     count: int,
     batch_job_id: uuid.UUID,
     guidance: str | None,
+    provider: str | None = None,
+    providers: list[str] | None = None,
 ) -> None:
     """Run the background worker only after the request transaction commits.
 
@@ -96,7 +99,7 @@ def _schedule_after_commit(
             draft_id,
             batch_job_id,
         )
-        schedule_image_job(org_id, draft_id, count, batch_job_id, guidance)
+        schedule_image_job(org_id, draft_id, count, batch_job_id, guidance, provider, providers)
 
     event.listen(sync, "after_commit", _on_commit, once=True)
 
@@ -109,15 +112,27 @@ async def queue_async_image_generation(
     count: int | None = None,
     guidance: str | None = None,
     reason: str = "manual",
+    provider: str | None = None,
+    providers: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Create batch ImageJob and mark draft. Schedules worker after session commit."""
+    """Create batch ImageJob and mark draft. Schedules worker after session commit.
+
+    ``providers`` (e.g. ["openai", "gemini"]) generates one variant per
+    provider in the same batch, so they land in the gallery together for
+    side-by-side comparison — overrides ``count``/``provider`` when set.
+    """
     draft = await session.get(Draft, draft_id)
     if draft is None or draft.organization_id != org_id:
         raise ValueError(f"Draft {draft_id} not found for org")
 
+    providers_list = [p.strip() for p in (providers or []) if p and p.strip()] or None
+
     settings = await load_brand_image_settings(session, org_id)
-    image_count = resolve_image_count(count, brand_extra=settings["extra"])
+    image_count = len(providers_list) if providers_list else resolve_image_count(
+        count, brand_extra=settings["extra"]
+    )
     guidance_s = (guidance or "").strip() or None
+    provider_s = (provider or "").strip() or None
 
     batch = ImageJob(
         organization_id=org_id,
@@ -130,6 +145,8 @@ async def queue_async_image_generation(
             "async": True,
             "guidance": guidance_s,
             "reason": reason,
+            "provider_override": provider_s,
+            "providers": providers_list,
         },
     )
     session.add(batch)
@@ -138,14 +155,15 @@ async def queue_async_image_generation(
         draft, status="running", batch_job_id=batch.id, count=image_count
     )
     _schedule_after_commit(
-        session, org_id, draft_id, image_count, batch.id, guidance_s
+        session, org_id, draft_id, image_count, batch.id, guidance_s, provider_s, providers_list
     )
     logger.info(
-        "Queued image generation draft_id=%s batch_id=%s count=%s reason=%s",
+        "Queued image generation draft_id=%s batch_id=%s count=%s reason=%s providers=%s",
         draft_id,
         batch.id,
         image_count,
         reason,
+        providers_list,
     )
     return {
         "status": "queued",
@@ -164,6 +182,8 @@ def schedule_image_job(
     count: int,
     batch_job_id: uuid.UUID,
     guidance: str | None,
+    provider: str | None = None,
+    providers: list[str] | None = None,
 ) -> None:
     if batch_job_id in _inflight_batches:
         return
@@ -175,7 +195,7 @@ def schedule_image_job(
 
     async def _run() -> None:
         try:
-            await runner(org_id, draft_id, count, batch_job_id, guidance)
+            await runner(org_id, draft_id, count, batch_job_id, guidance, provider, providers)
         finally:
             _inflight_batches.discard(batch_job_id)
 

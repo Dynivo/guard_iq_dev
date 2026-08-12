@@ -1,4 +1,4 @@
-"""Organization use cases: get org details, list members."""
+"""Organization use cases: get org details."""
 
 from __future__ import annotations
 
@@ -27,22 +27,3 @@ class GetOrganizationUseCase:
             "slug": org.slug,
             "is_active": org.is_active,
         }
-
-
-class ListMembersUseCase:
-    """List all active members of an organization."""
-
-    def __init__(self, org_repo: OrganizationRepository) -> None:
-        self._org_repo = org_repo
-
-    async def execute(self, org_id: uuid.UUID) -> list[dict]:
-        members = await self._org_repo.list_members(org_id)
-        return [
-            {
-                "user_id": str(m.user_id),
-                "role": m.role,
-                "display_name": m.display_name,
-                "email": m.email,
-            }
-            for m in members
-        ]

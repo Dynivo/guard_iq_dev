@@ -28,7 +28,7 @@ class GeminiProvider:
         return "gemini"
 
     async def complete(self, request: CompletionRequest) -> CompletionResult:
-        model = request.model or "gemini-2.5-flash"
+        model = request.model or "gemini-flash-latest"
         url = f"{self._base_url}/models/{model}:generateContent?key={self._api_key}"
 
         parts = []
@@ -42,6 +42,15 @@ class GeminiProvider:
             "generationConfig": {
                 "temperature": request.temperature,
                 "maxOutputTokens": request.max_tokens,
+                # Newer Gemini models (e.g. gemini-3.6-flash under the
+                # "gemini-flash-latest" alias) default to "thinking" — internal
+                # reasoning tokens that count against maxOutputTokens. For short
+                # structured-output capabilities (JSON extraction, short labels,
+                # scoring) that reasoning can consume the entire budget before
+                # any visible answer is written, hitting MAX_TOKENS with an
+                # empty response. thinkingBudget must be >=1 (0 is rejected by
+                # the API); 1 effectively disables it for these use cases.
+                "thinkingConfig": {"thinkingBudget": 1},
             },
         }
         if request.response_format == "json":

@@ -63,6 +63,7 @@ interface ArticleRow {
   ai_relevance?: number | null;
   admin_override?: { status?: string } | null;
   sentiment?: SentimentInfo | null;
+  score_json?: { reason?: string | null } | null;
   created_at?: string | null;
 }
 
@@ -97,7 +98,7 @@ const PAGE_SIZE = 10;
 function statusChip(status?: string) {
   if (status === 'relevant') return { status: 'approved' as const, label: 'Relevant' };
   if (status === 'irrelevant') return { status: 'rejected' as const, label: 'Not relevant' };
-  if (status === 'scored') return { status: 'waiting' as const, label: 'Scoring…' };
+  if (status === 'scored') return { status: 'waiting' as const, label: 'Not yet screened' };
   return { status: 'pending' as const, label: 'New' };
 }
 
@@ -127,7 +128,7 @@ function relevanceRank(a: ArticleRow): number {
 function statusToApiParam(filter: RelevanceFilter): string | null {
   if (filter === 'relevant') return 'relevant';
   if (filter === 'not_relevant') return 'irrelevant';
-  if (filter === 'unscored') return 'raw';
+  if (filter === 'unscored') return 'scored';
   return null;
 }
 
@@ -144,14 +145,13 @@ export function NewsFeedPage() {
   const queryClient = useQueryClient();
   const [category, setCategory] = useState('');
   const [topicKey, setTopicKey] = useState('');
-  const [relevanceFilter, setRelevanceFilter] = useState<RelevanceFilter>('all');
+  const [relevanceFilter, setRelevanceFilter] = useState<RelevanceFilter>('relevant');
   const [sortBy, setSortBy] = useState<SortKey>('newest');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
   const [enriching, setEnriching] = useState(false);
   const [showHow, setShowHow] = useState(false);
-  const [showAllTrends, setShowAllTrends] = useState(false);
   const [draftTarget, setDraftTarget] = useState<ArticleRow | null>(null);
   const [draftPhase, setDraftPhase] = useState<DraftPhase>('confirm');
   const [draftStep, setDraftStep] = useState(0);
@@ -204,18 +204,6 @@ export function NewsFeedPage() {
     return map;
   }, [trends]);
 
-  const hotCategories = useMemo(() => {
-    return [...categories]
-      .map((c) => ({
-        ...c,
-        momentum: momentumByTopic.get(c.category.toLowerCase()) || c.count,
-      }))
-      .sort((a, b) => b.momentum - a.momentum)
-      .slice(0, 8);
-  }, [categories, momentumByTopic]);
-
-  const visibleTrends = showAllTrends ? trends : trends.slice(0, 8);
-
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     let list = articles.filter((a) => {
@@ -260,15 +248,6 @@ export function NewsFeedPage() {
 
   const setRelevanceFilterAndReset = (key: RelevanceFilter) => {
     setRelevanceFilter(key);
-    setPage(0);
-  };
-
-  const selectTopic = (key: string) => {
-    const next = topicKey === key ? '' : key;
-    setTopicKey(next);
-    // Prefer API category filter when it matches a known category
-    const known = categories.some((c) => c.category.toLowerCase() === key.toLowerCase());
-    setCategory(known && next ? key : '');
     setPage(0);
   };
 
@@ -413,101 +392,6 @@ export function NewsFeedPage() {
         }
       />
 
-      {/* Trending rail */}
-      <section className="space-y-3 rounded-[var(--radius)] border border-border bg-card p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-accent" />
-            <h2 className="text-sm font-semibold text-foreground">Trending now</h2>
-          </div>
-          {trends.length > 8 && (
-            <button
-              type="button"
-              className="text-xs font-medium text-accent hover:underline"
-              onClick={() => setShowAllTrends((v) => !v)}
-            >
-              {showAllTrends ? 'Show less' : `See all trends (${trends.length})`}
-            </button>
-          )}
-        </div>
-
-        {hotCategories.length > 0 && (
-          <div>
-            <p className="mb-1.5 text-xs text-muted-foreground">Hot categories</p>
-            <div className="flex flex-wrap gap-1.5">
-              {hotCategories.map((c) => {
-                const active = category === c.category || topicKey === c.category;
-                return (
-                  <button
-                    key={c.category}
-                    type="button"
-                    onClick={() => selectTopic(c.category)}
-                    className={cn(
-                      'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
-                      active
-                        ? 'bg-accent text-accent-foreground'
-                        : 'bg-muted text-muted-foreground hover:bg-hover hover:text-foreground'
-                    )}
-                  >
-                    {formatTopic(c.category)}
-                    <span className="ml-1 opacity-70">{c.count}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {trends.length > 0 ? (
-          <div>
-            <p className="mb-1.5 text-xs text-muted-foreground">Topic momentum</p>
-            <div className="flex flex-wrap gap-1.5">
-              {visibleTrends.map((t) => {
-                const active = topicKey === t.topic_key;
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => selectTopic(t.topic_key)}
-                    title={t.window_label || undefined}
-                    className={cn(
-                      'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors',
-                      active
-                        ? 'border-accent bg-accent/10 text-foreground'
-                        : 'border-border bg-background text-muted-foreground hover:border-accent/40 hover:text-foreground'
-                    )}
-                  >
-                    <span className="font-medium">{formatTopic(t.topic_key)}</span>
-                    <span className="tabular-nums opacity-70">
-                      {t.article_count != null ? `${t.article_count}` : '—'}
-                      {typeof t.momentum === 'number' ? ` · ${Math.round(t.momentum)}` : ''}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            Trends appear after sources ingest. Run a source, then refresh.
-          </p>
-        )}
-
-        {(topicKey || category) && (
-          <button
-            type="button"
-            className="text-xs text-muted-foreground hover:text-foreground"
-            onClick={() => {
-              setTopicKey('');
-              setCategory('');
-              setPage(0);
-            }}
-          >
-            Clear topic filter: {formatTopic(topicKey || category)}
-          </button>
-        )}
-      </section>
-
       <div>
         <button
           type="button"
@@ -592,6 +476,19 @@ export function NewsFeedPage() {
               </option>
             ))}
           </select>
+          {(topicKey || category) && (
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                setTopicKey('');
+                setCategory('');
+                setPage(0);
+              }}
+            >
+              Clear topic filter: {formatTopic(topicKey || category)}
+            </button>
+          )}
         </div>
       </div>
 
@@ -652,9 +549,12 @@ export function NewsFeedPage() {
                       {[a.source_name, a.category, a.sentiment?.label].filter(Boolean).join(' · ') ||
                         '—'}
                     </p>
-                    {a.summary && (
-                      <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{a.summary}</p>
-                    )}
+                    {(a.status === 'relevant' || a.status === 'irrelevant') &&
+                      a.score_json?.reason && (
+                        <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">
+                          {a.score_json.reason}
+                        </p>
+                      )}
                   </div>
 
                   <div className="flex shrink-0 flex-wrap items-center gap-1.5 sm:justify-end">

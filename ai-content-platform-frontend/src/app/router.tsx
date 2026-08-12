@@ -62,7 +62,6 @@ const ProvidersPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
 );
-const UsersPage = lazy(() => import('@/pages/UsersPage').then((m) => ({ default: m.UsersPage })));
 const PromptsPage = lazy(() =>
   import('@/pages/PromptsPage').then((m) => ({ default: m.PromptsPage }))
 );
@@ -146,7 +145,6 @@ export const router = createBrowserRouter([
       { path: 'jobs', element: <L><JobsPage /></L> },
       { path: 'analytics', element: <L><AnalyticsPage /></L> },
       { path: 'settings', element: <L><SettingsPage /></L> },
-      { path: 'users', element: <L><UsersPage /></L> },
     ],
   },
   // Legacy bookmarks → workspace

@@ -106,6 +106,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         asyncio.create_task(recover_orphaned_image_batches_startup(async_session_factory))
     except Exception:  # noqa: BLE001
         logger.exception("Failed to schedule image orphan recovery")
+
+    try:
+        import asyncio
+
+        from app.modules.intelligence.application.orphan_recovery import (
+            recover_orphaned_relevance_scoring_startup,
+            relevance_recovery_loop,
+        )
+
+        asyncio.create_task(recover_orphaned_relevance_scoring_startup(async_session_factory))
+        asyncio.create_task(relevance_recovery_loop(async_session_factory))
+    except Exception:  # noqa: BLE001
+        logger.exception("Failed to schedule relevance orphan recovery")
     yield
     logger.info(
         "Shutting down AI Content Platform Backend",

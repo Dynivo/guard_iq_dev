@@ -37,6 +37,7 @@ providers:
       gemini-2.5-flash-lite: { input_per_1k: 0.0001, output_per_1k: 0.0004 }
       # Gemini 2.5 Flash: $0.30 / $2.50 per 1M
       gemini-2.5-flash: { input_per_1k: 0.0003, output_per_1k: 0.0025 }
+      gemini-flash-latest: { input_per_1k: 0.0003, output_per_1k: 0.0025 }
       gemini-1.5-flash: { input_per_1k: 0.000075, output_per_1k: 0.0003 }
 
   perplexity:
@@ -82,7 +83,7 @@ providers:
       gpt-4o-mini: { input_per_1k: 0.000165, output_per_1k: 0.00066 }
       text-embedding-3-small: { input_per_1k: 0.00002, output_per_1k: 0.0 }
 
-# Image generation USD estimates (per image). Used by OpenAI image adapter only.
+# Image generation USD estimates (per image).
 image_generation:
   openai:
     models:
@@ -96,3 +97,17 @@ image_generation:
           low: 0.02
           medium: 0.07
           high: 0.19
+
+  gemini:
+    models:
+      # Estimate — confirm against current Gemini API image pricing before relying on it.
+      gemini-2.5-flash-image:
+        quality:
+          low: 0.02
+          medium: 0.04
+          high: 0.04
+      default:
+        quality:
+          low: 0.02
+          medium: 0.04
+          high: 0.04

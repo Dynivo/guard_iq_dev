@@ -55,8 +55,8 @@ def test_media_belongs_to_jobs() -> None:
     assert not media_belongs_to_jobs(f"org/images/{jid}/optimized.png", {"other"})
 
 
-def test_body_bullets_drive_connected_or_process_visual() -> None:
-    subject = build_content_subject(
+async def test_body_bullets_drive_connected_or_process_visual() -> None:
+    subject = await build_content_subject(
         hook="Could AI be your next security threat?",
         body=(
             "Recent tests revealed AI agents creating fake identities.\n"
@@ -71,8 +71,8 @@ def test_body_bullets_drive_connected_or_process_visual() -> None:
     assert "floating" in subject["visual_elements"].lower() or "NOT" in subject["must_depict"]
 
 
-def test_thirty_four_malware_uses_big_stat_layout() -> None:
-    subject = build_content_subject(
+async def test_thirty_four_malware_uses_big_stat_layout() -> None:
+    subject = await build_content_subject(
         hook="What if 34 hidden threats were lurking in your practice's essential software?",
         body=(
             "We recently helped a client uncover 34 instances of malware embedded deep "
@@ -89,8 +89,8 @@ def test_thirty_four_malware_uses_big_stat_layout() -> None:
     assert "portrait" in subject["must_depict"].lower() or "floating" in subject["must_depict"].lower()
 
 
-def test_azure_vuln_uses_access_control_layout() -> None:
-    subject = build_content_subject(
+async def test_azure_vuln_uses_access_control_layout() -> None:
+    subject = await build_content_subject(
         hook="Ignoring the latest Azure vulnerability could expose your practice to serious risk.",
         body=(
             "The recent CVE-2026-35425 vulnerability in Azure API Management allows an "
@@ -100,8 +100,8 @@ def test_azure_vuln_uses_access_control_layout() -> None:
     assert subject["visual_mode"] == "access_control"
 
 
-def test_lawsuit_uses_legal_context_not_cyber_portrait() -> None:
-    subject = build_content_subject(
+async def test_lawsuit_uses_legal_context_not_cyber_portrait() -> None:
+    subject = await build_content_subject(
         hook="A significant tech company is now facing a class action lawsuit.",
         body=(
             "Rosen Law Firm has announced a class action lawsuit targeting Rackspace. "
@@ -117,8 +117,8 @@ def test_lawsuit_uses_legal_context_not_cyber_portrait() -> None:
     assert "Distributor" not in subject["short_labels"]
 
 
-def test_inject_brief_sets_educational_infographic_for_body_layout() -> None:
-    brief = inject_content_into_brief(
+async def test_inject_brief_sets_educational_infographic_for_body_layout() -> None:
+    brief = await inject_content_into_brief(
         {},
         hook="Could AI be your next security threat?",
         body=(
@@ -134,8 +134,8 @@ def test_inject_brief_sets_educational_infographic_for_body_layout() -> None:
     assert "neon" in brief["negative_prompt"].lower() or "portrait" in brief["negative_prompt"].lower()
 
 
-def test_noise_filter_post_does_not_depict_foreign_gun_news() -> None:
-    subject = build_content_subject(
+async def test_noise_filter_post_does_not_depict_foreign_gun_news() -> None:
+    subject = await build_content_subject(
         hook="Not every headline impacts your practice.",
         body=(
             "We're constantly sifting through global news to find what genuinely matters "

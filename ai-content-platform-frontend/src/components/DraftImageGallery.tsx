@@ -11,6 +11,14 @@ export interface DraftImageItem {
   width?: number | null;
   height?: number | null;
   source?: 'upload' | 'ai' | string;
+  provider?: string | null;
+}
+
+function providerLabel(provider?: string | null): string | null {
+  if (!provider) return null;
+  if (provider === 'openai') return 'OpenAI';
+  if (provider === 'gemini') return 'Gemini';
+  return provider;
 }
 
 interface DraftImageGalleryProps {
@@ -52,6 +60,11 @@ export function DraftImageGallery({ images, onIndexChange }: DraftImageGalleryPr
             alt={`Generated image ${safeIndex + 1}`}
             className="absolute inset-0 h-full w-full object-contain"
           />
+          {providerLabel(current.provider) && (
+            <span className="absolute left-2 top-2 rounded-full bg-background/90 px-2 py-0.5 text-[11px] font-medium shadow">
+              {providerLabel(current.provider)}
+            </span>
+          )}
         </div>
         {images.length > 1 && (
           <>

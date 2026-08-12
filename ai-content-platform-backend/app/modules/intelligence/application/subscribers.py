@@ -11,6 +11,12 @@ from app.shared.events.types import DomainEvent
 
 logger = get_logger(__name__)
 
+# Caps concurrent inline relevance-scoring calls (shared with the orphan-recovery
+# sweep in orphan_recovery.py) so a burst of ingested articles — or a sweep
+# catching up a backlog — can't hold more DB connections than the pool allows.
+# Same fix already applied to inline image ingest earlier this session.
+relevance_semaphore = asyncio.Semaphore(5)
+
 
 def register_intelligence_handlers(bus: EventBus, session_factory=None) -> None:
     """Subscribe ArticleImported → enqueue AI relevance (non-blocking)."""
@@ -37,6 +43,15 @@ def register_intelligence_handlers(bus: EventBus, session_factory=None) -> None:
 
 
 async def _score_in_background(
+    org_id: uuid.UUID,
+    article_id: uuid.UUID,
+    session_factory,
+) -> None:
+    async with relevance_semaphore:
+        await _score_one(org_id, article_id, session_factory)
+
+
+async def _score_one(
     org_id: uuid.UUID,
     article_id: uuid.UUID,
     session_factory,

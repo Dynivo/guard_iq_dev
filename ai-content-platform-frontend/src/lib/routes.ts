@@ -17,7 +17,6 @@ export const routes = {
   analytics: '/app/analytics',
   providers: '/app/providers',
   settings: '/app/settings',
-  users: '/app/users',
   ideas: '/app/ideas',
   plan: '/app/plan',
   toPost: '/app/to-post',

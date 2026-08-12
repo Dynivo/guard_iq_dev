@@ -38,7 +38,7 @@ _MIX_CAPABILITIES = frozenset(
 # Preferred chat models per provider (used when mixing)
 _CHAT_POOL: tuple[ProviderTarget, ...] = (
     ProviderTarget(provider="openai", model="gpt-4o-mini"),
-    ProviderTarget(provider="gemini", model="gemini-2.5-flash"),
+    ProviderTarget(provider="gemini", model="gemini-flash-latest"),
     ProviderTarget(provider="grok", model="llama-3.3-70b-versatile"),
     ProviderTarget(provider="azure_openai", model="gpt-4"),
     ProviderTarget(provider="perplexity", model="sonar"),

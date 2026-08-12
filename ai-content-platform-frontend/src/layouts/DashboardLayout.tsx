@@ -13,7 +13,6 @@ import {
   ListTodo,
   BarChart3,
   Settings,
-  Users,
   LogOut,
   Menu,
   X,
@@ -58,7 +57,6 @@ const navItems: NavItem[] = [
   { label: 'Analytics', path: routes.analytics, icon: <BarChart3 size={18} />, section: 'more', tourId: 'nav-analytics' },
   { label: 'Providers', path: routes.providers, icon: <Cpu size={18} />, section: 'more' },
   { label: 'Settings', path: routes.settings, icon: <Settings size={18} />, section: 'more' },
-  { label: 'Users', path: routes.users, icon: <Users size={18} />, section: 'more' },
 ];
 
 const sections = [
@@ -90,7 +88,6 @@ const crumbs: Record<string, string> = {
   [routes.jobs]: 'Jobs',
   [routes.analytics]: 'Analytics',
   [routes.settings]: 'Settings',
-  [routes.users]: 'Users',
   [routes.ideas]: 'Ideas',
 };
 

@@ -6,7 +6,7 @@ panel:
     model: gpt-4o-mini
     roles: [writing, hooks, formatting]
   - provider: gemini
-    model: gemini-2.5-flash
+    model: gemini-flash-latest
     roles: [writing, hooks, image_prompt]
   - provider: anthropic
     model: claude-3-5-haiku-latest
