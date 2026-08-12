@@ -5,9 +5,6 @@ import { AuthGuard } from './AuthGuard';
 import { Skeleton } from '@/design-system/ui/skeleton';
 import { routes } from '@/lib/routes';
 
-const LandingPage = lazy(() =>
-  import('@/pages/LandingPage').then((m) => ({ default: m.LandingPage }))
-);
 const LoginPage = lazy(() => import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })));
 const DashboardPage = lazy(() =>
   import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage }))
@@ -100,11 +97,7 @@ function LegacyDraftRedirect() {
 export const router = createBrowserRouter([
   {
     path: routes.home,
-    element: (
-      <L>
-        <LandingPage />
-      </L>
-    ),
+    element: <Navigate to={routes.app} replace />,
   },
   {
     path: routes.login,
