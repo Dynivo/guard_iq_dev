@@ -20,6 +20,7 @@ from app.infrastructure.storage.factory import get_delivery_strategy, get_storag
 from app.modules.ai.application.factory import AIOrchestratorFactory
 from app.modules.content.application.claims_guard import ClaimsGuard
 from app.modules.content.application.generator import ContentGenerator
+from app.modules.content.application.publishing_plan import PLAN_ORIGIN
 
 logger = get_logger(__name__)
 
@@ -592,6 +593,8 @@ class GenerateFromCaptureUseCase:
             metadata_json={
                 "capture": True,
                 "capture_session_id": str(row.id),
+                "plan_origin": True,
+                "origin": PLAN_ORIGIN,
                 "photo_mode": row.photo_mode,
                 "shot_list": row.shot_list_json or [],
                 "prefer_real_photos": row.photo_mode
