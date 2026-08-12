@@ -108,7 +108,16 @@ class CalendarViewService:
                 "suggested": False,
                 "label": mix,
             }
+            is_placeable = d.status in (
+                DraftStatus.APPROVED,
+                DraftStatus.PUBLISHED,
+                "approved",
+                "published",
+            )
             if isinstance(scheduled, str) and len(scheduled) >= 10:
+                if not is_placeable:
+                    # Stale/legacy scheduling on a not-yet-approved draft — never render it.
+                    continue
                 day = scheduled[:10]
                 item["date"] = day
                 scheduled_dates.add(day)
@@ -119,17 +128,9 @@ class CalendarViewService:
                     continue
                 events.append(item)
             else:
-                if d.status in (
-                    DraftStatus.PENDING_REVIEW,
-                    DraftStatus.IN_REVIEW,
-                    DraftStatus.APPROVED,
-                    DraftStatus.PUBLISHED,
-                    "pending_review",
-                    "in_review",
-                    "approved",
-                    "published",
-                    "scheduled",
-                ):
+                # Only approved posts are ready to schedule — pending-review drafts
+                # still need a decision in the review queue first.
+                if d.status in (DraftStatus.APPROVED, "approved"):
                     unscheduled.append(item)
 
         # Plan open slots → suggested events (no draft yet)

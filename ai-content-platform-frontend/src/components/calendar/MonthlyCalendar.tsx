@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
@@ -74,8 +74,8 @@ export function MonthlyCalendar({
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [assigning, setAssigning] = useState<string | null>(null);
+  const [scheduleDates, setScheduleDates] = useState<Record<string, string>>({});
 
   const { data, isLoading, isError, refetch } = useApiQuery<ApiEnvelope<CalendarMonthView>>(
     ['publishing-calendar', String(year), String(month)],
@@ -84,16 +84,6 @@ export function MonthlyCalendar({
 
   const view = data?.data;
   const unscheduled = view?.unscheduled ?? [];
-
-  const selectedEvents = useMemo(() => {
-    if (!view || !selectedDate) return [];
-    for (const week of view.weeks || []) {
-      for (const day of week) {
-        if (day.date === selectedDate) return day.events || [];
-      }
-    }
-    return [];
-  }, [view, selectedDate]);
 
   const shiftMonth = (delta: number) => {
     let m = month + delta;
@@ -107,14 +97,12 @@ export function MonthlyCalendar({
     }
     setMonth(m);
     setYear(y);
-    setSelectedDate(null);
   };
 
   const goToday = () => {
     const t = new Date();
     setYear(t.getFullYear());
     setMonth(t.getMonth() + 1);
-    setSelectedDate(t.toISOString().slice(0, 10));
   };
 
   const assign = async (draftId: string, date: string) => {
@@ -122,6 +110,11 @@ export function MonthlyCalendar({
     try {
       await apiClient.patch(`/drafts/${draftId}/schedule`, { scheduled_for: date });
       toast.success(`Scheduled for ${date}`);
+      setScheduleDates((prev) => {
+        const next = { ...prev };
+        delete next[draftId];
+        return next;
+      });
       queryClient.invalidateQueries({ queryKey: ['publishing-calendar'] });
       queryClient.invalidateQueries({ queryKey: ['to-post'] });
       queryClient.invalidateQueries({ queryKey: ['strategist-briefing'] });
@@ -209,19 +202,15 @@ export function MonthlyCalendar({
 
         <div className="grid grid-cols-7">
           {(view.weeks || []).flat().map((day) => {
-            const selected = selectedDate === day.date;
             const maxShow = compact ? 3 : 4;
             const extra = Math.max(0, (day.events?.length || 0) - maxShow);
             return (
-              <button
+              <div
                 key={day.date}
-                type="button"
-                onClick={() => setSelectedDate(day.date)}
                 className={cn(
                   'flex min-h-[6.5rem] flex-col border-b border-r border-[#dadce0] p-1.5 text-left transition-colors sm:min-h-[7.5rem]',
                   !day.in_month && 'bg-[#f8f9fa]',
                   day.is_weekend && day.in_month && 'bg-[#fafafa]',
-                  selected && 'bg-[#e8f0fe] ring-2 ring-inset ring-[#1a73e8]',
                   compact && 'min-h-[5.5rem] sm:min-h-[6.25rem]'
                 )}
               >
@@ -266,93 +255,71 @@ export function MonthlyCalendar({
                     </span>
                   )}
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {selectedDate ? `Selected · ${selectedDate}` : 'Select a day'}
-          </p>
-          {!selectedDate && (
-            <p className="mt-2 text-sm text-muted-foreground">
-              Click any day to see posts and plan slots, then schedule from Unscheduled.
-            </p>
-          )}
-          {selectedDate && selectedEvents.length === 0 && (
-            <p className="mt-2 text-sm text-muted-foreground">No posts on this day yet.</p>
-          )}
-          {selectedDate && selectedEvents.length > 0 && (
-            <ul className="mt-3 space-y-2">
-              {selectedEvents.map((ev) => (
-                <li key={ev.id}>
-                  <button
-                    type="button"
-                    className={cn(
-                      'w-full rounded-lg border px-3 py-2 text-left text-sm',
-                      eventClass(ev)
-                    )}
-                    onClick={() => onEventClick(ev)}
-                  >
-                    <p className="font-medium">{ev.title}</p>
-                    <p className="mt-0.5 text-xs opacity-80">
-                      {(ev.content_type || ev.kind || '').replace(/_/g, ' ')}
-                      {ev.status ? ` · ${String(ev.status).replace(/_/g, ' ')}` : ''}
-                    </p>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Unscheduled
-          </p>
-          {unscheduled.length === 0 ? (
-            <EmptyState
-              className="mt-2 border-0 p-0"
-              title="None waiting"
-              description="Approve drafts to schedule them on the calendar."
-              actionLabel="Drafts"
-              onAction={() => navigate(routes.drafts)}
-            />
-          ) : (
-            <ul className="mt-3 max-h-64 space-y-2 overflow-y-auto">
-              {unscheduled.map((item) => (
-                <li
-                  key={item.id}
-                  className="rounded-lg border border-[var(--color-border)] bg-white px-3 py-2"
-                >
-                  <p className="line-clamp-2 text-sm font-medium">{item.title}</p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    {(item.content_type || 'post').replace(/_/g, ' ')}
-                  </p>
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Approved — ready to schedule
+        </p>
+        {unscheduled.length === 0 ? (
+          <EmptyState
+            className="mt-2 border-0 p-0"
+            title="None waiting"
+            description="Approve drafts to schedule them on the calendar."
+            actionLabel="Drafts"
+            onAction={() => navigate(routes.drafts)}
+          />
+        ) : (
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {unscheduled.map((item) => (
+              <li
+                key={item.id}
+                className="rounded-lg border border-[var(--color-border)] bg-white px-3 py-2"
+              >
+                <p className="line-clamp-2 text-sm font-medium">{item.title}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  {(item.content_type || 'post').replace(/_/g, ' ')}
+                </p>
+                <div className="mt-2 flex items-center gap-1.5">
+                  <input
+                    type="date"
+                    className="h-8 min-w-0 flex-1 rounded-md border border-[var(--color-border)] bg-white px-2 text-xs text-[#3c4043]"
+                    value={item.draft_id ? scheduleDates[item.draft_id] || '' : ''}
+                    onChange={(e) => {
+                      if (!item.draft_id) return;
+                      const value = e.target.value;
+                      setScheduleDates((prev) => ({ ...prev, [item.draft_id as string]: value }));
+                    }}
+                  />
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="mt-2 w-full"
-                    disabled={!selectedDate || assigning === item.draft_id}
+                    className="h-8 shrink-0"
+                    disabled={
+                      !item.draft_id || !scheduleDates[item.draft_id] || assigning === item.draft_id
+                    }
                     onClick={() => {
-                      if (!selectedDate || !item.draft_id) return;
-                      void assign(item.draft_id, selectedDate);
+                      const date = item.draft_id ? scheduleDates[item.draft_id] : '';
+                      if (!item.draft_id || !date) return;
+                      void assign(item.draft_id, date);
                     }}
                   >
                     {assigning === item.draft_id ? (
-                      <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
-                    ) : null}
-                    {selectedDate ? `Schedule ${selectedDate.slice(5)}` : 'Select a day first'}
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      'Schedule'
+                    )}
                   </Button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground">

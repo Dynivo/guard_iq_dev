@@ -367,6 +367,8 @@ async def schedule_draft(
     ).scalar_one_or_none()
     if draft is None:
         raise NotFoundError("Draft", str(draft_id))
+    if draft.status not in (DraftStatus.APPROVED, DraftStatus.PUBLISHED, "approved", "published"):
+        raise ValidationError("Only approved posts can be scheduled")
 
     raw = body.scheduled_for.strip()
     try:
