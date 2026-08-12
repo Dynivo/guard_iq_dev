@@ -257,7 +257,12 @@ class ContentGenerator:
                             f"incidents unless the article is about security.\n"
                             f"Return JSON with ALL keys required: "
                             f'{{"hook":"...","body":"...","cta":"...","hashtags":["#..."]}}. '
-                            f"cta must be a short engagement question (never empty)."
+                            f"The body should already land its own call to action or "
+                            f"engagement question as its closing line — that is usually "
+                            f"stronger than a bolted-on closer. Only fill cta with a "
+                            f"distinct line if it adds something the body doesn't already "
+                            f"say; otherwise leave cta as an empty string. Never repeat or "
+                            f"paraphrase the body's closing line in cta."
                         ),
                         "topic": title,
                         "content_type": content_type,
@@ -344,7 +349,12 @@ class ContentGenerator:
                         f"Formatting: short paragraphs separated by a blank line.\n"
                         f"Return JSON with ALL keys required: "
                         f'{{"hook":"...","body":"...","cta":"...","hashtags":["#..."]}}. '
-                        f"cta must be a short engagement question (never empty)."
+                        f"The body should already land its own call to action or "
+                        f"engagement question as its closing line — that is usually "
+                        f"stronger than a bolted-on closer. Only fill cta with a "
+                        f"distinct line if it adds something the body doesn't already "
+                        f"say; otherwise leave cta as an empty string. Never repeat or "
+                        f"paraphrase the body's closing line in cta."
                     ),
                     "topic": title or story[:120],
                     "content_type": content_type,

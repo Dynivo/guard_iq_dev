@@ -146,7 +146,7 @@ function fullPostText(draft: Draft, body: string): string {
   const tags = (draft.hashtags || [])
     .map((t) => (t.startsWith('#') ? t : `#${t}`))
     .join(' ');
-  return [draft.hook, body, draft.cta, tags].filter(Boolean).join('\n\n');
+  return [draft.hook, body, tags].filter(Boolean).join('\n\n');
 }
 
 export function DraftDetailPage() {
@@ -169,7 +169,7 @@ export function DraftDetailPage() {
   const [showRewrite, setShowRewrite] = useState(false);
   const [showReject, setShowReject] = useState(false);
   const [contentNote, setContentNote] = useState('');
-  const [regenSection, setRegenSection] = useState<'full' | 'hook' | 'body' | 'cta'>('full');
+  const [regenSection, setRegenSection] = useState<'full' | 'hook' | 'body'>('full');
   const [imageNote, setImageNote] = useState('');
   const [includeLogo, setIncludeLogo] = useState(false);
   const [logoPosition, setLogoPosition] = useState('brand_default');
@@ -476,7 +476,7 @@ export function DraftDetailPage() {
     }
   };
 
-  const regenerateContent = async (guidance: string, section: 'full' | 'hook' | 'body' | 'cta' = 'full') => {
+  const regenerateContent = async (guidance: string, section: 'full' | 'hook' | 'body' = 'full') => {
     if (!draftId) return;
     setBusy('regen-content');
     try {
@@ -503,10 +503,8 @@ export function DraftDetailPage() {
         changed === 'hook'
           ? 'Hook updated — body kept as-is'
           : changed === 'body'
-            ? 'Body rewritten — hook & CTA kept'
-            : changed === 'cta'
-              ? 'CTA updated'
-              : 'Post rewritten — review and approve';
+            ? 'Body rewritten — hook kept'
+            : 'Post rewritten — review and approve';
       toast.success(res.data?.data?.message || label);
       setShowRewrite(false);
       invalidate();
@@ -657,14 +655,6 @@ export function DraftDetailPage() {
                   {body || '—'}
                 </p>
               </div>
-              {draft.cta && (
-                <div>
-                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Call to action
-                  </p>
-                  <p>{draft.cta}</p>
-                </div>
-              )}
               {!!draft.hashtags?.length && (
                 <div className="flex flex-wrap gap-1.5">
                   {draft.hashtags.map((tag) => (
@@ -755,7 +745,6 @@ export function DraftDetailPage() {
                 authorHeadline="Content Intelligence"
                 hook={draft.hook}
                 body={body}
-                cta={draft.cta}
                 hashtags={draft.hashtags}
                 imageUrl={previewImage}
               />
@@ -784,7 +773,6 @@ export function DraftDetailPage() {
                         { id: 'full', label: 'Whole post' },
                         { id: 'hook', label: 'Hook only' },
                         { id: 'body', label: 'Body only' },
-                        { id: 'cta', label: 'CTA only' },
                       ] as const
                     ).map((opt) => (
                       <Button
@@ -803,10 +791,8 @@ export function DraftDetailPage() {
                     {regenSection === 'hook'
                       ? 'Only the opening line changes — body stays the same.'
                       : regenSection === 'body'
-                        ? 'Only the middle paragraphs change — hook & CTA stay.'
-                        : regenSection === 'cta'
-                          ? 'Only the closing question changes.'
-                          : 'Rewrites hook, body, and CTA together.'}
+                        ? 'Only the middle paragraphs change — hook stays.'
+                        : 'Rewrites hook and body together.'}
                   </p>
                 </div>
                 <Textarea
@@ -815,9 +801,7 @@ export function DraftDetailPage() {
                       ? 'Optional — e.g. “shorter”, “more urgent”, “less clickbait”'
                       : regenSection === 'body'
                         ? 'Optional — e.g. “more about CQC”, “shorter paragraphs”'
-                        : regenSection === 'cta'
-                          ? 'Optional — e.g. “ask about compliance”'
-                          : 'Optional — e.g. “shorter overall”, “more practical”'
+                        : 'Optional — e.g. “shorter overall”, “more practical”'
                   }
                   value={contentNote}
                   onChange={(e) => setContentNote(e.target.value)}

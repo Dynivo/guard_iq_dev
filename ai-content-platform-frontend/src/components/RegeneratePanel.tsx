@@ -105,7 +105,7 @@ interface BeforeAfterCompareProps {
 function formatPost(s: PostSnapshot | null): string {
   if (!s) return '—';
   const tags = (s.hashtags || []).map((t) => (t.startsWith('#') ? t : `#${t}`)).join(' ');
-  return [s.hook, s.body, s.cta, tags].filter(Boolean).join('\n\n') || '—';
+  return [s.hook, s.body, tags].filter(Boolean).join('\n\n') || '—';
 }
 
 /** Side-by-side previous vs new after regenerate — for review. */

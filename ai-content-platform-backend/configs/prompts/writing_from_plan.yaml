@@ -110,8 +110,8 @@ sections:
     Respond with a single JSON object only (no markdown fences):
     {
       "hook": "string — one scroll-stopping first line",
-      "body": "string — LinkedIn post body with short line breaks (\\n\\n between beats)",
-      "cta": "string — comment/save/follow invite",
+      "body": "string — LinkedIn post body with short line breaks (\\n\\n between beats). Its closing line should already be the call to action or engagement question.",
+      "cta": "string — ONLY a distinct comment/save/follow invite that adds something the body's closing line doesn't already say; empty string if the body already lands its own CTA (the common case — don't duplicate it)",
       "hashtags": ["string"]
     }
   validation: |

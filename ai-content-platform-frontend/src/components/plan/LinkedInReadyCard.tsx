@@ -75,7 +75,6 @@ export function LinkedInReadyCard({
           authorHeadline={authorHeadline}
           hook={draft.hook || undefined}
           body={draft.body || undefined}
-          cta={draft.cta || undefined}
           hashtags={draft.hashtags || []}
           imageUrl={draft.image_url}
           className="rounded-none border-0 shadow-none"
