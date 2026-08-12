@@ -139,6 +139,21 @@ async def seed_publishing_calendar(
     )
 
 
+@router.post("/clear-calendar")
+async def clear_publishing_calendar(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(require_role(MembershipRole.EDITOR)),
+    session: AsyncSession = Depends(get_async_session),
+) -> dict:
+    """Unschedule every plan-origin draft. Drafts stay in Drafts, just no calendar date."""
+    svc = PublishingPlanService(session)
+    result = await svc.clear_calendar(current_user.organization_id)
+    return success_response(
+        result,
+        request_id=getattr(request.state, "request_id", ""),
+    )
+
+
 @router.get("/calendar")
 async def get_publishing_calendar(
     request: Request,

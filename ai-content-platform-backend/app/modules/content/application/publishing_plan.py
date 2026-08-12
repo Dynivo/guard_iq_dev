@@ -330,7 +330,13 @@ class PublishingPlanService:
             if bucket:
                 counts[bucket] = counts.get(bucket, 0) + 1
             scheduled = meta.get("scheduled_for")
-            if isinstance(scheduled, str) and scheduled[:10] in by_date:
+            is_placeable = d.status in (
+                DraftStatus.APPROVED,
+                DraftStatus.PUBLISHED,
+                "approved",
+                "published",
+            )
+            if is_placeable and isinstance(scheduled, str) and scheduled[:10] in by_date:
                 by_date[scheduled[:10]].append(str(d.id))
             if d.status in (
                 DraftStatus.PENDING_REVIEW,
@@ -388,9 +394,15 @@ class PublishingPlanService:
         draft_by_id: dict[str, Draft],
         gaps: dict[str, int],
     ) -> list[dict[str, Any]]:
+        # Round-robin across mix types so suggestions spread through the window
+        # instead of stacking every educational slot before success/personal ones.
+        remaining = {key: int(gaps.get(key, 0)) for key in MIX_KEYS}
         needed_queue: list[str] = []
-        for key in MIX_KEYS:
-            needed_queue.extend([key] * int(gaps.get(key, 0)))
+        while any(remaining.values()):
+            for key in MIX_KEYS:
+                if remaining[key] > 0:
+                    needed_queue.append(key)
+                    remaining[key] -= 1
         ni = 0
         slots: list[dict[str, Any]] = []
         for d in workdays:
@@ -644,23 +656,20 @@ class PublishingPlanService:
         if not workdays:
             return {"assigned": 0, "skipped": 0, "cleared_manual": 0, "workdays": 0, "assignments": []}
 
-        statuses = (
-            DraftStatus.PENDING_REVIEW,
-            DraftStatus.IN_REVIEW,
+        # Only approved (or already published) posts are placed on the calendar —
+        # pending-review drafts still need a decision in the review queue first.
+        placeable_statuses = (
             DraftStatus.APPROVED,
             DraftStatus.PUBLISHED,
-            "pending_review",
-            "in_review",
             "approved",
             "published",
-            "scheduled",
         )
         rows = (
             await self._session.execute(
                 select(Draft)
                 .where(
                     Draft.organization_id == org_id,
-                    Draft.status.in_(statuses),
+                    Draft.status.in_(placeable_statuses),
                 )
                 .order_by(Draft.created_at.desc())
                 .limit(300)
@@ -768,6 +777,34 @@ class PublishingPlanService:
             "load": load,
             "assignments": assignments,
         }
+
+    async def clear_calendar(self, org_id: uuid.UUID) -> dict[str, Any]:
+        """Unschedule every plan-origin draft — full reset, drafts themselves are untouched."""
+        rows = (
+            await self._session.execute(
+                select(Draft).where(Draft.organization_id == org_id)
+            )
+        ).scalars().all()
+
+        cleared = 0
+        for d in rows:
+            meta = d.metadata_json if isinstance(d.metadata_json, dict) else {}
+            if not is_plan_origin(meta):
+                continue
+            if not (meta.get("scheduled_for") or meta.get("calendar_seeded")):
+                continue
+            meta = dict(meta)
+            meta.pop("scheduled_for", None)
+            meta.pop("calendar_label", None)
+            meta.pop("calendar_seeded", None)
+            d.metadata_json = meta
+            flag_modified(d, "metadata_json")
+            cleared += 1
+
+        if cleared:
+            await self._session.flush()
+        logger.info("Calendar cleared org_id=%s cleared=%s", org_id, cleared)
+        return {"cleared": cleared}
 
     async def _mark_plan_origin(self, draft_id: uuid.UUID) -> None:
         draft = await self._session.get(Draft, draft_id)

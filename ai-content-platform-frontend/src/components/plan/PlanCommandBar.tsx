@@ -1,4 +1,4 @@
-import { Loader2, Mic, RefreshCw } from 'lucide-react';
+import { CalendarX, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/design-system/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -10,12 +10,12 @@ export function PlanCommandBar({
   counts,
   target,
   gaps,
-  regenerating,
+  generating,
   seedingCalendar,
-  onRegenerate,
+  clearingCalendar,
+  onAutoGenerate,
   onSeedCalendar,
-  onCaptureSuccess,
-  onCapturePersonal,
+  onClearCalendar,
   className,
 }: {
   windowMode?: string;
@@ -25,12 +25,12 @@ export function PlanCommandBar({
   counts?: Record<string, number>;
   target?: Record<string, number>;
   gaps?: Record<string, number>;
-  regenerating?: boolean;
+  generating?: boolean;
   seedingCalendar?: boolean;
-  onRegenerate: () => void;
+  clearingCalendar?: boolean;
+  onAutoGenerate: () => void;
   onSeedCalendar?: () => void;
-  onCaptureSuccess?: () => void;
-  onCapturePersonal?: () => void;
+  onClearCalendar?: () => void;
   className?: string;
 }) {
   const totalT = Number(target?.total ?? 0) || 1;
@@ -90,27 +90,31 @@ export function PlanCommandBar({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {Number(gaps?.success_story ?? 0) > 0 && onCaptureSuccess && (
-            <Button type="button" size="sm" variant="outline" onClick={onCaptureSuccess}>
-              <Mic className="mr-1.5 h-3.5 w-3.5" />
-              Capture
+          {onClearCalendar && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="text-muted-foreground"
+              onClick={onClearCalendar}
+              disabled={clearingCalendar || seedingCalendar || generating}
+              title="Unschedule every post from the calendar. Drafts stay in Drafts — nothing is deleted."
+            >
+              {clearingCalendar ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <CalendarX className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              {clearingCalendar ? 'Clearing…' : 'Clear calendar'}
             </Button>
           )}
-          {Number(gaps?.personal_achievement ?? 0) > 0 &&
-            Number(gaps?.success_story ?? 0) <= 0 &&
-            onCapturePersonal && (
-              <Button type="button" size="sm" variant="outline" onClick={onCapturePersonal}>
-                <Mic className="mr-1.5 h-3.5 w-3.5" />
-                Capture
-              </Button>
-            )}
           {onSeedCalendar && (
             <Button
               type="button"
               size="sm"
               variant="outline"
               onClick={onSeedCalendar}
-              disabled={seedingCalendar || regenerating}
+              disabled={seedingCalendar || generating || clearingCalendar}
             >
               {seedingCalendar ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -118,13 +122,18 @@ export function PlanCommandBar({
               {seedingCalendar ? 'Seeding…' : 'Seed calendar'}
             </Button>
           )}
-          <Button type="button" onClick={onRegenerate} disabled={regenerating || seedingCalendar}>
-            {regenerating ? (
+          <Button
+            type="button"
+            onClick={onAutoGenerate}
+            disabled={generating || seedingCalendar || clearingCalendar}
+            title="Generates educational posts only, from your scored news. New posts land in Drafts — approve them there to schedule."
+          >
+            {generating ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <RefreshCw className="mr-2 h-4 w-4" />
             )}
-            {regenerating ? 'Regenerating…' : 'Regenerate plan'}
+            {generating ? 'Generating…' : 'Auto Generate posts'}
           </Button>
         </div>
       </div>
