@@ -16,6 +16,7 @@ import {
   Smartphone,
   ThumbsDown,
   ThumbsUp,
+  Trash2,
   Type,
   Volume2,
   VolumeX,
@@ -573,6 +574,23 @@ export function DraftDetailPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!draftId || !draft) return;
+    if (!window.confirm(`Delete "${draft.title || draft.hook || 'this draft'}"? This can't be undone.`)) {
+      return;
+    }
+    setBusy('delete');
+    try {
+      await apiClient.delete(`/drafts/${draftId}`);
+      toast.success('Draft deleted');
+      queryClient.invalidateQueries({ queryKey: ['drafts'] });
+      navigate(routes.drafts);
+    } catch {
+      toast.error('Delete failed');
+      setBusy(null);
+    }
+  };
+
   if (isLoading) return <Skeleton className="h-96 w-full" />;
   if (isError || !draft) {
     return <ErrorState message="Unable to load this draft." onRetry={refetch} />;
@@ -599,10 +617,25 @@ export function DraftDetailPage() {
           </span>
         }
         actions={
-          <Button variant="outline" onClick={copyPost}>
-            <Copy className="h-4 w-4" />
-            Copy post
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={copyPost}>
+              <Copy className="h-4 w-4" />
+              Copy post
+            </Button>
+            <Button
+              variant="outline"
+              className="text-muted-foreground hover:text-destructive"
+              disabled={busy === 'delete'}
+              onClick={handleDelete}
+            >
+              {busy === 'delete' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+              Delete
+            </Button>
+          </div>
         }
       />
 

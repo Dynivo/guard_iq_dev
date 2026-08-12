@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { FileText, Newspaper, Check } from 'lucide-react';
+import { FileText, Newspaper, Check, Trash2 } from 'lucide-react';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { apiClient } from '@/api/client';
 import type { ApiEnvelope, Draft } from '@/api/types';
@@ -144,6 +144,22 @@ export function DraftsPage() {
     }
   };
 
+  const deleteDraft = async (id: string, title: string) => {
+    if (!window.confirm(`Delete "${title}"? This can't be undone.`)) return;
+    setBusy(id);
+    try {
+      await apiClient.delete(`/drafts/${id}`);
+      toast.success('Draft deleted');
+      queryClient.invalidateQueries({ queryKey: ['drafts'] });
+      queryClient.invalidateQueries({ queryKey: ['strategist-briefing'] });
+      queryClient.invalidateQueries({ queryKey: ['publishing-calendar'] });
+    } catch {
+      toast.error('Delete failed');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const columns = useMemo<ColumnDef<Draft>[]>(
     () => [
       {
@@ -209,12 +225,23 @@ export function DraftsPage() {
               <Button size="sm" variant={needsReview ? 'default' : 'outline'} onClick={() => navigate(routes.draft(d.id))}>
                 Open
               </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground hover:text-destructive"
+                disabled={busy === d.id}
+                onClick={() => deleteDraft(d.id, draftTitle(d))}
+                aria-label="Delete draft"
+                title="Delete draft"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
             </div>
           );
         },
       },
     ],
-    [busy, navigate, queryClient]
+    [busy, navigate]
   );
 
   if (isLoading) {

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import DraftStatus
@@ -12,7 +12,14 @@ from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.modules.ai.application.factory import AIOrchestratorFactory
 from app.modules.ai.domain.ports import AIOrchestrator
-from app.infrastructure.postgres.models.content import Draft, DraftVariation, DraftVersion
+from app.infrastructure.postgres.models.capture import CaptureSession
+from app.infrastructure.postgres.models.content import (
+    Draft,
+    DraftVariation,
+    DraftVersion,
+    GenerationReplay,
+    PromptHistory,
+)
 from app.infrastructure.postgres.models.news import Article
 from app.modules.content.application.claims_guard import ClaimsGuard
 from app.modules.content.application.generation.engine import (
@@ -456,6 +463,35 @@ class UpdateDraftUseCase:
         }
 
 
+class DeleteDraftUseCase:
+    """Permanently delete a draft — org-scoped. Images/jobs are left as-is."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+        self._draft_repo = PgDraftRepository(session)
+
+    async def execute(self, org_id: uuid.UUID, draft_id: uuid.UUID) -> dict:
+        draft = await self._draft_repo.get_by_id(draft_id, org_id=org_id)
+        if draft is None:
+            raise NotFoundError("Draft", str(draft_id))
+
+        await self._session.execute(delete(DraftVersion).where(DraftVersion.draft_id == draft_id))
+        await self._session.execute(delete(DraftVariation).where(DraftVariation.draft_id == draft_id))
+        await self._session.execute(delete(PromptHistory).where(PromptHistory.draft_id == draft_id))
+        await self._session.execute(
+            update(GenerationReplay)
+            .where(GenerationReplay.draft_id == draft_id)
+            .values(draft_id=None)
+        )
+        await self._session.execute(
+            update(CaptureSession)
+            .where(CaptureSession.draft_id == draft_id)
+            .values(draft_id=None)
+        )
+        await self._session.execute(delete(Draft).where(Draft.id == draft_id))
+        await self._session.flush()
+
+        return {"id": str(draft_id), "deleted": True}
 
 
 class RegenerateDraftSectionUseCase:

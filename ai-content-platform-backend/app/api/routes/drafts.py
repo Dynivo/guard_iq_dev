@@ -19,6 +19,7 @@ from app.infrastructure.postgres import get_async_session
 from app.modules.ai.application.factory import AIOrchestratorFactory
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.content.application.use_cases import (
+    DeleteDraftUseCase,
     GenerateDraftUseCase,
     GetDraftUseCase,
     ListDraftsUseCase,
@@ -91,6 +92,20 @@ async def update_draft(
     result = await use_case.execute(
         current_user.organization_id, draft_id, edited_text=body.edited_text
     )
+    request_id = getattr(request.state, "request_id", "")
+    return success_response(result, request_id=request_id)
+
+
+@router.delete("/drafts/{draft_id}")
+async def delete_draft(
+    draft_id: uuid.UUID,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(require_role(MembershipRole.EDITOR)),
+    session: AsyncSession = Depends(get_async_session),
+) -> dict:
+    """Permanently delete a draft (org-scoped)."""
+    use_case = DeleteDraftUseCase(session)
+    result = await use_case.execute(current_user.organization_id, draft_id)
     request_id = getattr(request.state, "request_id", "")
     return success_response(result, request_id=request_id)
 
