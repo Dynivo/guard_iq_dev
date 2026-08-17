@@ -116,13 +116,15 @@ class Settings(BaseSettings):
     # is a real LLM call. Enable once you're ready to pay for the backlog.
     RELEVANCE_RECOVERY_ENABLED: bool = False
 
-    # Per-ingest-run cap on how many freshly-saved articles get an immediate
-    # AI relevance LLM call. A burst larger than this (e.g. a big first-time
-    # source backfill) only auto-scores the first N; the rest stay at their
-    # post-ingest keyword-only status="scored" state and are picked up later
-    # only if RELEVANCE_RECOVERY_ENABLED is on — otherwise they're never
-    # auto-scored, which is the point: this bounds LLM spend per burst.
-    RELEVANCE_AUTOSCORE_BATCH_CAP: int = 100
+    # Process-wide cap on how many freshly-saved articles get an immediate AI
+    # relevance LLM call within a rolling window — global, not per ingest run.
+    # A burst spread across many sources (e.g. many due at once) still shares
+    # one budget. Articles beyond the budget stay at their post-ingest
+    # keyword-only status="scored" state and are picked up later only if
+    # RELEVANCE_RECOVERY_ENABLED is on — otherwise never auto-scored, which
+    # is the point: this bounds LLM spend regardless of how the burst arrives.
+    RELEVANCE_AUTOSCORE_MAX_PER_WINDOW: int = 100
+    RELEVANCE_AUTOSCORE_WINDOW_SECONDS: int = 3600
 
     # Periodic background loop that evaluates each enabled source's
     # `schedule_cron` and dispatches an ingest run when it's due (same path
@@ -130,6 +132,10 @@ class Settings(BaseSettings):
     # continuously — it does not persist a separate scheduler process.
     SOURCE_CRON_ENABLED: bool = True
     SOURCE_CRON_INTERVAL_SECONDS: int = 60
+    # Caps how many due sources fire per sweep — a fresh install has every
+    # seeded source due at once (no last_fetched_at yet); this staggers their
+    # first runs across several sweeps instead of firing all simultaneously.
+    SOURCE_CRON_MAX_DISPATCH_PER_SWEEP: int = 5
 
     # ── LLM Provider Keys ────────────────────────────────────
     OPENAI_API_KEY: str = ""

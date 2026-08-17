@@ -48,9 +48,17 @@ def _is_due(schedule_cron: str, last_fetched_at: datetime | None, now: datetime)
     return now >= nxt
 
 
-async def run_due_sources(session: AsyncSession) -> dict[str, Any]:
+async def run_due_sources(session: AsyncSession, *, max_dispatch: int | None = None) -> dict[str, Any]:
     """Find enabled sources whose cron schedule is due and dispatch a run for
-    each, skipping any that already have an in-flight ingest job."""
+    each, skipping any that already have an in-flight ingest job.
+
+    Capped per sweep (default from SOURCE_CRON_MAX_DISPATCH_PER_SWEEP) so a
+    fresh install — where every seeded source has no last_fetched_at and is
+    therefore due at once — staggers its first runs across several sweeps
+    instead of firing all sources simultaneously. Sources not dispatched this
+    time remain due and are picked up on a later sweep.
+    """
+    cap = max_dispatch if max_dispatch is not None else get_settings().SOURCE_CRON_MAX_DISPATCH_PER_SWEEP
     rows = (
         await session.execute(
             select(NewsSource).where(
@@ -80,6 +88,8 @@ async def run_due_sources(session: AsyncSession) -> dict[str, Any]:
     dispatched = 0
     runner = RunSourceUseCase(session)
     for source in rows:
+        if cap > 0 and dispatched >= cap:
+            break
         if not source.schedule_cron or not source.schedule_cron.strip():
             continue
         if str(source.id) in in_flight_source_ids:

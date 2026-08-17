@@ -73,7 +73,7 @@ async def _ensure_admin(session: AsyncSession, org_id: uuid.UUID) -> uuid.UUID:
         legacy_user.email = ADMIN_EMAIL
         legacy_user.password_hash = hash_password(ADMIN_PASSWORD)
         await session.flush()
-        print(f"  Migrated admin email {_LEGACY_ADMIN_EMAIL} → {ADMIN_EMAIL}: {legacy_user.id}")
+        print(f"  Migrated admin email {_LEGACY_ADMIN_EMAIL} -> {ADMIN_EMAIL}: {legacy_user.id}")
         return legacy_user.id
 
     user_id = uuid.uuid4()
@@ -178,7 +178,7 @@ async def _ensure_provider_configs(session: AsyncSession, org_id: uuid.UUID) -> 
 
         session.add(ProviderConfig(organization_id=org_id, **cfg))
         await session.flush()
-        print(f"  Created provider config: {cfg['capability']} → {cfg['provider']}/{cfg['model']}")
+        print(f"  Created provider config: {cfg['capability']} -> {cfg['provider']}/{cfg['model']}")
 
 
 async def _ensure_seed_claims(session: AsyncSession, org_id: uuid.UUID) -> None:
