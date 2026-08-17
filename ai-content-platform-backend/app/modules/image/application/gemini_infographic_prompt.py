@@ -1,7 +1,16 @@
-"""Build Gemini infographic prompts from YAML templates + VisualDesignSpec."""
+"""Build the Gemini infographic prompt from the draft's own text.
+
+Deliberately minimal: the post's hook and body go in verbatim and the model
+decides what to surface. An earlier version fanned the draft out into ~20
+structured slots (archetype, layout_type, hierarchy, density, complexity,
+coverage_hint, motifs, elements, narrative, metaphor, ...) which pushed the
+model toward crowded layouts and, because the body was pre-chopped into a
+`subheadline` slot, rendered truncated mid-sentence fragments verbatim.
+"""
 
 from __future__ import annotations
 
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -27,11 +36,30 @@ def _cfg() -> dict[str, Any]:
     return _cfg_cached(mtime)
 
 
-def _join_list(items: Any, *, empty: str = "none") -> str:
-    if not items:
-        return empty
-    vals = [str(x).strip() for x in items if str(x).strip()]
-    return "; ".join(vals) if vals else empty
+# Emoji and pictographs render badly (or literally) inside generated images —
+# a draft hook ending in a padlock emoji had it drawn into the headline.
+_EMOJI_RE = re.compile(
+    "["
+    "\U0001f300-\U0001faff"  # pictographs, symbols, supplemental
+    "\U0001f000-\U0001f2ff"  # tiles, enclosed characters
+    "\U00002600-\U000027bf"  # misc symbols + dingbats
+    "\U0001f1e6-\U0001f1ff"  # regional indicators (flags)
+    "\U0000fe00-\U0000fe0f"  # variation selectors
+    "\U00002b00-\U00002bff"  # misc symbols and arrows
+    "\U0000200d"  # zero-width joiner
+    "]+",
+    flags=re.UNICODE,
+)
+
+
+def strip_emoji(text: str) -> str:
+    """Remove emoji/pictographs and collapse the whitespace they leave behind."""
+    if not text:
+        return ""
+    cleaned = _EMOJI_RE.sub("", text)
+    cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+    cleaned = re.sub(r" +([.,!?;:])", r"\1", cleaned)
+    return cleaned.strip()
 
 
 def _format_label(fmt: str) -> str:
@@ -40,131 +68,72 @@ def _format_label(fmt: str) -> str:
     return "LinkedIn portrait"
 
 
-_LOGO_POSITION_LABELS = {
-    "top_left": "top-left corner",
-    "top_center": "top-center edge",
-    "top_right": "top-right corner",
-    "bottom_left": "bottom-left corner",
-    "bottom_center": "bottom-center edge",
-    "bottom_right": "bottom-right corner",
-}
-
-
 def build_gemini_infographic_prompt(
     spec: VisualDesignSpec,
     *,
     brand: dict[str, Any] | None = None,
+    draft: dict[str, Any] | None = None,
     creative_mode: str = "gemini_infographic",
     critic_recommendations: list[str] | None = None,
     logo_as_reference: bool = False,
 ) -> tuple[str, str]:
     """Return (positive_prompt, negative_prompt) for Gemini text-in-image generation."""
     brand = brand or {}
+    draft = draft or {}
     cfg = _cfg()
     mode = (creative_mode or "gemini_infographic").lower()
 
-    supporting = _join_list(spec.supporting_stats)
-    if spec.statistics:
-        supporting_bits = [
-            f"{s.value}" + (f" ({s.label})" if s.label and s.label != s.value else "")
-            for s in spec.statistics
-            if s.role != "hero" and s.value
-        ]
-        if supporting_bits:
-            supporting = "; ".join(supporting_bits)
+    # The draft's real text, never pre-truncated into slots. Falls back to the
+    # design spec's derived strings only when a draft wasn't supplied.
+    hook = strip_emoji(str(draft.get("hook") or spec.headline or "").strip())
+    body = strip_emoji(str(draft.get("body") or spec.subheadline or "").strip())
 
-    facts = spec.factual_constraints or ()
-    factual_lines = "\n".join(f"  - {f}" for f in facts) if facts else "  - (use CONTENT strings only)"
-
-    position_label = _LOGO_POSITION_LABELS.get(
-        (spec.logo.position or "bottom_right").strip().lower(), "bottom-right corner"
-    )
     logo_instruction = (
-        f"A logo reference image is attached — place that exact mark once, small "
-        f"(roughly 8% of image height), in the {position_label}, with generous clear "
-        f"space around it. Nothing else nearby — no extra wordmark, tagline, or text "
-        f"beside it beyond what's already in the reference image itself."
+        "- A logo image is attached: use it for branding. Place it once, small, "
+        "in whichever corner suits the finished composition, with clear space "
+        "around it. Reproduce it exactly as given — do not redraw, restyle, "
+        "recolour or add any wordmark or tagline beside it."
         if logo_as_reference and spec.logo.enabled
         else (
-            "Do not draw any logo, wordmark, icon, badge, card, or box anywhere — "
-            "use the full canvas freely, edge to edge, with no reserved blank area. "
-            "A real brand mark with its own backing is composited on top after "
-            "generation, in whichever corner suits the finished image best, so it "
-            "does not need — and must not have — any space set aside for it."
-            if spec.logo.enabled
-            else "Do not render any logo mark."
+            "- Do not render any logo, wordmark or badge."
+            if not spec.logo.enabled
+            else "- Do not draw a logo; brand it with colour and type only."
         )
     )
 
-    aspect = str((spec.metadata or {}).get("aspect_ratio") or ("1:1" if "square" in spec.format else "4:5"))
+    aspect = str(
+        (spec.metadata or {}).get("aspect_ratio")
+        or ("1:1" if "square" in spec.format else "4:5")
+    )
     ctx = {
         "brand_name": spec.brand_name or brand.get("name") or "Guard IQ",
-        "category": (spec.category_label or "SECURITY INSIGHT").upper(),
-        "headline": (spec.headline or "").strip() or "Security insight",
-        "subheadline": (spec.subheadline or "").strip() or "OMIT",
-        "primary_stat": (spec.primary_stat or "OMIT").strip(),
-        "supporting_stats": supporting,
-        "content_blocks": _join_list(spec.content_blocks),
-        "cta": (spec.cta or "").strip() or "OMIT",
-        "cta_body": (spec.cta_body or "").strip() or "OMIT",
-        "source": (spec.source or "").strip() or "OMIT",
-        "tagline": (spec.tagline or "").strip() or "OMIT",
-        "factual_constraints": factual_lines,
-        "narrative": (spec.story.narrative or "").strip() or "OMIT",
-        "metaphor": (spec.story.metaphor or "").strip() or "OMIT",
-        "viewer_takeaway": (spec.story.viewer_takeaway or "").strip() or "OMIT",
+        "hook": hook or "(no hook supplied)",
+        "body": body or "(no body supplied)",
         "format_label": _format_label(spec.format),
         "aspect_ratio": aspect,
         "width": spec.layout.width,
         "height": spec.layout.height,
-        "archetype": spec.design_archetype,
-        "layout_type": spec.layout.type,
-        "primary_focus": spec.hierarchy.primary_focus,
-        "secondary_focus": spec.hierarchy.secondary_focus,
-        "density": spec.hierarchy.density or spec.layout.density,
-        "complexity": spec.hierarchy.complexity,
-        "coverage_hint": spec.hierarchy.coverage_hint,
-        "brand_variant": spec.brand_variant,
-        "visual_motifs": _join_list(spec.visual_motifs),
-        "visual_elements": _join_list(spec.visual_elements),
-        "visual_concept": (spec.visual_concept or "").strip() or "OMIT",
         "primary_hex": brand.get("primary_color") or spec.brand.primary,
         "secondary_hex": brand.get("secondary_color") or spec.brand.secondary,
         "accent_hex": brand.get("accent_color") or spec.brand.accent,
         "background_hex": spec.brand.background,
-        "text_hex": spec.brand.text,
         "logo_instruction": logo_instruction,
-        "image_generation_instruction": (
-            spec.image_generation_instruction or "Create a professional LinkedIn infographic."
-        ),
     }
 
     sections = [
-        str(cfg.get("instruction_prefix") or "{image_generation_instruction}").format(**ctx),
         str(cfg.get("role") or "").format(**ctx),
-        str(cfg.get("content_block") or "").format(**ctx),
-        str(cfg.get("factual_block") or "").format(**ctx),
-        str(cfg.get("story_block") or "").format(**ctx),
-        str(cfg.get("layout_block") or "").format(**ctx),
-        str(cfg.get("design_language_block") or "").format(**ctx),
+        str(cfg.get("post_block") or "").format(**ctx),
+        str(cfg.get("image_task") or "").format(**ctx),
         str(cfg.get("brand_block") or "").format(**ctx),
-        str(cfg.get("text_rules_block") or "").format(**ctx),
+        str(cfg.get("format_block") or "").format(**ctx),
     ]
-    if mode in {"gemini_creative", "creative"}:
-        sections.append(str(cfg.get("creative_extras") or "").strip())
+    if mode in {"gemini_creative", "creative"} and cfg.get("creative_extras"):
+        sections.append(str(cfg.get("creative_extras")).strip())
 
     if critic_recommendations:
         rec_lines = "\n".join(f"  - {r}" for r in critic_recommendations if str(r).strip())
         if rec_lines:
-            sections.append(f"QUALITY RETRY GUIDANCE (must address):\n{rec_lines}")
-
-    if spec.relationships:
-        rel_lines = "\n".join(
-            f"  - {r.from_node} → {r.to_node}"
-            + (f" ({r.label})" if r.label else "")
-            for r in spec.relationships
-        )
-        sections.append(f"RELATIONSHIPS TO VISUALIZE:\n{rel_lines}")
+            sections.append(f"FIX ON THIS ATTEMPT:\n{rec_lines}")
 
     positive = "\n\n".join(s.strip() for s in sections if s and s.strip())
     negative = str(cfg.get("negative") or "misspellings, neon glow, empty poster")

@@ -116,6 +116,38 @@ def pick_best_corner(
     return best_position
 
 
+def should_use_backing(
+    image_bytes: bytes,
+    *,
+    position: str,
+    scale: float = 0.11,
+    dark_threshold: float = 140.0,
+    busy_threshold: float = 38.0,
+) -> bool:
+    """Whether a backing plate actually helps at `position`.
+
+    The brand mark is dark navy, so it reads fine unaided on a flat light
+    background — painting a light plate there just draws a visible box, which
+    is exactly the artifact the plate was meant to avoid. Only worth it where
+    the underlying region is dark (poor contrast) or busy (logo competes with
+    detail)."""
+    canvas = Image.open(BytesIO(image_bytes)).convert("RGB")
+    side = max(64, int(min(canvas.width, canvas.height) * scale))
+    margin = int(min(canvas.width, canvas.height) * 0.045)
+    lx, ly = _corner_origin(position, (canvas.width, canvas.height), (side, side), margin)
+    box = (
+        max(0, lx),
+        max(0, ly),
+        min(canvas.width, lx + side),
+        min(canvas.height, ly + side),
+    )
+    if box[2] <= box[0] or box[3] <= box[1]:
+        return False
+    region = canvas.crop(box).convert("L")
+    stat = ImageStat.Stat(region)
+    return stat.mean[0] < dark_threshold or stat.stddev[0] > busy_threshold
+
+
 def _rounded_rect_mask(size: tuple[int, int], radius: int) -> Image.Image:
     mask = Image.new("L", size, 0)
     draw = ImageDraw.Draw(mask)

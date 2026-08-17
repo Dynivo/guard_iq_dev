@@ -532,6 +532,7 @@ class VisualWorkflow:
         from app.modules.image.application.logo_stamp import (
             default_brand_logo_bytes,
             pick_best_corner,
+            should_use_backing,
             stamp_brand_logo,
         )
         from app.modules.image.application.reference_policy import ReferenceImagePolicy
@@ -580,14 +581,15 @@ class VisualWorkflow:
         # drifting on prompt wording alone. None when no file is bundled, in
         # which case generation falls back to the text prompt only.
         style_ref = default_style_reference()
-        # Never hand the logo to Gemini as a generation reference — an AI
-        # reproduction can drift (placement, cropping, redrawing). Always leave
-        # empty space in the prompt (include_logo=False below) and composite the
-        # real logo file on afterward instead — see the always-stamp block below.
+        # Hand the logo to Gemini as a reference image so it places the mark
+        # natively, in a spot that suits the composition it just built.
+        # Deterministic compositing stays as a fallback only (see
+        # should_stamp_logo below) — always-stamping is what forced a fixed
+        # corner and a visible backing plate over the model's own layout.
         refs = ref_policy.resolve(
             mode=reference_mode,
-            include_logo=False,
-            logo_bytes=None,
+            include_logo=True,
+            logo_bytes=mark,
             brand=brand,
             brand_style_bytes=style_ref[0] if style_ref else None,
             brand_style_mime=style_ref[1] if style_ref else None,
@@ -675,6 +677,7 @@ class VisualWorkflow:
             positive, negative = build_gemini_infographic_prompt(
                 design_spec,
                 brand=brand,
+                draft=draft_dict,
                 creative_mode=mode,
                 critic_recommendations=recommendations or None,
                 logo_as_reference=refs.logo_as_reference,
@@ -783,14 +786,16 @@ class VisualWorkflow:
         final_bytes = best_bytes
 
         await self._set_job_phase(job, "applying_brand", attempt=attempt)
-        if design_spec.logo.enabled and mark:
-            # Always composite the real logo file — never rely on the critic to
-            # catch a missing/wrong AI-drawn one, since the prompt never asks
-            # Gemini to draw a logo at all (see ref_policy.resolve above). Position
-            # is picked from the actual generated image (whichever corner is
-            # visually flattest) rather than a fixed config value, and a backing
-            # plate carries legibility instead of relying on the prompt having
-            # left that exact spot blank.
+        # Gemini places the logo itself from the reference image. Composite one
+        # on only when the critic reports it missing or wrong — this is the
+        # policy reference_policy.yaml always described ("prefer
+        # model-integrated logo; stamp only when critic says missing/wrong").
+        needs_stamp = mark is not None and ref_policy.should_stamp_logo(
+            critic_result=best_critic,
+            logo_enabled=design_spec.logo.enabled,
+            stamp_policy=refs.stamp_policy,
+        )
+        if needs_stamp:
             scale = float(refs.stamp_policy.get("default_stamp_scale") or 0.11)
             try:
                 position = pick_best_corner(final_bytes, scale=scale)
@@ -802,12 +807,15 @@ class VisualWorkflow:
                     or "bottom_right"
                 )
             try:
+                # Backing plate only where it helps — on a flat light corner it
+                # would just draw the visible white box it exists to prevent.
+                backing = should_use_backing(final_bytes, position=position, scale=scale)
                 final_bytes = stamp_brand_logo(
                     final_bytes,
                     mark,
                     position=position,
                     scale=scale,
-                    backing=True,
+                    backing=backing,
                 )
                 best_critic["logo_stamped"] = True
                 best_critic["logo_position"] = position

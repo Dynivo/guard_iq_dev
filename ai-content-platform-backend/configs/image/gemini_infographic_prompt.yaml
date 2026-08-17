@@ -1,55 +1,35 @@
-# Gemini infographic prompt templates — text-in-image art direction.
-# Placeholders use Python str.format with escaped braces where needed.
+# Gemini infographic prompt — deliberately short and close to how a person
+# would brief this by hand. The post's own text is included verbatim and the
+# model decides what to surface; earlier versions pre-chopped it into ~20
+# structured slots (archetype, hierarchy, density, motifs, coverage...) which
+# forced cluttered layouts and rendered truncated sentence fragments.
 
 role: |
-  You are a senior art director for cybersecurity LinkedIn creatives for {brand_name}.
-  Produce a single polished infographic image. Render all typography legibly inside the image.
-  Do not invent facts, numbers, or brand claims beyond the CONTENT and FACTUAL CONSTRAINTS.
+  I am creating a LinkedIn post for {brand_name}, an IT support and
+  cybersecurity company serving regulated UK businesses. This image
+  accompanies the post below and is meant to educate that audience.
 
-content_block: |
-  CONTENT (use these exact strings where typography appears):
-  - Category: {category}
-  - Headline: {headline}
-  - Subheadline: {subheadline}
-  - Primary statistic: {primary_stat}
-  - Supporting statistics: {supporting_stats}
-  - Content blocks: {content_blocks}
-  - Source: {source}
-  No call-to-action box, banner, or button anywhere in the image — the headline,
-  stats, and content blocks above are the entire piece. No footer tagline or
-  slogan text beyond the logo itself.
+post_block: |
+  THE POST:
 
-factual_block: |
-  FACTUAL DO-NOT-ALTER:
-  {factual_constraints}
-  Never change spellings, percentages, counts, or proper nouns from the list above.
-  Never add fake metrics.
+  Hook:
+  {hook}
 
-story_block: |
-  VISUAL STORY:
-  - Narrative: {narrative}
-  - Metaphor: {metaphor}
-  - Viewer takeaway: {viewer_takeaway}
+  Body:
+  {body}
 
-layout_block: |
-  LAYOUT:
-  - Format: {format_label} ({aspect_ratio}, intent canvas {width}x{height})
-  - Archetype: {archetype}
-  - Layout type: {layout_type}
-  - Hierarchy: primary={primary_focus}, secondary={secondary_focus}
-  - Density: {density}; complexity: {complexity}; coverage: {coverage_hint}
-  Generous whitespace and breathing room around every element — a premium
-  consulting deck feel, not a cramped or cluttered layout. Fewer, larger
-  elements with real margins beat many small ones packed tightly together.
+image_task: |
+  Create one polished image that educates the audience about this topic.
 
-design_language_block: |
-  DESIGN LANGUAGE:
-  - Brand variant: {brand_variant}
-  - Visual motifs: {visual_motifs}
-  - Visual elements: {visual_elements}
-  - Concept: {visual_concept}
-  Professional cybersecurity consulting aesthetic. Crisp vector/infographic clarity.
-  High contrast readable type. No neon glow, no glitch, no comic style.
+  Pull out the single clearest idea — do not try to fit the whole post into
+  the image. Prefer one strong focal illustration with generous whitespace
+  over many small crowded elements.
+
+  Any text you render must be short, spelled correctly, and taken from the
+  post's own wording. Never render a partial, cut-off or mid-sentence
+  fragment — if a line will not fit comfortably, use fewer words instead.
+  Never invent statistics, percentages, dates or claims that do not appear
+  in the post above.
 
 brand_block: |
   BRAND:
@@ -58,27 +38,17 @@ brand_block: |
   - Secondary: {secondary_hex}
   - Accent: {accent_hex}
   - Background: {background_hex}
-  - Text: {text_hex}
   {logo_instruction}
 
-text_rules_block: |
-  TEXT RULES:
-  - Spell every word correctly. Prefer short labels.
-  - Keep hero statistic large and singular (do not repeat the same number).
-  - Do not reserve blank space for a logo — it is added after generation.
-  - Do not invent footer sparkles or decorative fake URLs.
+format_block: |
+  FORMAT: {format_label}, aspect ratio {aspect_ratio}, canvas {width}x{height}.
+  Professional cybersecurity consulting aesthetic — crisp vector/infographic
+  clarity, high-contrast readable type, no neon glow, no glitch, no comic
+  style, nothing touching the frame edge.
 
 negative: |
-  misspellings, garbled letters, unreadable text, duplicated logos, invented logo,
-  placeholder logo shape, logo-shaped card or badge, neon cyberpunk glow,
+  misspellings, garbled letters, truncated or cut-off sentences, unreadable text,
+  duplicated logos, invented logo, placeholder logo shape, neon cyberpunk glow,
   empty sparse poster, watermark, stock photo collage, low contrast grey-on-grey,
-  fake UI screenshots with illegible chrome, comic book style, 3D plastic clipart,
-  call-to-action box, call-to-action banner, button, footer tagline or slogan,
+  comic book style, 3D plastic clipart, call-to-action box, button,
   cramped or cluttered layout, elements touching the edge of the frame
-
-# Looser artistic template for gemini_creative mode
-creative_extras: |
-  Artistic latitude: richer illustration metaphors, more atmospheric depth, still keep all facts exact.
-  Prefer balanced coverage over maximal density.
-
-instruction_prefix: "{image_generation_instruction}"
