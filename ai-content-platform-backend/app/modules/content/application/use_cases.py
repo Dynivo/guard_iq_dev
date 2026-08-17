@@ -254,28 +254,27 @@ class GenerateDraftUseCase:
         out["relevance_warning"] = relevance_warning
         out["article_status"] = article.status
 
-        # Optional: brand kit can auto-queue LinkedIn image with the draft
+        # Every newly generated News draft gets its default image batch automatically.
+        # Image generation is best-effort so an image-provider failure does not discard
+        # an otherwise valid draft.
         try:
             from app.modules.image.application.queue_generation import (
-                load_brand_image_settings,
                 queue_async_image_generation,
             )
 
-            img_settings = await load_brand_image_settings(self._session, org_id)
-            if img_settings.get("auto_generate_image_with_draft"):
-                queued = await queue_async_image_generation(
-                    self._session,
-                    org_id=org_id,
-                    draft_id=draft.id,
-                    count=None,
-                    reason="auto_with_draft",
-                )
-                out["image_generation"] = queued
-                logger.info(
-                    "Auto image queued with draft draft_id=%s count=%s",
-                    draft.id,
-                    queued.get("count"),
-                )
+            queued = await queue_async_image_generation(
+                self._session,
+                org_id=org_id,
+                draft_id=draft.id,
+                count=None,
+                reason="auto_with_draft",
+            )
+            out["image_generation"] = queued
+            logger.info(
+                "Auto image queued with draft draft_id=%s count=%s",
+                draft.id,
+                queued.get("count"),
+            )
         except Exception as exc:  # noqa: BLE001
             logger.warning("Auto image with draft skipped: %s", exc)
 

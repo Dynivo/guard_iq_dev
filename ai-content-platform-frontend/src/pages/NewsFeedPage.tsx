@@ -756,7 +756,7 @@ export function NewsFeedPage() {
                   </span>
                   <span>
                     <span className="font-medium text-foreground">Visuals</span>
-                    <span className="text-muted-foreground"> — generate images on the draft page</span>
+                    <span className="text-muted-foreground"> — generate automatically with your draft</span>
                   </span>
                 </li>
               </ol>

@@ -661,25 +661,14 @@ export function BrandKitPage() {
                 <h3 className="font-semibold text-foreground">LinkedIn visuals</h3>
               </CardHeader>
               <CardContent className="space-y-4">
-                <label className="flex items-start justify-between gap-3 rounded-lg border border-border/80 px-3 py-2.5">
+                <div className="rounded-lg border border-border/80 px-3 py-2.5">
                   <span className="text-sm">
-                    <span className="font-medium text-foreground">Generate image with draft</span>
+                    <span className="font-medium text-foreground">Images generate with drafts</span>
                     <span className="mt-0.5 block text-xs text-muted-foreground">
-                      When a draft is created from News, also start image generation automatically.
+                      Creating a draft from News now starts image generation automatically.
                     </span>
                   </span>
-                  <input
-                    type="checkbox"
-                    className="mt-1 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
-                    checked={Boolean(form.auto_generate_image_with_draft)}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        auto_generate_image_with_draft: e.target.checked,
-                      })
-                    }
-                  />
-                </label>
+                </div>
                 <Input
                   id="default_image_count"
                   label="Default images per draft"
