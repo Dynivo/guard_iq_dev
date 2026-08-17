@@ -129,6 +129,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         asyncio.create_task(source_cron_loop(async_session_factory))
     except Exception:  # noqa: BLE001
         logger.exception("Failed to schedule source cron loop")
+
+    try:
+        import asyncio
+
+        from app.modules.news.application.article_retention import article_retention_loop
+
+        asyncio.create_task(article_retention_loop(async_session_factory))
+    except Exception:  # noqa: BLE001
+        logger.exception("Failed to schedule article retention loop")
     yield
     logger.info(
         "Shutting down AI Content Platform Backend",

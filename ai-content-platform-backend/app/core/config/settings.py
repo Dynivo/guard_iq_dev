@@ -132,6 +132,13 @@ class Settings(BaseSettings):
     RELEVANCE_AUTOSCORE_MAX_PER_WINDOW: int = 100
     RELEVANCE_AUTOSCORE_WINDOW_SECONDS: int = 3600
 
+    # Not-relevant articles have no ongoing value once classified — permanently
+    # deleted once they're this many days old (checked every
+    # ARTICLE_RETENTION_SWEEP_INTERVAL_SECONDS). Set to 0 to disable. Relevant
+    # articles are never auto-deleted this way — see the Hide feature instead.
+    IRRELEVANT_ARTICLE_RETENTION_DAYS: int = 1
+    ARTICLE_RETENTION_SWEEP_INTERVAL_SECONDS: int = 3600
+
     # Periodic background loop that evaluates each enabled source's
     # `schedule_cron` and dispatches an ingest run when it's due (same path
     # as clicking "Run" in Sources). Requires the API process to stay running
