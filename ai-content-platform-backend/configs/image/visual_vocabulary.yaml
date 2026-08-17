@@ -1,0 +1,96 @@
+# Domain-aware visual vocabulary for cybersecurity / B2B security posts.
+# Used to ground illustration prompts — never invents article-specific copy.
+
+default_motifs:
+  - shield
+  - network
+  - cloud_security
+  - alert
+
+topics:
+  ddos:
+    keywords: [ddos, tbps, denial of service, network-layer, volumetric, traffic surge]
+    motifs:
+      - network_traffic_surge
+      - cloud_mitigation_shield
+      - server_infrastructure
+      - blocked_attack_vectors
+    mood: urgent_professional
+
+  phishing:
+    keywords: [phish, email, bec, invoice fraud, lookalike, credential theft]
+    motifs:
+      - suspicious_email
+      - warning_link
+      - credential_shield
+      - inbox_threat
+    mood: cautionary
+
+  ransomware:
+    keywords: [ransomware, encrypt, ransom, locked files]
+    motifs:
+      - locked_files
+      - encryption_lock
+      - recovery_shield
+    mood: high_alert
+
+  compliance:
+    keywords: [compliance, gdpr, audit, regulation, cqc, sra, fca, iso]
+    motifs:
+      - checklist
+      - audit_document
+      - compliance_shield
+    mood: authoritative
+
+  breach:
+    keywords: [breach, exposed, leak, data exposure, records]
+    motifs:
+      - exposed_database
+      - broken_perimeter
+      - alert_flash
+    mood: serious
+
+  identity:
+    keywords: [identity, mfa, authentication, credential, access control, zero trust, fake identities, fake online identities]
+    motifs:
+      - identity_card
+      - access_gateway
+      - verification_check
+      - segmented_network
+    mood: precise
+
+  ai_agents:
+    keywords:
+      - ai agent
+      - ai agents
+      - anthropic
+      - openai
+      - unsanctioned
+      - ai security institute
+      - aisi
+      - mythos
+      - fake identities
+      - unauthorised actions
+      - unauthorized actions
+    motifs:
+      - agent_shield
+      - identity_warning
+      - audit_document
+      - access_gateway
+    mood: serious
+
+  malware:
+    keywords: [malware, threat, cve, vulnerability, exploit]
+    motifs:
+      - malware_detection
+      - patch_shield
+      - code_scan
+    mood: investigative
+
+  zero_trust:
+    keywords: [zero trust, zta, least privilege, verify explicitly]
+    motifs:
+      - access_gateway
+      - identity_verification
+      - segmented_network
+    mood: modern_enterprise

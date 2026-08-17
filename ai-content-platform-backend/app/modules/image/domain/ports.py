@@ -108,7 +108,9 @@ class QualityChecker(Protocol):
 
 
 class ImageOrchestrator(Protocol):
-    async def execute(self, prompt_request: ImagePromptRequest) -> ImageGenerationResult: ...
+    async def execute(
+        self, prompt_request: ImagePromptRequest, *, logo_bytes: bytes | None = None
+    ) -> ImageGenerationResult: ...
 
 
 class ImageValidator(Protocol):

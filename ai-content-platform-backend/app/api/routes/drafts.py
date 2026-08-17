@@ -16,22 +16,23 @@ from app.api.schemas.envelope import success_response
 from app.core.constants import MembershipRole
 from app.core.security import require_role
 from app.infrastructure.postgres import get_async_session
-from app.modules.ai.application.factory import AIOrchestratorFactory
 from app.modules.auth.domain.entities import AuthenticatedUser
+from app.modules.content.application.generation.jobs import (
+    DispatchGenerateDraftJob,
+    DispatchRegenerateDraftJob,
+)
 from app.modules.content.application.use_cases import (
     DeleteDraftUseCase,
-    GenerateDraftUseCase,
     GetDraftUseCase,
     ListDraftsUseCase,
     ListDraftVersionsUseCase,
-    RegenerateDraftSectionUseCase,
     UpdateDraftUseCase,
 )
 
 router = APIRouter(tags=["content"])
 
 
-@router.post("/articles/{article_id}/generate-draft", status_code=201)
+@router.post("/articles/{article_id}/generate-draft", status_code=202)
 async def generate_draft(
     article_id: uuid.UUID,
     body: GenerateDraftRequest,
@@ -39,9 +40,8 @@ async def generate_draft(
     current_user: AuthenticatedUser = Depends(require_role(MembershipRole.EDITOR)),
     session: AsyncSession = Depends(get_async_session),
 ) -> dict:
-    """Generate a content draft from a scored article."""
-    use_case = GenerateDraftUseCase(session, AIOrchestratorFactory.create())
-    result = await use_case.execute(
+    """Queue draft generation from a scored article in the background — safe to leave the page."""
+    result = await DispatchGenerateDraftJob(session).execute(
         org_id=current_user.organization_id,
         article_id=article_id,
         content_type=body.content_type,
@@ -110,7 +110,7 @@ async def delete_draft(
     return success_response(result, request_id=request_id)
 
 
-@router.post("/drafts/{draft_id}/regenerate")
+@router.post("/drafts/{draft_id}/regenerate", status_code=202)
 async def regenerate_draft_section(
     draft_id: uuid.UUID,
     body: RegenerateDraftRequest,
@@ -118,11 +118,10 @@ async def regenerate_draft_section(
     current_user: AuthenticatedUser = Depends(require_role(MembershipRole.EDITOR)),
     session: AsyncSession = Depends(get_async_session),
 ) -> dict:
-    """Regenerate the full post (default) or a section. Optional guidance. Returns previous vs new."""
-    use_case = RegenerateDraftSectionUseCase(session, AIOrchestratorFactory.create())
-    result = await use_case.execute(
-        current_user.organization_id,
-        draft_id,
+    """Queue a regenerate of the full post (default) or a section, in the background."""
+    result = await DispatchRegenerateDraftJob(session).execute(
+        org_id=current_user.organization_id,
+        draft_id=draft_id,
         section=body.section or "full",
         guidance=body.guidance,
     )

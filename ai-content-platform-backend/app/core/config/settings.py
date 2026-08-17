@@ -80,6 +80,27 @@ class Settings(BaseSettings):
     OPENAI_IMAGE_MODEL: str = "gpt-image-1"
     # Gemini native image generation (IMAGE_PROVIDER=gemini) — uses GEMINI_API_KEY
     GEMINI_IMAGE_MODEL: str = "gemini-2.5-flash-image"
+    # Post-generation OCR/vision check (gpt-4o-mini) that reads rendered text and
+    # flags typos/fabricated copy the pixel-only validator can't see; retries
+    # generation once on failure. Off by default — each check + possible retry is
+    # a real extra API call/cost. Enable once you're ready to pay for it.
+    IMAGE_TEXT_ACCURACY_CHECK_ENABLED: bool = False
+
+    # ── gemini_infographic pipeline (second/"white card" image variant only) ──
+    # Higher-quality Gemini image model tier for GeminiInfographicProvider —
+    # separate from GEMINI_IMAGE_MODEL above, which the existing alert_card
+    # ("blue card") flow keeps using unchanged.
+    GEMINI_IMAGE_MODEL_PREMIUM: str = "gemini-3-pro-image"
+    # Multimodal LLM-as-judge that scores the generated infographic (composition,
+    # legibility, brand alignment, factual fidelity, density, logo) and triggers
+    # a retry with specific feedback if it scores below IMAGE_QUALITY_THRESHOLD.
+    # Each retry is a real extra Gemini image call — costs more per generation.
+    IMAGE_VISUAL_CRITIC_ENABLED: bool = True
+    IMAGE_QUALITY_THRESHOLD: float = 82.0
+    IMAGE_MAX_RETRIES: int = 2
+    # If every Gemini attempt fails outright, retry once via this provider before
+    # falling back to the deterministic PIL-composed brand template.
+    IMAGE_PROVIDER_FALLBACK: str = "openai"
 
     # ── Job Backend ───────────────────────────────────────────
     # "inline" runs work in-process; "dramatiq" requires Redis workers.

@@ -34,7 +34,9 @@ class DefaultImageOrchestrator:
         self._metrics = metrics or InMemoryImageMetrics()
         self._provider_factory = provider_factory
 
-    async def execute(self, prompt_request: ImagePromptRequest) -> ImageGenerationResult:
+    async def execute(
+        self, prompt_request: ImagePromptRequest, *, logo_bytes: bytes | None = None
+    ) -> ImageGenerationResult:
         max_attempts = max(1, int(self._cfg.get("max_attempts") or 2))
         fallbacks = list(self._cfg.get("fallback_workflow_ids") or [])
         workflow_chain = [prompt_request.workflow_id, *[w for w in fallbacks if w != prompt_request.workflow_id]]
@@ -58,7 +60,8 @@ class DefaultImageOrchestrator:
                         seed=prompt_request.seed,
                         parameters=dict(prompt_request.parameters),
                         metadata=dict(prompt_request.metadata),
-                    )
+                    ),
+                    logo_bytes=logo_bytes,
                 )
                 try:
                     result = await self._provider.generate(req)

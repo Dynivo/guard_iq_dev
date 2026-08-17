@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiQuery } from '@/hooks/useApiQuery';
+import { useJobPolling } from '@/hooks/useJobPolling';
 import { apiClient } from '@/api/client';
 import type { ApiEnvelope } from '@/api/types';
 import { PageHeader } from '@/components/PageHeader';
@@ -10,11 +11,23 @@ import { toast } from 'sonner';
 import { MonthlyCalendar } from '@/components/calendar/MonthlyCalendar';
 import { PlanCommandBar, type StrategistBriefing } from '@/components/plan';
 
+interface FillEducationalResult {
+  generated?: unknown[];
+  message?: string;
+  plan?: { needs_capture?: Record<string, number> };
+}
+
 export function PublishingPlanPage() {
   const queryClient = useQueryClient();
   const [generating, setGenerating] = useState(false);
   const [seedingCalendar, setSeedingCalendar] = useState(false);
   const [clearingCalendar, setClearingCalendar] = useState(false);
+  const [autoGenJobId, setAutoGenJobId] = useState<string | null>(null);
+  const {
+    job: autoGenJob,
+    isComplete: autoGenComplete,
+    isFailed: autoGenFailed,
+  } = useJobPolling(autoGenJobId);
 
   const briefingQ = useApiQuery<ApiEnvelope<StrategistBriefing>>(
     ['strategist-briefing'],
@@ -34,20 +47,38 @@ export function PublishingPlanPage() {
   const autoGeneratePosts = async () => {
     setGenerating(true);
     try {
-      const res = await apiClient.post<
-        ApiEnvelope<{
-          generated?: unknown[];
-          message?: string;
-          plan?: { needs_capture?: Record<string, number> };
-        }>
-      >('/publishing-plan/fill-educational', {});
-      const n = res.data?.data?.generated?.length ?? 0;
+      const res = await apiClient.post<ApiEnvelope<{ job_id: string }>>(
+        '/publishing-plan/fill-educational',
+        {}
+      );
+      const jobId = res.data?.data?.job_id;
+      if (!jobId) throw new Error('No job id returned');
+      setAutoGenJobId(jobId);
+    } catch {
+      toast.error('Could not generate posts');
+      setGenerating(false);
+    }
+  };
+
+  // Auto Generate now runs as a background Job — was previously a blocking
+  // request that looped generating up to 10-15 drafts sequentially.
+  useEffect(() => {
+    if (!autoGenJobId) return;
+    if (autoGenFailed) {
+      toast.error(autoGenJob?.error_message || 'Could not generate posts');
+      setGenerating(false);
+      setAutoGenJobId(null);
+      return;
+    }
+    if (autoGenComplete) {
+      const result = (autoGenJob?.result || {}) as FillEducationalResult;
+      const n = result.generated?.length ?? 0;
       toast.success(
         n > 0
           ? `${n} educational post(s) generated — approve them in Drafts to schedule.`
-          : res.data?.data?.message || 'Educational quota already filled for this window'
+          : result.message || 'Educational quota already filled for this window'
       );
-      const needs = res.data?.data?.plan?.needs_capture || {};
+      const needs = result.plan?.needs_capture || {};
       const needParts = Object.entries(needs)
         .filter(([, v]) => Number(v) > 0)
         .map(([k, v]) => `${v} ${k.replace(/_/g, ' ')}`);
@@ -55,12 +86,11 @@ export function PublishingPlanPage() {
         toast.message(`Still need Capture: ${needParts.join(', ')}`);
       }
       invalidate();
-    } catch {
-      toast.error('Could not generate posts');
-    } finally {
       setGenerating(false);
+      setAutoGenJobId(null);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoGenComplete, autoGenFailed, autoGenJobId]);
 
   const seedCalendar = async () => {
     setSeedingCalendar(true);

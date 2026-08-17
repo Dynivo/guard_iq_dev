@@ -1,0 +1,54 @@
+# Design-spec validation / auto-simplification rules.
+
+headline:
+  max_words: 14
+  max_chars: 78
+subheadline:
+  max_words: 20
+  max_chars: 120
+primary_stat:
+  max_chars: 32
+supporting_stat:
+  max_chars: 36
+  max_items: 2
+cta:
+  max_words: 10
+  max_chars: 64
+content_blocks:
+  max_items: 3
+source:
+  max_chars: 36
+
+# Bare integers below this are treated as noise (word counts, ages, etc.)
+stats:
+  min_significant_magnitude: 50
+  allow_units: ["%", "x", "+", "tbps", "million", "billion", "k", "$"]
+
+logo:
+  default_position: bottom_right
+  default_size: m
+
+density:
+  max_medium_blocks: 3
+  max_low_blocks: 0
+
+# Optional multimodal critic (IMAGE_VISUAL_CRITIC_ENABLED)
+critic:
+  enabled_env: IMAGE_VISUAL_CRITIC_ENABLED
+  default_enabled: true
+  # 0–100 scale (aligned with IMAGE_QUALITY_THRESHOLD)
+  min_overall: 82
+  max_retries: 2
+  schema:
+    overall: number
+    scores:
+      - composition
+      - legibility
+      - brand_alignment
+      - factual_fidelity
+      - density
+      - logo
+    issues: string_array
+    recommendations: string_array
+    flags:
+      - logo_ok

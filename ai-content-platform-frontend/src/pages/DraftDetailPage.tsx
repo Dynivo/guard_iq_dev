@@ -9,7 +9,6 @@ import {
   Copy,
   ExternalLink,
   Image as ImageIcon,
-  Layers,
   Loader2,
   Monitor,
   RefreshCw,
@@ -17,12 +16,12 @@ import {
   ThumbsDown,
   ThumbsUp,
   Trash2,
-  Type,
   Volume2,
   VolumeX,
   XCircle,
 } from 'lucide-react';
 import { useApiQuery } from '@/hooks/useApiQuery';
+import { useJobPolling } from '@/hooks/useJobPolling';
 import { apiClient } from '@/api/client';
 import type { ApiEnvelope, Draft } from '@/api/types';
 import { PageHeader } from '@/components/PageHeader';
@@ -163,10 +162,11 @@ export function DraftDetailPage() {
     { enabled: Boolean(draftId) }
   );
   const [busy, setBusy] = useState<string | null>(null);
-  const [imageCount, setImageCount] = useState(1);
+  // Default to 2 — one of each card style (alert_card, stat_diagram_card); see
+  // prompt_builder.yaml style_order. Still adjustable via the "How many?" field.
+  const [imageCount, setImageCount] = useState(2);
   const [imageProvider, setImageProvider] = useState('');
   const [rejectReason, setRejectReason] = useState('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [showImageOptions, setShowImageOptions] = useState(false);
   const [showSource, setShowSource] = useState(false);
   const [showRewrite, setShowRewrite] = useState(false);
@@ -175,9 +175,6 @@ export function DraftDetailPage() {
   const [regenSection, setRegenSection] = useState<'full' | 'hook' | 'body'>('full');
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('mobile');
   const [imageNote, setImageNote] = useState('');
-  const [includeLogo, setIncludeLogo] = useState(false);
-  const [logoPosition, setLogoPosition] = useState('brand_default');
-  const [logoSize, setLogoSize] = useState<'s' | 'm' | 'l'>('m');
   const [genMessageIdx, setGenMessageIdx] = useState(0);
   const [localImages, setLocalImages] = useState<DraftImageItem[]>([]);
   const [previewImageIndex, setPreviewImageIndex] = useState(0);
@@ -185,6 +182,9 @@ export function DraftDetailPage() {
   const [sawImageJobRunning, setSawImageJobRunning] = useState(() => readImageGenFlag(draftId));
   const [comparePrevious, setComparePrevious] = useState<PostSnapshot | null>(null);
   const [compareCurrent, setCompareCurrent] = useState<PostSnapshot | null>(null);
+  const [regenJobId, setRegenJobId] = useState<string | null>(null);
+  const { job: regenJob, isComplete: regenComplete, isFailed: regenFailed } =
+    useJobPolling(regenJobId);
   const [speaking, setSpeaking] = useState(false);
   const [speakLoading, setSpeakLoading] = useState(false);
   const speakAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -230,8 +230,10 @@ export function DraftDetailPage() {
       jobs?: Array<{
         job_id: string;
         status: string;
+        provider?: string | null;
+        quality_score?: number | null;
         error?: string;
-        metadata?: { reason_codes?: string[]; [key: string]: unknown };
+        metadata?: { reason_codes?: string[]; provider_label?: string; [key: string]: unknown };
       }>;
     }>
   >(['drafts', draftId || '', 'images'], `/drafts/${draftId}/images`, {
@@ -256,41 +258,10 @@ export function DraftDetailPage() {
     ApiEnvelope<{ default_image_count?: number; auto_generate_image_with_draft?: boolean }>
   >(['brand-kit'], '/brand-kit');
 
-  const { data: biProfilesData } = useApiQuery<
-    ApiEnvelope<Array<{ id: string; is_default?: boolean; name?: string }>>
-  >(['brand-intelligence', 'profiles'], '/brand-intelligence/profiles');
-
-  const biProfileId = useMemo(() => {
-    const list = biProfilesData?.data || [];
-    return list.find((p) => p.is_default)?.id || list[0]?.id || null;
-  }, [biProfilesData]);
-
-  const { data: logoPlacementEnv } = useApiQuery<
-    ApiEnvelope<{
-      include_logo?: boolean;
-      position?: string;
-      learned_position?: string | null;
-      has_logo_asset?: boolean;
-      position_source?: string;
-    }>
-  >(
-    ['brand-intelligence', 'logo-placement', biProfileId || ''],
-    `/brand-intelligence/profiles/${biProfileId}/logo-placement`,
-    { enabled: Boolean(biProfileId) }
-  );
-
   useEffect(() => {
     const n = brandData?.data?.default_image_count;
     if (n && n >= 1 && n <= 4) setImageCount(n);
   }, [brandData]);
-
-  useEffect(() => {
-    const lp = logoPlacementEnv?.data;
-    if (!lp) return;
-    if (lp.learned_position) setLogoPosition('brand_default');
-    else if (lp.position && lp.position !== 'brand_default') setLogoPosition(lp.position);
-    // keep includeLogo false by default (optional)
-  }, [logoPlacementEnv]);
 
   useEffect(() => {
     if (imagesData?.data?.generating) {
@@ -370,6 +341,16 @@ export function DraftDetailPage() {
     if (storedImages.length) return storedImages;
     return localImages;
   }, [generating, localImages, storedImages]);
+
+  // Most recent generation job that has a quality score (currently only the
+  // gemini_infographic "white card" pipeline computes one via its critic).
+  const latestImageJob = (imagesData?.data?.jobs || []).find(
+    (j) => j.quality_score != null
+  );
+  const latestImageQuality = latestImageJob?.quality_score ?? null;
+  const latestImageProviderLabel =
+    latestImageJob?.metadata?.provider_label ||
+    (latestImageJob?.provider ? latestImageJob.provider : null);
 
   const flow = useMemo(
     () => resolveFlow(draft, images.length > 0, generating),
@@ -458,14 +439,15 @@ export function DraftDetailPage() {
             }
     );
     try {
-      const compare = imageProvider === '__compare__';
+      // Multiple images use one provider and cycle through the backend's
+      // template styles (alert card, stat diagram, ...) for visual variety —
+      // see app/modules/image/application/prompt_builder.py style_order.
       await apiClient.post<ApiEnvelope<Record<string, unknown>>>(
         `/drafts/${draft.id}/images/generate`,
         {
-          count: compare ? undefined : imageCount,
+          count: imageCount,
           guidance: guidance || undefined,
-          provider: compare ? undefined : imageProvider || undefined,
-          providers: compare ? ['openai', 'gemini'] : undefined,
+          provider: imageProvider || undefined,
         },
         { timeout: 30_000 }
       );
@@ -484,64 +466,56 @@ export function DraftDetailPage() {
     if (!draftId) return;
     setBusy('regen-content');
     try {
-      const res = await apiClient.post<
-        ApiEnvelope<{
-          previous?: PostSnapshot;
-          current?: PostSnapshot;
-          message?: string;
-          section?: string;
-        }>
-      >(
+      const res = await apiClient.post<ApiEnvelope<{ job_id: string; status: string }>>(
         `/drafts/${draftId}/regenerate`,
         { section, guidance: guidance || undefined },
-        { timeout: 120_000 }
+        { timeout: 15_000 }
       );
-      const prev = res.data?.data?.previous ?? null;
-      const curr = res.data?.data?.current ?? null;
-      if (prev && curr) {
-        setComparePrevious(prev);
-        setCompareCurrent(curr);
+      const jobId = res.data?.data?.job_id;
+      if (!jobId) throw new Error('No job id returned');
+      setRegenJobId(jobId);
+    } catch {
+      toast.error('Could not start regenerate');
+      setBusy(null);
+    }
+  };
+
+  // Regenerate now runs as a background Job (see /jobs/{id}) instead of
+  // blocking the request — this reacts once useJobPolling sees it finish.
+  useEffect(() => {
+    if (!regenJobId) return;
+    if (regenFailed) {
+      toast.error(regenJob?.error_message || 'Could not regenerate post');
+      setBusy(null);
+      setRegenJobId(null);
+      return;
+    }
+    if (regenComplete) {
+      const result = (regenJob?.result || {}) as {
+        previous?: PostSnapshot;
+        current?: PostSnapshot;
+        message?: string;
+        section?: string;
+      };
+      if (result.previous && result.current) {
+        setComparePrevious(result.previous);
+        setCompareCurrent(result.current);
       }
-      const changed = res.data?.data?.section || section;
+      const changed = result.section || 'full';
       const label =
         changed === 'hook'
           ? 'Hook updated — body kept as-is'
           : changed === 'body'
             ? 'Body rewritten — hook kept'
             : 'Post rewritten — review and approve';
-      toast.success(res.data?.data?.message || label);
+      toast.success(result.message || label);
       setShowRewrite(false);
       invalidate();
-    } catch {
-      toast.error('Could not regenerate post');
-    } finally {
       setBusy(null);
+      setRegenJobId(null);
     }
-  };
-
-  const runExtra = async (
-    key: 'typography' | 'carousel',
-    path: string,
-    successMsg: string,
-    body: Record<string, unknown> = {}
-  ) => {
-    setBusy(key);
-    try {
-      await apiClient.post(path, body, { timeout: 180_000 });
-      toast.success(successMsg);
-      invalidate();
-    } catch {
-      toast.error(
-        key === 'typography'
-          ? includeLogo && !logoPlacementEnv?.data?.has_logo_asset
-            ? 'Upload a brand logo first (Brand kit), or turn logo off'
-            : 'Text overlay failed — generate an image first'
-          : 'Carousel failed — try again'
-      );
-    } finally {
-      setBusy(null);
-    }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regenComplete, regenFailed, regenJobId]);
 
   const handleApprove = async () => {
     if (!draftId) return;
@@ -982,6 +956,12 @@ export function DraftDetailPage() {
               {!generating && images.length > 0 && (
                 <DraftImageGallery images={images} onIndexChange={setPreviewImageIndex} />
               )}
+              {!generating && latestImageQuality != null && (
+                <p className="text-xs text-muted-foreground">
+                  Quality score: {Number(latestImageQuality).toFixed(0)}
+                  {latestImageProviderLabel ? ` · ${latestImageProviderLabel}` : ''}
+                </p>
+              )}
 
               {!generating && !images.length && !imagesFetching && (
                 <div className="flex aspect-square max-h-56 w-full items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-center text-sm text-muted-foreground">
@@ -1046,9 +1026,12 @@ export function DraftDetailPage() {
                       <option value="">Default</option>
                       <option value="openai">OpenAI (gpt-image-1)</option>
                       <option value="gemini">Gemini (nano banana)</option>
-                      <option value="__compare__">Compare (OpenAI + Gemini)</option>
                     </select>
                   </label>
+                  <p className="text-[11px] text-muted-foreground">
+                    This model choice applies to the first image. The second image always
+                    uses our enhanced Gemini pipeline for a richer layout.
+                  </p>
                   <Textarea
                     placeholder='Optional tip — e.g. "senior living", "no padlocks"'
                     value={imageNote}
@@ -1072,132 +1055,6 @@ export function DraftDetailPage() {
               )}
             </CardContent>
           </Card>
-
-          <div className="rounded-xl border border-border">
-            <button
-              type="button"
-              className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium text-muted-foreground"
-              onClick={() => setShowAdvanced((v) => !v)}
-            >
-              <span>Optional extras</span>
-              {showAdvanced ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            </button>
-            {showAdvanced && (
-              <div className="space-y-3 border-t border-border px-4 py-3">
-                <p className="text-xs text-muted-foreground">
-                  Most posts only need one image. Logo overlay is optional.
-                </p>
-
-                <div className="space-y-2 rounded-lg border border-border/80 bg-muted/15 p-3">
-                  <label className="flex items-center justify-between gap-3 text-sm font-medium">
-                    <span>Add brand logo</span>
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 accent-[var(--color-accent)]"
-                      checked={includeLogo}
-                      disabled={!logoPlacementEnv?.data?.has_logo_asset && !includeLogo}
-                      onChange={(e) => setIncludeLogo(e.target.checked)}
-                    />
-                  </label>
-                  {!logoPlacementEnv?.data?.has_logo_asset && (
-                    <p className="text-xs text-muted-foreground">
-                      No logo on Brand kit yet — upload one under Brand to enable this.
-                    </p>
-                  )}
-                  {includeLogo && (
-                    <div className="space-y-2 pt-1">
-                      <label className="block text-xs text-muted-foreground">
-                        Position
-                        <select
-                          className="mt-1 h-9 w-full rounded-md border border-border bg-background px-2 text-sm text-foreground"
-                          value={logoPosition}
-                          onChange={(e) => setLogoPosition(e.target.value)}
-                        >
-                          <option value="brand_default">
-                            Brand default
-                            {logoPlacementEnv?.data?.learned_position
-                              ? ` (learned: ${logoPlacementEnv.data.learned_position.replace(/_/g, ' ')})`
-                              : ' (bottom right)'}
-                          </option>
-                          <option value="bottom_right">Bottom right</option>
-                          <option value="bottom_left">Bottom left</option>
-                          <option value="top_right">Top right</option>
-                          <option value="top_left">Top left</option>
-                          <option value="center">Center</option>
-                        </select>
-                      </label>
-                      <label className="block text-xs text-muted-foreground">
-                        Size
-                        <select
-                          className="mt-1 h-9 w-full rounded-md border border-border bg-background px-2 text-sm text-foreground"
-                          value={logoSize}
-                          onChange={(e) => setLogoSize(e.target.value as 's' | 'm' | 'l')}
-                        >
-                          <option value="s">Small</option>
-                          <option value="m">Medium</option>
-                          <option value="l">Large</option>
-                        </select>
-                      </label>
-                      {logoPlacementEnv?.data?.learned_position && (
-                        <p className="text-[11px] text-muted-foreground">
-                          Learned from your brand posts’ images where the logo usually sits.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  disabled={busy === 'typography' || generating || !images.length}
-                  onClick={() =>
-                    runExtra(
-                      'typography',
-                      `/drafts/${draft.id}/typography/generate`,
-                      includeLogo ? 'Overlay + logo applied' : 'Text overlay created',
-                      {
-                        logo: {
-                          include_logo: includeLogo,
-                          position: logoPosition,
-                          size: logoSize,
-                          opacity: 1,
-                          margin: 0.04,
-                          safe_area: true,
-                        },
-                      }
-                    )
-                  }
-                >
-                  {busy === 'typography' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Type className="h-4 w-4" />
-                  )}
-                  {includeLogo ? 'Text overlay + logo' : 'Text overlay'}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  disabled={busy === 'carousel' || generating}
-                  onClick={() =>
-                    runExtra(
-                      'carousel',
-                      `/drafts/${draft.id}/carousels/generate`,
-                      'Carousel ready'
-                    )
-                  }
-                >
-                  {busy === 'carousel' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Layers className="h-4 w-4" />
-                  )}
-                  Multi-slide carousel
-                </Button>
-              </div>
-            )}
-          </div>
         </aside>
       </div>
     </div>

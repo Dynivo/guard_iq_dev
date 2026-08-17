@@ -374,6 +374,211 @@ async def _author_visual_concept(
         return None
 
 
+_EYEBROW_RULES: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"\b(?:ddos|denial[- ]of[- ]service)\b", re.I), "CYBER THREAT ALERT"),
+    (
+        re.compile(
+            r"\b(?:ransomware|malware|phishing|breach|hack|mfa|password|vulnerabilit)",
+            re.I,
+        ),
+        "CYBER THREAT ALERT",
+    ),
+    (
+        re.compile(r"\b(?:gdpr|complian|regulat|audit|dsp\b|cqc\b)", re.I),
+        "COMPLIANCE ALERT",
+    ),
+    (re.compile(r"\b(?:sra\b|solicitor|law firm|legal)\b", re.I), "LEGAL SECTOR UPDATE"),
+    (re.compile(r"\b(?:microsoft|365|azure|m365|cloud)\b", re.I), "M365 INSIGHT"),
+]
+
+_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
+_RISK_WORDS = re.compile(
+    r"\b(?:breach|downtime|cost|disrupt|exposure|fine|reputation|trust|risk|loss|liabilit)",
+    re.I,
+)
+
+
+def _split_sentences(text: str) -> list[str]:
+    return [s.strip() for s in _SENTENCE_SPLIT.split(re.sub(r"\s+", " ", text or "").strip()) if s.strip()]
+
+
+_STAT_NUMBER = re.compile(r"\d[\d,]*\.?\d*%?")
+_STAT_PREFIX = re.compile(r"\b(over|more than|exceeding|nearly|almost|up to)\s*$", re.I)
+
+
+def _extract_stat(body_sentences: list[str]) -> tuple[str, str]:
+    """Real number + a short caption trimmed from the same sentence — never a
+    compressed abstract label like the old '800 found'."""
+    for s in body_sentences:
+        m = _STAT_NUMBER.search(s)
+        if not m:
+            continue
+        number = m.group(0)
+        if _STAT_PREFIX.search(s[: m.start()]) and not number.endswith("%"):
+            number = f"{number}+"
+        caption = " ".join(s[m.start():].split()[:8])
+        return number, _clean(caption, 60)
+    return "", ""
+
+
+def _derive_eyebrow(text: str, content_type: str) -> str:
+    """Short all-caps category label for the card's eyebrow slot."""
+    for pattern, label in _EYEBROW_RULES:
+        if pattern.search(text or ""):
+            return label
+    ctype = (content_type or "").strip().lower()
+    if ctype == "success_story":
+        return "CLIENT SUCCESS"
+    if ctype == "personal_achievement":
+        return "TEAM UPDATE"
+    return "SECURITY INSIGHT"
+
+
+def _deterministic_card_copy(
+    *, hook: str, body: str, cta: str, safe_mode: bool = False
+) -> dict[str, str]:
+    """Regex/heuristic fallback for the alert-card copy slots — real post text only,
+    never abstracted into 2-4 word labels.
+
+    ``safe_mode`` covers the noise-filter content type: the post body quotes the
+    foreign headlines being filtered OUT (e.g. US court cases) as an example of
+    what's irrelevant. Those quoted examples must never end up rendered onto the
+    image, so this skips body-sentence extraction and uses generic filter copy
+    grounded only in the hook.
+    """
+    hook_sentences = _split_sentences(hook)
+    body_sentences = _split_sentences(body)
+
+    if safe_mode:
+        return {
+            "headline": _clean(hook, 100),
+            "subtext": "We filter global headlines down to what actually affects your practice.",
+            "callout_title": "STAY FOCUSED",
+            "callout_body": "Only the news that matters for UK compliance reaches you.",
+            "stat_number": "",
+            "stat_caption": "Filtered for UK regulatory relevance",
+        }
+
+    if len(hook_sentences) >= 2 and hook_sentences[-1].rstrip().endswith("?"):
+        headline = _clean(" ".join(hook_sentences[:-1]), 100)
+        callout_title = _clean(hook_sentences[-1].rstrip(" ?").upper(), 60) + "?"
+    else:
+        headline = _clean(hook, 100)
+        question = next((s for s in body_sentences if s.rstrip().endswith("?")), "")
+        callout_title = (
+            _clean(question.rstrip(" ?").upper(), 60) + "?" if question else "TAKE ACTION"
+        )
+
+    subtext = next((s for s in body_sentences if re.search(r"\d", s)), "")
+    if not subtext and body_sentences:
+        subtext = body_sentences[0]
+    subtext = _clean(subtext, 140)
+
+    callout_body = next((s for s in body_sentences if _RISK_WORDS.search(s)), "")
+    callout_body = _clean(callout_body, 140) or _clean(cta, 140)
+
+    stat_number, stat_caption = _extract_stat(body_sentences)
+    if not stat_number:
+        stat_number = "NEW"
+        stat_caption = _clean(hook, 60) or "Stay ahead of emerging risks"
+
+    return {
+        "headline": headline,
+        "subtext": subtext,
+        "callout_title": callout_title,
+        "callout_body": callout_body,
+        "stat_number": stat_number,
+        "stat_caption": stat_caption,
+    }
+
+
+async def _author_card_copy(
+    *, hook: str, body: str, cta: str, orchestrator: Any, organization_id: str | None
+) -> dict[str, str] | None:
+    """Ask the AI for tighter alert-card copy; falls back to the deterministic extractor.
+
+    Same best-effort pattern as ``_author_visual_concept`` — this is the text that gets
+    rendered directly onto the image, so it must stay short and grounded in the real post,
+    never invented.
+    """
+    if orchestrator is None or not (hook or body):
+        return None
+    prompt = (
+        "You write the on-image copy for a branded LinkedIn 'alert card' graphic "
+        "(dark card, small eyebrow label, big headline, one-line subtext, a bordered "
+        "callout box with a title + one supporting line). Given this post, extract copy "
+        "for each slot from the ACTUAL post content below — do not invent facts. Keep it "
+        "punchy and short; this text is rendered directly onto an image, not a caption.\n\n"
+        f"HOOK: {hook}\n"
+        f"BODY: {(body or '')[:1500]}\n"
+        f"CTA: {cta}\n\n"
+        "Respond with ONLY JSON:\n"
+        '{"eyebrow": "2-4 word category label, all caps, e.g. CYBER THREAT ALERT", '
+        '"headline": "the main factual claim, <=90 characters, perfect spelling", '
+        '"subtext": "one supporting sentence with the key stat/fact, <=110 characters", '
+        '"callout_title": "short punchy question or imperative, all caps, <=45 characters", '
+        '"callout_body": "one sentence on the consequence/risk or action, <=110 characters", '
+        '"stat_number": "the single standout number/stat from the post, e.g. 800+ or 5x or 34 '
+        '(empty string if the post has no real number)", '
+        '"stat_caption": "short caption for that number, <=60 characters, real text not invented"}'
+    )
+    try:
+        result = await orchestrator.complete(
+            "image_prompting",
+            prompt,
+            organization_id=organization_id,
+            response_format="json",
+            max_tokens=250,
+        )
+        data = json.loads(result.text)
+        out: dict[str, str] = {}
+        for key, limit in (
+            ("eyebrow", 40),
+            ("headline", 100),
+            ("subtext", 140),
+            ("callout_title", 60),
+            ("callout_body", 140),
+            ("stat_number", 12),
+            ("stat_caption", 60),
+        ):
+            val = _clean(str(data.get(key) or ""), limit).strip(" .")
+            if val:
+                out[key] = val
+        return out if out.get("headline") else None
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("AI card-copy authoring failed, using deterministic fallback: %s", exc)
+        return None
+
+
+async def build_card_copy(
+    *,
+    hook: str = "",
+    body: str = "",
+    cta: str = "",
+    content_type: str = "",
+    orchestrator: Any = None,
+    organization_id: str | None = None,
+    safe_mode: bool = False,
+) -> dict[str, str]:
+    """Real post copy for the alert-card slots (eyebrow/headline/subtext/callout) —
+    never the abstracted 2-4 word node labels used by the old diagram templates.
+
+    ``safe_mode`` (noise-filter posts) skips the AI pass too — the raw body contains
+    the filtered-out foreign headlines, and those must never reach the image, whether
+    via regex extraction or an LLM paraphrase of the same text.
+    """
+    copy = _deterministic_card_copy(hook=hook, body=body, cta=cta, safe_mode=safe_mode)
+    copy["eyebrow"] = "NEWS FILTER" if safe_mode else _derive_eyebrow(f"{hook} {body}", content_type)
+    if safe_mode:
+        return copy
+    ai = await _author_card_copy(
+        hook=hook, body=body, cta=cta, orchestrator=orchestrator, organization_id=organization_id
+    )
+    if ai:
+        copy.update(ai)
+    return copy
+
+
 async def build_content_subject(
     *,
     hook: str = "",
@@ -550,6 +755,16 @@ async def build_content_subject(
             180,
         )
 
+    card_copy = await build_card_copy(
+        hook=hook,
+        body=body,
+        cta=cta,
+        content_type=ctype,
+        orchestrator=orchestrator,
+        organization_id=organization_id,
+        safe_mode=bool(cues.get("filtering")),
+    )
+
     return {
         "content_subject": subject,
         "must_depict": must,
@@ -564,6 +779,7 @@ async def build_content_subject(
         "charts": ",".join(cues["charts"]),
         "graphs": ",".join(cues["graphs"]),
         "content_type": ctype,
+        **card_copy,
     }
 
 
@@ -664,6 +880,9 @@ async def inject_content_into_brief(
     meta.update(subject)
     meta["content_grounded"] = True
     meta["text_in_image"] = True  # short labels only
+    meta["footer_tagline"] = str(
+        brand_ctx.get("services_line") or brand_ctx.get("footer_text") or ""
+    ).strip()
     meta["visual_plan"] = {
         "post_intent": plan.get("post_intent"),
         "pattern_id": plan.get("pattern_id"),
@@ -686,22 +905,8 @@ async def inject_content_into_brief(
     meta["visual_quality_score"] = (plan.get("quality") or {}).get("overall")
     brief["metadata"] = meta
 
-    avoid_extra = ", ".join(str(a) for a in (plan.get("always_avoid") or [])[:16])
     brief["negative_prompt"] = (
-        "No text paragraphs, no watermark, no signatures, no blurry image, "
-        "no extra fingers, no distorted objects, no AI artifacts, no random symbols, "
-        "no spelling errors, no floating UI chrome, no fake logos, no unrealistic humans, "
-        "no meme style, no cartoon clipart, no robots, no glowing brains, "
-        "LinkedIn logo, social media UI chrome, paragraphs of body copy, "
-        "tiny illegible text walls, misspelled words, garbled typography, "
-        "long question headline across the top, truncated cut-off text at edges, "
-        "title-card only layout, watermark, low quality, muddy brown background, "
-        "muddy beige olive gradient, dull washed-out colours, neon cyberpunk glow, "
-        "black void background, rim-light portrait collage, "
-        "floating icon halo around angry businessman, photorealistic stock photo, "
-        "padlock spam, hacking hoodie, cluttered mind-map spiderweb, "
-        "duplicate repeated labels, misspelled Distributor Distrubur Diligence, "
-        "synonym spam Vendor Provider Reseller Distributor Supplier all at once, "
-        f"{avoid_extra}"
+        "blurry text, misspelled words, extra logos, watermarks, cluttered layout, "
+        "neon glow, cartoon style, duplicate text, overlapping elements, decorative sparkles"
     )
     return brief

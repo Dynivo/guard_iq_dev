@@ -80,8 +80,13 @@ async def test_noise_filter_labels_and_inject_plan() -> None:
     assert meta["visual_plan"]["pattern_id"] == "decision_funnel"
     assert "funnel" in brief["scene"].lower()
     assert "stripe" in brief["scene"].lower() or "cloudflare" in brief["scene"].lower()
-    assert "no watermark" in brief["negative_prompt"].lower()
+    assert "watermark" in brief["negative_prompt"].lower()
     assert meta.get("visual_quality_score") is not None
+    # Noise-filter posts quote the filtered-OUT foreign headlines in the body as an
+    # example of what's irrelevant — those must never reach the rendered image copy.
+    assert "texas" not in meta["headline"].lower()
+    assert "texas" not in meta["subtext"].lower()
+    assert "gun ban" not in meta["subtext"].lower()
 
 
 async def test_golden_prompt_contains_designer_clauses() -> None:
@@ -123,11 +128,16 @@ async def test_golden_prompt_contains_designer_clauses() -> None:
         brand={"name": "Guard IQ", "primary_color": "#0A1F2B", "accent_color": "#1A5CB0"},
     )
     p = req.positive_prompt.lower()
-    assert "premium linkedin" in p or "editorial" in p
-    assert "funnel" in p
-    assert "compliance risk" in p
-    assert "whitespace" in p or "white space" in p or "typography-safe" in p
-    assert "robot" in p  # avoidance clause
+    # Alert-card structural slots, not the old pattern/funnel diagram wording.
+    assert "linkedin graphic" in p
+    assert "headline" in p and "logo" in p
+    # No CTA/callout box on-image — client asked for it to never render.
+    assert "callout box" not in p
+    assert "#0a1f2b" in p and "#1a5cb0" in p
+    # Noise-filter safe_mode: never quote the filtered-out foreign headlines onto the image.
+    assert "texas" not in p
+    assert "gun ban" not in p
+    assert "strictly avoid" in p and "watermark" in p  # avoidance clause folded in
     assert "#0a1f2b" in p
     assert "generate a cybersecurity image" not in p
     assert req.metadata.get("visual_pattern_id") == "decision_funnel"

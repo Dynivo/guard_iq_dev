@@ -1,4 +1,6 @@
 # Default image generation policy (admin can override via brand kit extra_settings)
-default_count: 1
+# 2 = one of each card style (alert_card, stat_diagram_card) — see
+# app/modules/image/application/prompt_builder.py style_order.
+default_count: 2
 max_count: 4
 min_count: 1

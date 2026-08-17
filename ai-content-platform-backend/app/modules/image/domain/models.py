@@ -291,9 +291,16 @@ class ImageGenerationRequest:
     seed: int | None = None
     parameters: dict[str, Any] | None = None
     metadata: dict[str, Any] | None = None
+    # Raw brand logo bytes for providers that support image-reference input
+    # (OpenAI images.edit, Gemini multi-part generateContent). Deliberately kept
+    # off ImagePromptRequest — that object is hashed/cached/replayed as JSON and
+    # must never carry binary payloads.
+    logo_bytes: bytes | None = None
 
     @classmethod
-    def from_prompt_request(cls, req: ImagePromptRequest) -> ImageGenerationRequest:
+    def from_prompt_request(
+        cls, req: ImagePromptRequest, *, logo_bytes: bytes | None = None
+    ) -> ImageGenerationRequest:
         return cls(
             prompt=req.positive_prompt,
             width=req.width,
@@ -305,6 +312,7 @@ class ImageGenerationRequest:
             seed=req.seed,
             parameters=dict(req.parameters),
             metadata=dict(req.metadata),
+            logo_bytes=logo_bytes,
         )
 
 
@@ -637,6 +645,8 @@ class ImagePipelineRequest:
     variant_index: int = 0
     image_count: int = 1
     seed_override: int | None = None
+    # Real brand logo bytes, in-memory only — see ImageGenerationRequest.logo_bytes.
+    logo_bytes: bytes | None = None
 
 
 @dataclass(slots=True)

@@ -74,9 +74,29 @@ class GeminiImageProvider:
         if neg and "strictly avoid" not in prompt.lower() and "avoid:" not in prompt.lower():
             prompt = f"{prompt.rstrip()}. Strictly avoid: {neg}"
 
+        parts: list[dict[str, Any]] = []
+        if request.logo_bytes:
+            # Real logo bytes as a reference image instead of describing the mark in
+            # words — same fix as the OpenAI adapter's images.edit path.
+            prompt = (
+                f"{prompt.rstrip()} The attached image is the brand's exact official "
+                "logo — reproduce it pixel-accurately wherever the logo is called for "
+                "(same shape, proportions, colours, and wordmark text), do not "
+                "redesign, redraw, or add extra words to it."
+            )
+            parts.append(
+                {
+                    "inlineData": {
+                        "mimeType": "image/png",
+                        "data": base64.b64encode(request.logo_bytes).decode("ascii"),
+                    }
+                }
+            )
+        parts.append({"text": prompt})
+
         url = f"{self._base_url}/models/{model}:generateContent?key={self._api_key}"
         body = {
-            "contents": [{"parts": [{"text": prompt}]}],
+            "contents": [{"parts": parts}],
             "generationConfig": {"responseModalities": ["IMAGE"]},
         }
 
@@ -116,6 +136,7 @@ class GeminiImageProvider:
             "style": request.style,
             "requested_size": f"{request.width}x{request.height}",
             "image_byte_length": len(image_bytes),
+            "used_logo_reference": bool(request.logo_bytes),
         }
         if correlation_id:
             metadata["correlation_id"] = correlation_id

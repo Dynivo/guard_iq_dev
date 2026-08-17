@@ -1,0 +1,37 @@
+# Reference image policy for Gemini infographic generation.
+
+defaults:
+  mode: auto
+  max_references: 3
+
+modes:
+  auto:
+    include_logo_when_enabled: true
+    include_brand_style: true
+    include_previous_creative: false
+  brand:
+    include_logo_when_enabled: true
+    include_brand_style: true
+    include_previous_creative: false
+  none:
+    include_logo_when_enabled: false
+    include_brand_style: false
+    include_previous_creative: false
+
+roles:
+  logo_identity:
+    mime_type: image/png
+    prompt_hint: "Use this exact brand logo mark for identity fidelity; place once only."
+  brand_style:
+    mime_type: image/png
+    prompt_hint: "Match the color mood and graphic language of this brand style reference."
+  previous_creative:
+    mime_type: image/png
+    prompt_hint: "Keep visual continuity with this previous creative without copying layout verbatim."
+
+logo_correction:
+  # Prefer model-integrated logo; stamp only when critic says missing/wrong
+  stamp_when_critic_flags: true
+  never_duplicate: true
+  default_stamp_position: bottom_right
+  default_stamp_scale: 0.11

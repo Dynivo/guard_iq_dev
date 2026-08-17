@@ -6,8 +6,13 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from app.core.config import get_settings
 from app.core.exceptions import AppError, NotFoundError, ValidationError
 from app.core.logging import get_logger
+from app.infrastructure.image_generation.text_accuracy import (
+    TextAccuracyResult,
+    check_rendered_text,
+)
 from app.modules.image.application.asset_intelligence import DefaultAssetAnalyzer
 from app.modules.image.application.assets import MemoryImageAssetStore
 from app.modules.image.application.brief import DefaultVisualBriefEnricher
@@ -205,6 +210,30 @@ class DefaultVisualIntelligenceEngine:
             replay_of=record.job_id,
         )
 
+    async def _generate_and_validate(
+        self,
+        *,
+        prompt_req: ImagePromptRequest,
+        request: ImagePipelineRequest,
+        composition: CompositionPlan,
+        brief: EnrichedVisualBrief,
+    ) -> tuple[Any, ImageValidationResult, TextAccuracyResult]:
+        gen = await self._orch.execute(prompt_req, logo_bytes=request.logo_bytes)  # type: ignore[union-attr]
+        validation = self._validator.validate(
+            gen.image_bytes,
+            composition=composition,
+            brief=brief,
+            brand=request.brand,
+        )
+        text_result = TextAccuracyResult(checked=False, passed=True)
+        # Never run on mock-generated pixels (nothing real to check — also keeps
+        # the test suite from making a live network call) and only when the
+        # operator has explicitly opted into the extra cost.
+        if validation.passed and gen.provider != "mock" and get_settings().IMAGE_TEXT_ACCURACY_CHECK_ENABLED:
+            card_copy = dict(prompt_req.parameters.get("card_copy") or {})
+            text_result = await check_rendered_text(gen.image_bytes, card_copy)
+        return gen, validation, text_result
+
     async def _finish_from_prompt(
         self,
         *,
@@ -218,15 +247,30 @@ class DefaultVisualIntelligenceEngine:
         prompt_hash: str,
         replay_of: str | None,
     ) -> ImagePipelineResult:
-        gen = await self._orch.execute(prompt_req)  # type: ignore[union-attr]
-        validation = self._validator.validate(
-            gen.image_bytes,
-            composition=composition,
-            brief=brief,
-            brand=request.brand,
+        gen, validation, text_result = await self._generate_and_validate(
+            prompt_req=prompt_req, request=request, composition=composition, brief=brief
         )
+        retried = False
+        if validation.passed and not text_result.passed:
+            logger.info(
+                "image_text_accuracy_retry",
+                extra={"job_id": job_id, "issues": list(text_result.issues)},
+            )
+            retry_gen, retry_validation, retry_text_result = await self._generate_and_validate(
+                prompt_req=prompt_req, request=request, composition=composition, brief=brief
+            )
+            retried = True
+            if retry_validation.passed:
+                gen, validation, text_result = retry_gen, retry_validation, retry_text_result
+
         quality = validation.breakdown
         quality_score = validation.score
+        text_accuracy_meta = {
+            "checked": text_result.checked,
+            "passed": text_result.passed,
+            "issues": list(text_result.issues),
+            "retried": retried,
+        }
 
         if not validation.passed:
             return ImagePipelineResult(
@@ -250,7 +294,10 @@ class DefaultVisualIntelligenceEngine:
                 workflow_id=gen.workflow_id or prompt_req.workflow_id,
                 workflow_version=gen.workflow_version or prompt_req.workflow_version,
                 seed=prompt_req.seed,
-                metadata={"reason_codes": list(validation.reason_codes)},
+                metadata={
+                    "reason_codes": list(validation.reason_codes),
+                    "text_accuracy": text_accuracy_meta,
+                },
             )
 
         layout = self._layout.plan(
@@ -290,6 +337,7 @@ class DefaultVisualIntelligenceEngine:
                 "layout_plan": layout.to_dict(),
                 "asset_intelligence": intelligence.to_dict(),
                 "seed": prompt_req.seed,
+                "text_accuracy": text_accuracy_meta,
             },
         )
         if assets:
@@ -325,6 +373,7 @@ class DefaultVisualIntelligenceEngine:
                 "formats": list(bundle.formats.keys()),
                 "layout_plan": layout.to_dict(),
                 "cost_estimate": gen.cost_estimate,
+                "text_accuracy": text_accuracy_meta,
             },
         )
         self._replay.save(

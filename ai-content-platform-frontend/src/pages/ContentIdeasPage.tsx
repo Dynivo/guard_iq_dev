@@ -1,4 +1,5 @@
 import { useApiQuery } from '@/hooks/useApiQuery';
+import { useJobPolling } from '@/hooks/useJobPolling';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/Card';
 import { PageHeader } from '@/components/PageHeader';
@@ -10,7 +11,8 @@ import { EmptyState } from '@/components/EmptyState';
 import { apiClient } from '@/api/client';
 import type { ApiEnvelope } from '@/api/types';
 import { Lightbulb, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 interface ArticleRow {
   id: string;
@@ -30,6 +32,20 @@ export function ContentIdeasPage() {
     '/articles?status=relevant'
   );
   const [busy, setBusy] = useState<string | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const { job, isComplete: jobComplete, isFailed: jobFailed } = useJobPolling(jobId);
+
+  // Draft generation now runs as a background Job instead of blocking the
+  // request — this reacts once useJobPolling sees it finish or fail.
+  useEffect(() => {
+    if (!jobId || (!jobComplete && !jobFailed)) return;
+    if (jobFailed) {
+      toast.error(job?.error_message || 'Could not generate draft');
+    }
+    queryClient.invalidateQueries({ queryKey: ['drafts'] });
+    setBusy(null);
+    setJobId(null);
+  }, [jobComplete, jobFailed, jobId, job, queryClient]);
 
   if (isLoading) return <Spinner />;
   if (isError) return <ErrorState message="Unable to load content ideas." onRetry={refetch} />;
@@ -40,9 +56,18 @@ export function ContentIdeasPage() {
   const generate = async (id: string) => {
     setBusy(id);
     try {
-      await apiClient.post(`/articles/${id}/generate-draft`, { content_type: 'educational' });
-      queryClient.invalidateQueries({ queryKey: ['drafts'] });
-    } finally {
+      const res = await apiClient.post<ApiEnvelope<{ job_id: string }>>(
+        `/articles/${id}/generate-draft`,
+        { content_type: 'educational' }
+      );
+      const newJobId = res.data?.data?.job_id;
+      if (newJobId) setJobId(newJobId);
+      else {
+        toast.error('Could not start draft generation');
+        setBusy(null);
+      }
+    } catch {
+      toast.error('Could not start draft generation');
       setBusy(null);
     }
   };

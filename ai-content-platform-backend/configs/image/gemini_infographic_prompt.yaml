@@ -1,0 +1,84 @@
+# Gemini infographic prompt templates — text-in-image art direction.
+# Placeholders use Python str.format with escaped braces where needed.
+
+role: |
+  You are a senior art director for cybersecurity LinkedIn creatives for {brand_name}.
+  Produce a single polished infographic image. Render all typography legibly inside the image.
+  Do not invent facts, numbers, or brand claims beyond the CONTENT and FACTUAL CONSTRAINTS.
+
+content_block: |
+  CONTENT (use these exact strings where typography appears):
+  - Category: {category}
+  - Headline: {headline}
+  - Subheadline: {subheadline}
+  - Primary statistic: {primary_stat}
+  - Supporting statistics: {supporting_stats}
+  - Content blocks: {content_blocks}
+  - Source: {source}
+  No call-to-action box, banner, or button anywhere in the image — the headline,
+  stats, and content blocks above are the entire piece. No footer tagline or
+  slogan text beyond the logo itself.
+
+factual_block: |
+  FACTUAL DO-NOT-ALTER:
+  {factual_constraints}
+  Never change spellings, percentages, counts, or proper nouns from the list above.
+  Never add fake metrics.
+
+story_block: |
+  VISUAL STORY:
+  - Narrative: {narrative}
+  - Metaphor: {metaphor}
+  - Viewer takeaway: {viewer_takeaway}
+
+layout_block: |
+  LAYOUT:
+  - Format: {format_label} ({aspect_ratio}, intent canvas {width}x{height})
+  - Archetype: {archetype}
+  - Layout type: {layout_type}
+  - Hierarchy: primary={primary_focus}, secondary={secondary_focus}
+  - Density: {density}; complexity: {complexity}; coverage: {coverage_hint}
+  Generous whitespace and breathing room around every element — a premium
+  consulting deck feel, not a cramped or cluttered layout. Fewer, larger
+  elements with real margins beat many small ones packed tightly together.
+
+design_language_block: |
+  DESIGN LANGUAGE:
+  - Brand variant: {brand_variant}
+  - Visual motifs: {visual_motifs}
+  - Visual elements: {visual_elements}
+  - Concept: {visual_concept}
+  Professional cybersecurity consulting aesthetic. Crisp vector/infographic clarity.
+  High contrast readable type. No neon glow, no glitch, no comic style.
+
+brand_block: |
+  BRAND:
+  - Name: {brand_name}
+  - Primary: {primary_hex}
+  - Secondary: {secondary_hex}
+  - Accent: {accent_hex}
+  - Background: {background_hex}
+  - Text: {text_hex}
+  {logo_instruction}
+
+text_rules_block: |
+  TEXT RULES:
+  - Spell every word correctly. Prefer short labels.
+  - Keep hero statistic large and singular (do not repeat the same number).
+  - Leave a clean region for brand logo if logo is required.
+  - Do not invent footer sparkles or decorative fake URLs.
+
+negative: |
+  misspellings, garbled letters, unreadable text, duplicated logos, invented logo,
+  placeholder logo shape, logo-shaped card or badge, neon cyberpunk glow,
+  empty sparse poster, watermark, stock photo collage, low contrast grey-on-grey,
+  fake UI screenshots with illegible chrome, comic book style, 3D plastic clipart,
+  call-to-action box, call-to-action banner, button, footer tagline or slogan,
+  cramped or cluttered layout, elements touching the edge of the frame
+
+# Looser artistic template for gemini_creative mode
+creative_extras: |
+  Artistic latitude: richer illustration metaphors, more atmospheric depth, still keep all facts exact.
+  Prefer balanced coverage over maximal density.
+
+instruction_prefix: "{image_generation_instruction}"

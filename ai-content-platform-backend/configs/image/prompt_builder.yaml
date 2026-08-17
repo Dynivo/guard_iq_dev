@@ -1,51 +1,102 @@
-# Positive prompt — senior LinkedIn designer quality (planning-driven).
-# Short 2–4 word labels allowed; paragraphs banned. Brand hexes injected at runtime.
-template: >-
-  Create a premium LinkedIn infographic with a clean editorial style.
-  style {style}.
-  Theme: {content_subject}.
-  MUST DEPICT (do not ignore): {must_depict}.
-  VISUAL PLANNING: {planning_clause}.
-  Visual hierarchy: {visual_hierarchy}.
-  Pattern story: {visual_story}.
-  BODY-GROUNDED VISUAL SYSTEM: {visual_elements}.
-  charts/graphs/objects to include: {charts} {graphs} {objects}.
-  SHORT LABELS on nodes/cards (2–4 words, correct English spelling): {body_key_ideas}.
-  scene details: {scene},
-  focal composition: {foreground},
-  environment: {background},
-  relevant icons only (never decorative halo spam): {icons},
-  composition {composition}, camera {camera}, focus {focus},
-  intent {intent}, brand {brand_direction},
-  target audience / business tone: thought-leadership for regulated UK practices,
-  STRICT brand colour palette: {palette},
-  Style inspiration: {style_inspiration},
-  Flat vector illustration. Minimal. Corporate. Premium SaaS.
-  Large whitespace. Rounded cards. Subtle professional gradients. Soft shadows.
-  Professional iconography. No decorative clutter. No AI fantasy. No humans. No robots.
-  LIGHT off-white / mint-grey paper-grain background, bright professional lighting,
-  square 1:1 LinkedIn framing, scroll-stopping but professional,
-  leave a clean typography-safe area in the upper ~30% for headline overlay,
-  leave bottom ~15% for CTA,
-  NOT a marketing banner, NOT a centred angry portrait with floating icons,
-  NOT a black void with neon glow
+# Positive prompt — validated "alert card" / "stat diagram" templates
+# (see docs/PROMPT_VALIDATION.md). Each variant of a draft cycles through
+# style_order by variant_index, always via the same provider (see workflow.py) —
+# visual variety comes from style, not from mixing AI models.
+# Each fact appears exactly once per template; real headline/subtext/callout copy
+# is quoted for exact rendering, never abstracted into 2-4 word node labels.
+
+style_order:
+  - alert_card
+  - stat_diagram_card
+
+templates:
+  alert_card: >-
+    Design a single square (1:1) LinkedIn graphic for {brand_name}, a {brand_personality}.
+    Dark navy background ({primary_color}), premium flat corporate style, generous margins,
+    no clutter. Thin accent-colour ({accent_color}) diagonal line cutting off the top-right corner.
+
+
+    LOGO (top center, about 15% of image height): {logo_description_on_dark}. Below the
+    icon, bold white sans-serif wordmark text reading exactly "{brand_name_upper}". Below
+    that, a thin horizontal accent-colour divider line.
+
+
+    EYEBROW LABEL (small caps, accent colour, centered, below the divider): "{eyebrow}"
+
+
+    HEADLINE (large, bold, white, sans-serif, centered, render this exact text with perfect
+    spelling, max 2 lines): "{headline}"
+
+
+    SUBTEXT (smaller, light grey, centered, below headline, render this exact text with
+    perfect spelling, one line): "{subtext}"
+
+
+    Thin horizontal divider line (accent colour, low opacity), then generous empty space
+    below it before the footer — no bordered box, no call-to-action panel, no extra text block.
+
+
+    FOOTER (bottom left, small): white bold wordmark "{brand_name_upper}" and below it in
+    accent colour smaller text: "{footer_tagline}"
+
+
+    Overall composition must match a premium B2B SaaS security-brand aesthetic (think
+    Cloudflare, CrowdStrike, Vanta marketing graphics) — clean typographic hierarchy, lots
+    of negative space, no illustrations of people, no hackers, no padlock clip art, no
+    stock photography.{variant_note}
+
+  stat_diagram_card: >-
+    Design a single square (1:1) LinkedIn graphic for {brand_name}, a {brand_personality}.
+    Light off-white background ({surface_color}), premium flat corporate style, generous
+    margins, no clutter, one consistent flat-line icon style throughout (no mixed icon
+    styles, no gradients, no glossy 3D icons).
+
+
+    TITLE (top, large, bold, dark navy {primary_color}, centered, render this exact text
+    with perfect spelling, max 2 lines): "{headline}"
+
+
+    Below the title, a thin horizontal accent-colour ({accent_color}) divider line.
+
+
+    STAT CALLOUT (left side, appears exactly once in the whole image — do not repeat this
+    number or its caption anywhere else): a large bold dark navy numeral reading exactly
+    "{stat_number}", with a small upward accent-colour trend arrow beside it, and one short
+    caption line below the number, render exactly: "{stat_caption}"
+
+
+    ICON ROW (right side, exactly 3 simple flat-line icon circles in one consistent style,
+    connected by thin straight accent-colour lines, evenly spaced, generous whitespace
+    between them): each circle has one short 2-3 word label taken directly from this list,
+    one label per circle, verbatim, do not invent or paraphrase: {short_labels}.
+
+
+    Generous empty space below the icon row — no callout line, no call-to-action text,
+    no extra text block.
+
+
+    LOGO (bottom right corner, small, about 8% of image height, always in this exact
+    position): {logo_description_on_light}. Small bold dark navy wordmark
+    "{brand_name_upper}" beside it.
+
+
+    Overall composition must match a premium B2B SaaS security-brand aesthetic (think
+    Cloudflare, CrowdStrike, Vanta marketing graphics) — clean typographic hierarchy, no
+    illustrations of people, no hackers, no photorealistic clip art, no stock photography,
+    no duplicate stats or labels anywhere in the image.{variant_note}
+
 default_workflow_id: flux_dev
 default_workflow_version: "1"
 default_negative: >-
-  No text paragraphs, no watermark, no signatures, no blurry image, no extra fingers,
-  no distorted objects, no AI artifacts, no random symbols, no spelling, no floating UI,
-  no fake logos, no unrealistic humans, no meme style, no cartoon,
-  LinkedIn logo, LinkedIn UI, social network logos, photorealistic stock photo,
-  handshake, blurry faces, low quality, watermark, logo spam, cluttered collage,
-  neon cyberpunk glow, black void background, rim-light portrait, plastic 3d CGI,
-  distorted anatomy, robots, glowing brains, holograms, hooded hackers,
-  floating padlock spam, binary rain, futuristic cities, abstract polygons, 3d blobs,
-  paragraphs of body copy, tiny illegible text walls, misspelled or garbled text,
-  long question headline across the top, truncated cut-off text at edges,
-  floating icon halo around businessman head, angry stock portrait as the whole creative,
-  cluttered mind-map spiderweb, duplicate repeated labels, misspelled words,
-  Distrubur, synonym spam of Vendor Provider Reseller Distributor,
-  unrelated decorative icons, muddy brown backgrounds, muddy beige olive gradient,
-  dull washed-out colours
-style_prefix: premium flat branded LinkedIn educational infographic
+  blurry text, misspelled words, extra logos, watermarks, cluttered layout, neon glow,
+  cartoon style, duplicate text, overlapping elements, decorative sparkles, mixed icon
+  styles, glossy 3d icons, bordered CTA panel, unrequested button or badge
+logo_description_on_dark: >-
+  a simple white outline shield icon with a checkmark inside it, with three small
+  five-pointed gold/yellow stars arranged above the shield
+logo_description_on_light: >-
+  a simple dark navy outline shield icon with a checkmark inside it, with three small
+  five-pointed gold/yellow stars arranged above the shield
+surface_color: "#F4F7F5"
+style_prefix: premium flat branded LinkedIn alert-card graphic
 avoid_prefix: "Strictly avoid"

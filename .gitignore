@@ -121,3 +121,6 @@ TODO.local.md
 # Cursor / agent local state (rules/skills may be committed separately if desired)
 .cursor/projects/
 **/agent-transcripts/
+
+# ─── Standalone comparison checkout (not part of this repo's history) ────────
+updated_delivery/

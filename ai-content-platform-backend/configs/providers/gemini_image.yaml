@@ -1,0 +1,73 @@
+# Gemini native image generation (Nano Banana family) — ImageProvider adapter only.
+# Domain never imports this file; model IDs stay config-driven.
+# Used only by GeminiInfographicProvider (gemini_infographic pipeline) — the
+# existing GeminiImageProvider used by the alert_card ("blue card") flow does
+# not read this file.
+
+provider: gemini
+capability: image_generation
+
+models:
+  standard: gemini-3.1-flash-image
+  premium: gemini-3-pro-image
+
+defaults:
+  model: gemini-3.1-flash-image
+  quality_tier: premium
+  output_mime_type: image/png
+  response_modalities:
+    - IMAGE
+    - TEXT
+
+# Aspect ratios supported by Gemini image models (request WxH mapped via ratio).
+allowed_aspect_ratios:
+  - "1:1"
+  - "4:5"
+  - "5:4"
+  - "3:4"
+  - "4:3"
+  - "9:16"
+  - "16:9"
+  - "3:2"
+  - "2:3"
+  - "21:9"
+
+# Intent canvas sizes (LinkedIn). Provider maps to nearest aspect_ratio.
+formats:
+  linkedin_square:
+    width: 1080
+    height: 1080
+    aspect_ratio: "1:1"
+  linkedin_portrait:
+    width: 1080
+    height: 1350
+    aspect_ratio: "4:5"
+
+aspect_map:
+  - name: square
+    min_ratio: 0.85
+    max_ratio: 1.15
+    aspect_ratio: "1:1"
+  - name: portrait_4_5
+    min_ratio: 0.75
+    max_ratio: 0.85
+    aspect_ratio: "4:5"
+  - name: portrait_tall
+    min_ratio: 0.0
+    max_ratio: 0.75
+    aspect_ratio: "9:16"
+  - name: landscape
+    min_ratio: 1.15
+    max_ratio: 99.0
+    aspect_ratio: "16:9"
+
+# Optional image_size for pro models (when supported by API).
+image_size_by_tier:
+  standard: null
+  premium: "2K"
+
+reference_images:
+  max_count: 3
+  max_bytes_each: 7340032
+
+timeout_seconds: 120

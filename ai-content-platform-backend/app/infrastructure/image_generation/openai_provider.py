@@ -114,6 +114,8 @@ class OpenAIImageProvider:
         correlation_id = meta_in.get("correlation_id") or meta_in.get("request_id")
 
         client = self._get_client()
+        is_gpt_image = model.startswith("gpt-image") or model.startswith("chatgpt-image")
+        use_edit = bool(request.logo_bytes) and is_gpt_image
         try:
             # gpt-image has no native negative channel — fold bans into the prompt.
             prompt = request.prompt or ""
@@ -121,24 +123,45 @@ class OpenAIImageProvider:
             if neg and "strictly avoid" not in prompt.lower() and "avoid:" not in prompt.lower():
                 prompt = f"{prompt.rstrip()}. Strictly avoid: {neg}"
 
-            create_kwargs: dict[str, Any] = {
-                "model": model,
-                "prompt": prompt,
-                "size": api_size,
-                "quality": quality,
-                "n": 1,
-            }
-            # gpt-image models use output_format; older dall-e uses response_format
-            if model.startswith("gpt-image") or model.startswith("chatgpt-image"):
-                create_kwargs["output_format"] = output_format
-                if background:
-                    create_kwargs["background"] = background
-                if moderation:
-                    create_kwargs["moderation"] = moderation
+            if use_edit:
+                # Real logo bytes attached as a reference image (images.edit) instead
+                # of asking the model to redraw the mark from a text description —
+                # fixes the "GUARDIQ CONSULTING" wordmark-invention drift.
+                prompt = (
+                    f"{prompt.rstrip()} The attached image is the brand's exact "
+                    "official logo — reproduce it pixel-accurately wherever the logo "
+                    "is called for (same shape, proportions, colours, and wordmark "
+                    "text), do not redesign, redraw, or add extra words to it."
+                )
+                response = await client.images.edit(
+                    model=model,
+                    image=[("logo.png", request.logo_bytes, "image/png")],
+                    prompt=prompt,
+                    size=api_size,
+                    quality=quality,
+                    input_fidelity="high",
+                    output_format=output_format,
+                    n=1,
+                )
             else:
-                create_kwargs["response_format"] = "b64_json"
+                create_kwargs: dict[str, Any] = {
+                    "model": model,
+                    "prompt": prompt,
+                    "size": api_size,
+                    "quality": quality,
+                    "n": 1,
+                }
+                # gpt-image models use output_format; older dall-e uses response_format
+                if is_gpt_image:
+                    create_kwargs["output_format"] = output_format
+                    if background:
+                        create_kwargs["background"] = background
+                    if moderation:
+                        create_kwargs["moderation"] = moderation
+                else:
+                    create_kwargs["response_format"] = "b64_json"
 
-            response = await client.images.generate(**create_kwargs)
+                response = await client.images.generate(**create_kwargs)
         except AuthenticationError as exc:
             raise AppError(f"OpenAI authentication failed: {exc}") from exc
         except APIError as exc:
@@ -164,6 +187,7 @@ class OpenAIImageProvider:
             "api_size": api_size,
             "quality": quality,
             "output_format": output_format,
+            "used_logo_reference": use_edit,
             "image_byte_length": len(image_bytes),
         }
         if correlation_id:

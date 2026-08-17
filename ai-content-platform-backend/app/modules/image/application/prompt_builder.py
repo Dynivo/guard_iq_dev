@@ -77,85 +77,89 @@ class DefaultImagePromptBuilder:
         content_subject = str(
             meta.get("content_subject") or brief.focal_point or "LinkedIn educational post"
         )
-        must_depict = str(
-            meta.get("must_depict")
-            or brief.scene_hint
-            or "flat branded illustration matching the post topic"
-        )
-        visual_elements = str(
-            meta.get("visual_elements")
-            or "one clear focal subject with relevant educational graphic accents, no text"
-        )
-        # Abstract icon themes only — never raw post sentences (those caused wrong scenes + misspellings)
-        body_key_ideas = str(
-            meta.get("short_labels")
-            or meta.get("body_key_ideas")
-            or meta.get("icon_themes")
-            or ""
-        )
-        charts = ", ".join(scene.charts) or str(meta.get("charts") or "none")
-        graphs = ", ".join(scene.graphs) or str(meta.get("graphs") or "none")
-        objects = ", ".join(scene.objects) or (
-            ", ".join(brief.infographic_suggestions[:4]) if brief.infographic_suggestions else "none"
-        )
         text_in_image = bool(meta.get("text_in_image", True))
         palette_colours = resolve_brand_palette(brand, brief.color_palette)
         palette_clause = format_palette_clause(palette_colours)
-        brand_direction = (
-            brief.brand_direction
-            or f"{brand.get('name') or 'Brand'} — palette {', '.join(palette_colours[:3])}"
-        )
-        planning_clause = str(
-            meta.get("planning_clause")
-            or meta.get("visual_story")
-            or "Premium SaaS editorial infographic with clear visual hierarchy."
-        )
-        visual_story = str(meta.get("visual_story") or planning_clause)
-        visual_hierarchy = str(
-            meta.get("visual_hierarchy")
-            or (meta.get("visual_plan") or {}).get("story", {}).get("visual_hierarchy")
-            or "headline band → diagram → outcome"
-        )
-        style_inspiration = str(
-            meta.get("style_inspiration")
-            or "CrowdStrike, Microsoft Security, Cloudflare, Stripe, Linear, Vanta"
-        )
 
-        template = str(
-            self._cfg.get("template")
-            or "{style} illustration, {scene}, {intent}, about {content_subject}, colours {palette}"
+        brand_name = str(brand.get("name") or "the brand").strip() or "the brand"
+        primary_color = palette_colours[0] if palette_colours else "#0A1F2B"
+        accent_color = str(
+            brand.get("accent_color") or (palette_colours[2] if len(palette_colours) > 2 else "#1A5CB0")
         )
+        brand_personality = str(
+            brand.get("personality")
+            or brand.get("voice")
+            or brand.get("tone")
+            or "UK IT & cybersecurity managed services provider"
+        )
+        logo_on_dark = str(
+            self._cfg.get("logo_description_on_dark") or "a simple brand mark icon"
+        )
+        logo_on_light = str(
+            self._cfg.get("logo_description_on_light") or "a simple brand mark icon"
+        )
+        surface_color = str(self._cfg.get("surface_color") or "#F4F7F5")
+
+        # Real post copy for each card slot — never abstracted into 2-4 word labels.
+        # No CTA/callout slot here on purpose — the client asked for calls-to-action
+        # to never render on the image itself.
+        headline = str(meta.get("headline") or content_subject).strip()
+        subtext = str(meta.get("subtext") or "").strip()
+        eyebrow = str(meta.get("eyebrow") or "INSIGHT").strip()
+        stat_number = str(meta.get("stat_number") or "NEW").strip()
+        stat_caption = str(meta.get("stat_caption") or headline).strip()
+        short_labels = (
+            str(meta.get("short_labels") or meta.get("body_key_ideas") or "").strip()
+            or "Key insight; Stay secure; Act early"
+        )
+        footer_tagline = str(
+            meta.get("footer_tagline") or brand.get("services_line") or brand.get("footer_text") or ""
+        ).strip() or brand_name.upper()
+        # Free-text guidance from the "Options" tip field on the draft page — e.g.
+        # a client asking to change something about an already-generated image.
+        image_guidance = str(meta.get("image_guidance") or "").strip()
+
+        # Each variant of a draft cycles through style_order — same provider, different
+        # template — instead of the old "one provider per variant" comparison approach.
+        style_order = [str(s) for s in (self._cfg.get("style_order") or ["alert_card"])]
+        style_key = style_order[variant_index % len(style_order)]
+        templates = self._cfg.get("templates") or {}
+        template = str(templates.get(style_key) or self._cfg.get("template") or "{headline}")
+
         variant_note = ""
-        if variant_index > 0:
-            variant_note = f", alternate composition variant {variant_index + 1}"
+        if variant_index >= len(style_order):
+            variant_note = (
+                " Use a subtly different layout balance from the primary variant "
+                "while keeping the same structure."
+            )
+
         positive = template.format(
-            style=brief.illustration_style or self._cfg.get("style_prefix") or "professional",
-            theme=brief.theme,
-            scene=(brief.scene_hint or scene.layout) + variant_note,
-            foreground=", ".join(scene.foreground) or "subject",
-            background=", ".join(scene.background) or "clean light brand-surface backdrop",
-            icons=", ".join(scene.icons) or "subtle icons",
-            composition=composition.balance,
-            camera=composition.camera,
-            focus=composition.focus,
-            intent=brief.image_intent or brief.purpose,
-            brand_direction=brand_direction,
-            content_subject=content_subject,
-            must_depict=must_depict,
-            visual_elements=visual_elements,
-            body_key_ideas=body_key_ideas or "Hidden risk; Detect; Resolve; Compliance",
-            charts=charts,
-            graphs=graphs,
-            objects=objects,
-            palette=palette_clause,
-            planning_clause=planning_clause,
-            visual_story=visual_story,
-            visual_hierarchy=visual_hierarchy,
-            style_inspiration=style_inspiration,
+            brand_name=brand_name,
+            brand_name_upper=brand_name.upper(),
+            brand_personality=brand_personality,
+            primary_color=primary_color,
+            accent_color=accent_color,
+            surface_color=surface_color,
+            logo_description_on_dark=logo_on_dark,
+            logo_description_on_light=logo_on_light,
+            eyebrow=eyebrow,
+            headline=headline,
+            subtext=subtext,
+            stat_number=stat_number,
+            stat_caption=stat_caption,
+            short_labels=short_labels,
+            footer_tagline=footer_tagline,
+            variant_note=variant_note,
         )
+        if image_guidance:
+            positive = (
+                f"{positive.strip()} ADDITIONAL INSTRUCTION FROM THE USER — follow this "
+                f"precisely; it takes priority over anything above it if there's a conflict: "
+                f"{image_guidance}"
+            )
         negative = brief.negative_prompt or str(
             self._cfg.get("default_negative")
-            or "paragraphs, tiny illegible text, misspelled text, neon glow, black void, watermark"
+            or "blurry text, misspelled words, watermark, cluttered layout"
         )
         # Fold negatives into positive for providers (OpenAI Images) that ignore negative_prompt
         avoid_prefix = str(self._cfg.get("avoid_prefix") or "Strictly avoid")
@@ -163,7 +167,7 @@ class DefaultImagePromptBuilder:
             positive = f"{positive.strip()}. {avoid_prefix}: {negative.strip()}"
 
         wf = workflow_id or str(self._cfg.get("default_workflow_id") or "flux_dev")
-        seed_src = f"{positive.strip()}|{negative}|{wf}|v{variant_index}"
+        seed_src = f"{positive.strip()}|{negative}|{wf}|v{variant_index}|{style_key}"
         seed = (
             int(seed_override)
             if seed_override is not None
@@ -183,6 +187,18 @@ class DefaultImagePromptBuilder:
                 "palette": palette_colours,
                 "variant_index": variant_index,
                 "content_subject": content_subject,
+                "template_style": style_key,
+                # Intended on-image text — used by the post-generation text-accuracy
+                # check (engine.py) to catch rendered typos like "exposoed", not to
+                # build the prompt (that already happened above).
+                "card_copy": {
+                    "brand_name": brand_name,
+                    "eyebrow": eyebrow,
+                    "headline": headline,
+                    "subtext": subtext,
+                    "stat_number": stat_number,
+                    "stat_caption": stat_caption,
+                },
             },
             metadata={
                 "audience": brief.audience,
@@ -192,6 +208,7 @@ class DefaultImagePromptBuilder:
                 "text_in_image": text_in_image,
                 "never_calls_providers": True,
                 "variant_index": variant_index,
+                "template_style": style_key,
                 "visual_pattern_id": meta.get("visual_pattern_id"),
                 "post_intent": meta.get("post_intent"),
                 "visual_quality_score": meta.get("visual_quality_score"),

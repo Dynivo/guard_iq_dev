@@ -15,8 +15,11 @@ from app.core.security import require_role
 from app.infrastructure.postgres import get_async_session
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.content.application.calendar_view import CalendarViewService
+from app.modules.content.application.generation.jobs import (
+    DispatchFillEducationalJob,
+    DispatchRegeneratePlanJob,
+)
 from app.modules.content.application.publishing_plan import PublishingPlanService
-from app.modules.content.application.use_cases import GenerateDraftUseCase
 
 router = APIRouter(prefix="/publishing-plan", tags=["publishing-plan"])
 
@@ -58,7 +61,7 @@ async def get_publishing_plan(
     )
 
 
-@router.post("/fill-educational")
+@router.post("/fill-educational", status_code=202)
 async def fill_educational(
     request: Request,
     max_generate: int | None = Query(
@@ -70,42 +73,28 @@ async def fill_educational(
     current_user: AuthenticatedUser = Depends(require_role(MembershipRole.EDITOR)),
     session: AsyncSession = Depends(get_async_session),
 ) -> dict:
-    """Generate educational drafts from unused relevant articles until gap filled."""
-    generate_uc = GenerateDraftUseCase(session)
-    svc = PublishingPlanService(session, generate_uc=generate_uc)
-    result = await svc.fill_educational(
-        current_user.organization_id,
+    """Queue educational-gap fill in the background — was a blocking N-draft loop."""
+    result = await DispatchFillEducationalJob(session).execute(
+        org_id=current_user.organization_id,
         max_generate=max_generate,
         ensure_image=True,
     )
-    plan = await svc.get_plan(current_user.organization_id)
-    result["plan"] = {
-        "counts": plan["counts"],
-        "gaps": plan["gaps"],
-        "total_count": plan["total_count"],
-        "target": plan["target"],
-        "window": plan["window"],
-        "slots": plan["slots"],
-        "needs_capture": plan.get("needs_capture"),
-    }
     return success_response(
         result,
         request_id=getattr(request.state, "request_id", ""),
     )
 
 
-@router.post("/regenerate")
+@router.post("/regenerate", status_code=202)
 async def regenerate_plan(
     request: Request,
     body: RegeneratePlanBody | None = None,
     current_user: AuthenticatedUser = Depends(require_role(MembershipRole.EDITOR)),
     session: AsyncSession = Depends(get_async_session),
 ) -> dict:
-    """Rebuild mix: fill educational + Capture gaps with LinkedIn copy + image."""
-    generate_uc = GenerateDraftUseCase(session)
-    svc = PublishingPlanService(session, generate_uc=generate_uc)
-    result = await svc.regenerate_plan(
-        current_user.organization_id,
+    """Queue a full mix rebuild in the background: fill educational + Capture gaps."""
+    result = await DispatchRegeneratePlanJob(session).execute(
+        org_id=current_user.organization_id,
         max_generate=(body.max_generate if body else None),
     )
     return success_response(

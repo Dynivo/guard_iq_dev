@@ -18,6 +18,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { useApiQuery } from '@/hooks/useApiQuery';
+import { useJobPolling } from '@/hooks/useJobPolling';
 import { apiClient } from '@/api/client';
 import type { ApiEnvelope, Draft } from '@/api/types';
 import { PageHeader } from '@/components/PageHeader';
@@ -156,6 +157,9 @@ export function NewsFeedPage() {
   const [draftPhase, setDraftPhase] = useState<DraftPhase>('confirm');
   const [draftStep, setDraftStep] = useState(0);
   const [draftError, setDraftError] = useState<string | null>(null);
+  const [draftJobId, setDraftJobId] = useState<string | null>(null);
+  const { job: draftJob, isComplete: draftJobComplete, isFailed: draftJobFailed } =
+    useJobPolling(draftJobId);
 
   const params = new URLSearchParams({ limit: '100' });
   if (category) params.set('category', category);
@@ -305,18 +309,13 @@ export function NewsFeedPage() {
     setDraftStep(0);
     setDraftError(null);
     try {
-      const res = await apiClient.post<ApiEnvelope<Draft>>(
+      const res = await apiClient.post<ApiEnvelope<{ job_id: string; status: string }>>(
         `/articles/${row.id}/generate-draft`,
         { content_type: 'educational', force: lowFit }
       );
-      setDraftStep(2);
-      setDraftPhase('opening');
-      queryClient.invalidateQueries({ queryKey: ['drafts'] });
-      const draft = res.data.data;
-      toast.success('Draft ready — opening editor');
-      await new Promise((r) => setTimeout(r, 450));
-      if (draft?.id) navigate(routes.draft(draft.id));
-      else navigate(routes.drafts);
+      const jobId = res.data?.data?.job_id;
+      if (!jobId) throw new Error('No job id returned');
+      setDraftJobId(jobId);
     } catch (err: unknown) {
       const ax = err as { response?: { data?: { error?: string; detail?: string } }; message?: string };
       const apiMsg =
@@ -327,10 +326,37 @@ export function NewsFeedPage() {
       setDraftPhase('error');
       setDraftError(apiMsg);
       toast.error('Draft failed');
-    } finally {
       setBusy(null);
     }
   };
+
+  // Draft generation now runs as a background Job — this reacts once
+  // useJobPolling sees it finish, replacing the old blocking await.
+  useEffect(() => {
+    if (!draftJobId) return;
+    if (draftJobFailed) {
+      setDraftPhase('error');
+      setDraftError(draftJob?.error_message || 'Couldn’t write this draft. Try again in a moment.');
+      toast.error('Draft failed');
+      setBusy(null);
+      setDraftJobId(null);
+      return;
+    }
+    if (draftJobComplete) {
+      const draft = draftJob?.result as Draft | undefined;
+      setDraftStep(2);
+      setDraftPhase('opening');
+      queryClient.invalidateQueries({ queryKey: ['drafts'] });
+      toast.success('Draft ready — opening editor');
+      setBusy(null);
+      setDraftJobId(null);
+      window.setTimeout(() => {
+        if (draft?.id) navigate(routes.draft(draft.id));
+        else navigate(routes.drafts);
+      }, 450);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftJobComplete, draftJobFailed, draftJobId]);
 
   const runEnrichment = async () => {
     setEnriching(true);

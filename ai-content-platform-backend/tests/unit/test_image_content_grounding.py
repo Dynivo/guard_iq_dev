@@ -172,6 +172,11 @@ def test_prompt_builder_injects_brand_kit_hexes() -> None:
             "must_depict": "stat callout",
             "short_labels": "34 threats; Detect; Resolve",
             "text_in_image": True,
+            "eyebrow": "COMPLIANCE ALERT",
+            "headline": "34 threats detected across UK practices this quarter",
+            "subtext": "Most were caught before causing a breach",
+            "callout_title": "ARE YOU COVERED?",
+            "callout_body": "Review your security posture today",
         },
     )
     scene = ScenePlan(
@@ -192,8 +197,14 @@ def test_prompt_builder_injects_brand_kit_hexes() -> None:
     req = builder.build(brief, scene, composition, brand=brand)
     assert "#0A1F2B" in req.positive_prompt
     assert "#1A5CB0" in req.positive_prompt
-    assert "INFOGRAPHIC" in req.positive_prompt.upper() or "infographic" in req.positive_prompt.lower()
-    assert "34 threats" in req.positive_prompt
+    # Real quoted post copy must reach the prompt verbatim — never abstracted into
+    # 2-4 word node labels (that was the bug: see docs/PROMPT_VALIDATION.md).
+    assert "34 threats detected across UK practices this quarter" in req.positive_prompt
+    assert "Guard IQ" in req.positive_prompt
+    # No CTA/callout box on-image — client asked for it to never render.
+    assert "ARE YOU COVERED?" not in req.positive_prompt
+    assert "callout box" not in req.positive_prompt.lower()
+    assert "callout_title" not in req.parameters["card_copy"]
     assert req.parameters["palette"][0] == "#0A1F2B"
     assert req.metadata["text_in_image"] is True
 

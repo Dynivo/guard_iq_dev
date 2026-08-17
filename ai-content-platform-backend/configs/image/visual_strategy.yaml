@@ -1,0 +1,98 @@
+# Visual strategy — content-type → archetype weights + density thresholds.
+# Used by VisualStrategyEngine (no magic numbers in Python).
+
+defaults:
+  format: linkedin_portrait
+  quality_tier: premium
+  density: medium
+  complexity: moderate
+  coverage_hint: filled_infographic
+  max_hero_stats: 1
+  max_supporting_stats: 2
+  max_context_stats: 2
+  max_relationships: 5
+  max_factual_constraints: 12
+
+formats:
+  linkedin_portrait:
+    width: 1080
+    height: 1350
+    aspect_ratio: "4:5"
+  linkedin_square:
+    width: 1080
+    height: 1080
+    aspect_ratio: "1:1"
+
+quality_tiers:
+  standard:
+    label: Standard
+  premium:
+    label: Premium
+
+density_thresholds:
+  low:
+    max_content_blocks: 1
+    max_supporting_stats: 1
+    coverage_hint: sparse
+  medium:
+    max_content_blocks: 3
+    max_supporting_stats: 2
+    coverage_hint: filled_infographic
+  high:
+    max_content_blocks: 5
+    max_supporting_stats: 3
+    coverage_hint: filled_infographic
+
+# Soft weights: higher = preferred when signals match
+content_type_weights:
+  educational:
+    explainer_infographic: 3
+    process_flow: 2
+    data_infographic: 2
+    statistic_infographic: 1
+  news:
+    news_alert: 3
+    threat_alert: 2
+    statistic_threat_alert: 2
+    timeline: 1
+  thought_leadership:
+    quote_insight: 3
+    minimal_editorial: 2
+    central_hub: 1
+  promotional:
+    comparison: 2
+    minimal_editorial: 2
+    data_infographic: 1
+  alert:
+    threat_alert: 4
+    statistic_threat_alert: 3
+    risk_map: 2
+    threat_risk_map: 2
+
+signal_boosts:
+  has_primary_stat:
+    statistic_infographic: 4
+    statistic_threat_alert: 3
+    data_infographic: 3
+  has_steps:
+    process_flow: 4
+    explainer_infographic: 3
+    timeline: 2
+  has_comparison_language:
+    comparison: 4
+  has_risk_language:
+    risk_map: 3
+    threat_risk_map: 3
+    threat_alert: 2
+  has_hub_language:
+    central_hub: 4
+
+creative_mode_overrides:
+  gemini_infographic:
+    density: medium
+    complexity: moderate
+    coverage_hint: filled_infographic
+  gemini_creative:
+    density: low
+    complexity: rich
+    coverage_hint: balanced

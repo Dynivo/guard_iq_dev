@@ -1,0 +1,224 @@
+# LinkedIn creative design archetypes (hybrid + Gemini infographic pipelines).
+
+default: statistic_threat_alert
+canvas:
+  width: 1080
+  height: 1080
+
+# Map UI visual_style → archetype id
+style_aliases:
+  auto: null
+  editorial: minimal_editorial
+  infographic: statistic_infographic
+  light: data_infographic
+  light_infographic: data_infographic
+  threat_alert: statistic_threat_alert
+  dark_threat: threat_alert
+  alert: threat_alert
+  minimal: minimal_editorial
+  explainer: explainer_infographic
+  dark: statistic_threat_alert
+  process: process_flow
+  timeline: timeline
+  hub: central_hub
+  risk: risk_map
+
+# Ranked alternate archetypes for multi-variant generation
+variant_rotation:
+  - statistic_threat_alert
+  - statistic_infographic
+  - data_infographic
+  - threat_alert
+  - news_alert
+  - explainer_infographic
+  - process_flow
+  - central_hub
+  - timeline
+  - risk_map
+  - threat_risk_map
+  - minimal_editorial
+  - quote_insight
+  - comparison
+
+archetypes:
+  statistic_threat_alert:
+    label: Statistic / Threat Alert
+    typography_template: statistics
+    brand_variant: dark
+    density: medium
+    complexity: moderate
+    coverage: filled_infographic
+    layout_type: threat_alert
+    visual_focus: central_security_illustration
+    logo_placement: bottom_right
+    requires_primary_stat: true
+    description: Large headline, key fact once, CTA, real logo
+
+  statistic_infographic:
+    label: Statistic Infographic
+    typography_template: statistics
+    brand_variant: light
+    density: high
+    complexity: rich
+    coverage: filled_infographic
+    layout_type: kpi_grid
+    visual_focus: hero_metric_with_supporting_cards
+    logo_placement: bottom_right
+    requires_primary_stat: true
+    description: Hero KPI, supporting metrics, icons, filled consulting layout
+
+  data_infographic:
+    label: Data / Statistics Infographic
+    typography_template: statistics
+    brand_variant: light
+    density: medium
+    complexity: moderate
+    coverage: filled_infographic
+    layout_type: data_cards
+    visual_focus: chart_or_kpi_backdrop
+    logo_placement: bottom_right
+    requires_primary_stat: true
+    description: Light consulting infographic with KPIs and icon pods
+
+  threat_alert:
+    label: Threat Alert
+    typography_template: hero
+    brand_variant: dark
+    density: medium
+    complexity: moderate
+    coverage: filled_infographic
+    layout_type: alert_banner
+    visual_focus: urgent_threat_visual
+    logo_placement: bottom_right
+    requires_primary_stat: false
+    description: Urgent dark alert with clear hierarchy and CTA
+
+  threat_risk_map:
+    label: Threat / Risk Map
+    typography_template: problem_solution
+    brand_variant: light
+    density: medium
+    complexity: rich
+    coverage: filled_infographic
+    layout_type: risk_nodes
+    visual_focus: central_threat_with_nodes
+    logo_placement: bottom_right
+    requires_primary_stat: false
+    description: Central concept with 3–5 related risk concepts
+
+  risk_map:
+    label: Risk Map
+    typography_template: problem_solution
+    brand_variant: light
+    density: high
+    complexity: rich
+    coverage: filled_infographic
+    layout_type: risk_matrix
+    visual_focus: interconnected_risk_nodes
+    logo_placement: bottom_right
+    requires_primary_stat: false
+    description: Mapped risks with relationships and mitigation hint
+
+  central_hub:
+    label: Central Hub
+    typography_template: checklist
+    brand_variant: light
+    density: high
+    complexity: rich
+    coverage: filled_infographic
+    layout_type: hub_spoke
+    visual_focus: center_concept_with_spokes
+    logo_placement: bottom_right
+    requires_primary_stat: false
+    description: One core idea with radiating related concepts
+
+  process_flow:
+    label: Process Flow
+    typography_template: checklist
+    brand_variant: light
+    density: medium
+    complexity: moderate
+    coverage: filled_infographic
+    layout_type: horizontal_steps
+    visual_focus: numbered_process_illustration
+    logo_placement: bottom_right
+    requires_primary_stat: false
+    description: Sequential steps with clear reading order
+
+  timeline:
+    label: Timeline
+    typography_template: checklist
+    brand_variant: light
+    density: medium
+    complexity: moderate
+    coverage: filled_infographic
+    layout_type: vertical_timeline
+    visual_focus: chronological_markers
+    logo_placement: bottom_right
+    requires_primary_stat: false
+    description: Chronological story with milestones
+
+  explainer_infographic:
+    label: Explainer Infographic
+    typography_template: checklist
+    brand_variant: light
+    density: medium
+    complexity: moderate
+    coverage: filled_infographic
+    layout_type: steps
+    visual_focus: process_illustration
+    logo_placement: bottom_right
+    requires_primary_stat: false
+    description: Numbered steps on a light consulting surface
+
+  comparison:
+    label: Comparison
+    typography_template: comparison
+    brand_variant: light
+    density: medium
+    complexity: moderate
+    coverage: filled_infographic
+    layout_type: two_column
+    visual_focus: dual_panel_metaphor
+    logo_placement: bottom_right
+    requires_primary_stat: false
+    description: Before/after or risk vs protection
+
+  quote_insight:
+    label: Quote / Insight
+    typography_template: quote
+    brand_variant: dark
+    density: low
+    complexity: simple
+    coverage: balanced
+    layout_type: quote
+    visual_focus: subtle_abstract_backdrop
+    logo_placement: bottom_right
+    requires_primary_stat: false
+    description: Large statement with subtle visual treatment
+
+  news_alert:
+    label: News Alert
+    typography_template: hero
+    brand_variant: dark
+    density: medium
+    complexity: moderate
+    coverage: filled_infographic
+    layout_type: news_stack
+    visual_focus: alert_illustration
+    logo_placement: bottom_right
+    requires_primary_stat: false
+    description: Category, headline, key fact, why it matters, CTA
+
+  minimal_editorial:
+    label: Minimal Editorial
+    typography_template: hero
+    brand_variant: dark
+    density: low
+    complexity: simple
+    coverage: balanced
+    layout_type: editorial
+    visual_focus: single_strong_visual
+    logo_placement: bottom_right
+    requires_primary_stat: false
+    description: Large typography + one strong visual
