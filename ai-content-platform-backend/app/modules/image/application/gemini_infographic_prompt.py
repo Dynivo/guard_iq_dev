@@ -86,12 +86,11 @@ def build_gemini_infographic_prompt(
         f"beside it beyond what's already in the reference image itself."
         if logo_as_reference and spec.logo.enabled
         else (
-            f"The {position_label} (roughly 8% of image height) must be left "
-            "completely untouched — pure background, same as any other empty area "
-            "of the canvas. Do not draw a logo, wordmark, icon, badge, card, box, "
-            "or any shape or text there. A real logo image will be composited "
-            "into that exact spot in a separate step after generation — anything "
-            "you draw there will conflict with it."
+            "Do not draw any logo, wordmark, icon, badge, card, or box anywhere — "
+            "use the full canvas freely, edge to edge, with no reserved blank area. "
+            "A real brand mark with its own backing is composited on top after "
+            "generation, in whichever corner suits the finished image best, so it "
+            "does not need — and must not have — any space set aside for it."
             if spec.logo.enabled
             else "Do not render any logo mark."
         )

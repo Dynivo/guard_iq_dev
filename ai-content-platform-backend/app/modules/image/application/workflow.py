@@ -530,6 +530,7 @@ class VisualWorkflow:
         )
         from app.modules.image.application.logo_stamp import (
             default_brand_logo_bytes,
+            pick_best_corner,
             stamp_brand_logo,
         )
         from app.modules.image.application.reference_policy import ReferenceImagePolicy
@@ -777,19 +778,31 @@ class VisualWorkflow:
         if design_spec.logo.enabled and mark:
             # Always composite the real logo file — never rely on the critic to
             # catch a missing/wrong AI-drawn one, since the prompt never asks
-            # Gemini to draw a logo at all (see ref_policy.resolve above).
+            # Gemini to draw a logo at all (see ref_policy.resolve above). Position
+            # is picked from the actual generated image (whichever corner is
+            # visually flattest) rather than a fixed config value, and a backing
+            # plate carries legibility instead of relying on the prompt having
+            # left that exact spot blank.
+            scale = float(refs.stamp_policy.get("default_stamp_scale") or 0.11)
+            try:
+                position = pick_best_corner(final_bytes, scale=scale)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("logo_position_pick_failed job=%s: %s", job.id, exc)
+                position = str(
+                    refs.stamp_policy.get("default_stamp_position")
+                    or design_spec.logo.position
+                    or "bottom_right"
+                )
             try:
                 final_bytes = stamp_brand_logo(
                     final_bytes,
                     mark,
-                    position=str(
-                        refs.stamp_policy.get("default_stamp_position")
-                        or design_spec.logo.position
-                        or "bottom_right"
-                    ),
-                    scale=float(refs.stamp_policy.get("default_stamp_scale") or 0.11),
+                    position=position,
+                    scale=scale,
+                    backing=True,
                 )
                 best_critic["logo_stamped"] = True
+                best_critic["logo_position"] = position
             except Exception as exc:  # noqa: BLE001
                 logger.warning("logo_stamp_correction_failed job=%s: %s", job.id, exc)
 

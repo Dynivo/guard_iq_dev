@@ -65,7 +65,7 @@ text_rules_block: |
   TEXT RULES:
   - Spell every word correctly. Prefer short labels.
   - Keep hero statistic large and singular (do not repeat the same number).
-  - Leave a clean region for brand logo if logo is required.
+  - Do not reserve blank space for a logo — it is added after generation.
   - Do not invent footer sparkles or decorative fake URLs.
 
 negative: |
