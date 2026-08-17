@@ -320,10 +320,20 @@ class PublishingPlanService:
         draft_by_id: dict[str, Draft] = {}
         review_drafts: list[Draft] = []
 
-        # Only AI Content Intelligence plan posts count — not manual News drafts.
+        # Mirrors calendar_view.month_view: an approved/published draft counts
+        # toward the mix whatever its origin (it is a post that is ready), while
+        # an undecided manual News draft stays in the Drafts queue and does not.
+        # These two must agree — when only the calendar was relaxed, an approved
+        # manual draft appeared on the calendar but left the counter on 0/10.
         for d in drafts:
             meta = d.metadata_json if isinstance(d.metadata_json, dict) else {}
-            if not is_plan_origin(meta):
+            decided = d.status in (
+                DraftStatus.APPROVED,
+                DraftStatus.PUBLISHED,
+                "approved",
+                "published",
+            )
+            if not is_plan_origin(meta) and not decided:
                 continue
             draft_by_id[str(d.id)] = d
             bucket = normalize_mix_type(d.content_type)
@@ -682,19 +692,14 @@ class PublishingPlanService:
         cleared_manual = 0
         placed_by_mix = empty_counts()
 
+        # Every row here is already approved/published (see placeable_statuses),
+        # and an approved post belongs on the calendar whatever its origin — so
+        # no origin filter. This previously stripped scheduled_for from
+        # manual-origin drafts, which silently unscheduled an approved post the
+        # operator had placed by hand.
         for d in rows:
             meta = dict(d.metadata_json or {}) if isinstance(d.metadata_json, dict) else {}
             scheduled = meta.get("scheduled_for")
-            if not is_plan_origin(meta):
-                # Remove calendar placement from manual News drafts
-                if isinstance(scheduled, str) or meta.get("calendar_seeded"):
-                    meta.pop("scheduled_for", None)
-                    meta.pop("calendar_label", None)
-                    meta.pop("calendar_seeded", None)
-                    d.metadata_json = meta
-                    flag_modified(d, "metadata_json")
-                    cleared_manual += 1
-                continue
 
             if isinstance(scheduled, str) and len(scheduled) >= 10:
                 day = scheduled[:10]
@@ -779,7 +784,12 @@ class PublishingPlanService:
         }
 
     async def clear_calendar(self, org_id: uuid.UUID) -> dict[str, Any]:
-        """Unschedule every plan-origin draft — full reset, drafts themselves are untouched."""
+        """Unschedule every scheduled draft — full reset, drafts themselves are untouched.
+
+        No origin filter: anything showing on the calendar must be clearable
+        from it. Filtering on plan-origin here meant an approved manual draft
+        stayed pinned to its date and "Clear calendar" appeared to do nothing.
+        """
         rows = (
             await self._session.execute(
                 select(Draft).where(Draft.organization_id == org_id)
@@ -789,8 +799,6 @@ class PublishingPlanService:
         cleared = 0
         for d in rows:
             meta = d.metadata_json if isinstance(d.metadata_json, dict) else {}
-            if not is_plan_origin(meta):
-                continue
             if not (meta.get("scheduled_for") or meta.get("calendar_seeded")):
                 continue
             meta = dict(meta)
@@ -994,19 +1002,30 @@ class PublishingPlanService:
         *,
         limit: int = 20,
     ) -> list[tuple[Article, int | None]]:
-        # Only treat articles as used if they already have a *plan* draft
-        # (manual News drafts must not block AI plan fill).
+        # An article is "used" if it already has a plan draft, or an
+        # approved/published draft of any origin — the latter now counts toward
+        # the mix, so re-using its article would put two posts about the same
+        # story in one window. An undecided manual draft still must not block
+        # AI plan fill.
         used_rows = (
             await self._session.execute(
-                select(Draft.article_id, Draft.metadata_json).where(
+                select(Draft.article_id, Draft.metadata_json, Draft.status).where(
                     Draft.organization_id == org_id,
                     Draft.article_id.is_not(None),
                 )
             )
         ).all()
         used: set[uuid.UUID] = set()
-        for aid, meta in used_rows:
-            if aid is not None and is_plan_origin(meta if isinstance(meta, dict) else {}):
+        for aid, meta, status in used_rows:
+            if aid is None:
+                continue
+            decided = status in (
+                DraftStatus.APPROVED,
+                DraftStatus.PUBLISHED,
+                "approved",
+                "published",
+            )
+            if decided or is_plan_origin(meta if isinstance(meta, dict) else {}):
                 used.add(aid)
 
         score_sub = (

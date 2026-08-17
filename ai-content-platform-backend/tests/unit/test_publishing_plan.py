@@ -264,11 +264,15 @@ async def test_regenerate_fills_capture_and_queues_image() -> None:
 
 @pytest.mark.asyncio
 async def test_candidate_articles_skip_already_drafted() -> None:
-    """Articles with a plan-origin draft are excluded; manual drafts do not block."""
+    """Excluded when an article already has a plan-origin draft, or an approved
+    draft of any origin (that one now counts toward the mix, so re-using it
+    would double-post the same story). An undecided manual draft still must not
+    block AI plan fill."""
     org_id = uuid4()
     used_article = uuid4()
     free_article = uuid4()
     manual_only = uuid4()
+    approved_manual = uuid4()
 
     article = MagicMock()
     article.id = free_article
@@ -279,10 +283,14 @@ async def test_candidate_articles_skip_already_drafted() -> None:
     manual_article = MagicMock()
     manual_article.id = manual_only
 
+    approved_manual_article = MagicMock()
+    approved_manual_article.id = approved_manual
+
     used_result = MagicMock()
     used_result.all.return_value = [
-        (used_article, {"plan_origin": True}),
-        (manual_only, {"origin": "manual_news"}),
+        (used_article, {"plan_origin": True}, "pending_review"),
+        (manual_only, {"origin": "manual_news"}, "pending_review"),
+        (approved_manual, {"origin": "manual_news"}, "approved"),
     ]
 
     candidates_result = MagicMock()
@@ -291,6 +299,7 @@ async def test_candidate_articles_skip_already_drafted() -> None:
     candidates_result.all.return_value = [
         (used_article_obj, 90),
         (manual_article, 85),
+        (approved_manual_article, 83),
         (article, 80),
     ]
 
@@ -301,5 +310,6 @@ async def test_candidate_articles_skip_already_drafted() -> None:
     out = await svc._candidate_educational_articles(org_id, limit=10)  # noqa: SLF001
     ids = {row[0].id for row in out}
     assert used_article not in ids
+    assert approved_manual not in ids
     assert manual_only in ids
     assert free_article in ids
