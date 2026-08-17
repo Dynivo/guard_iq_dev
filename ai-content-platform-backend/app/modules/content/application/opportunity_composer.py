@@ -362,6 +362,7 @@ class OpportunityComposerService:
                 "target": plan.get("target"),
                 "counts": plan.get("counts"),
                 "gaps": plan.get("gaps"),
+                "in_review_count": plan.get("in_review_count"),
                 "window": plan.get("window"),
                 "days_left": plan.get("days_left"),
                 "slots": plan.get("slots") or [],

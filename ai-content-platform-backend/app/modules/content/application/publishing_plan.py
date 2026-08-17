@@ -315,7 +315,14 @@ class PublishingPlanService:
         targets = resolved.targets.as_dict()
         drafts = await self._fetch_window_drafts(org_id, start, end)
 
+        # counts   = what is actually planned: approved AND given a date.
+        # pipeline = everything in flight for this window (incl. drafts still
+        #            awaiting review). Generation gates on pipeline so Auto
+        #            Generate doesn't keep producing drafts while earlier ones
+        #            sit unreviewed or unscheduled; the mix shown to the user
+        #            gates on counts so "ready" means ready.
         counts = empty_counts()
+        pipeline_counts = empty_counts()
         by_date: dict[str, list[str]] = {d.isoformat(): [] for d in workdays}
         draft_by_id: dict[str, Draft] = {}
         review_drafts: list[Draft] = []
@@ -338,15 +345,16 @@ class PublishingPlanService:
             draft_by_id[str(d.id)] = d
             bucket = normalize_mix_type(d.content_type)
             if bucket:
-                counts[bucket] = counts.get(bucket, 0) + 1
+                pipeline_counts[bucket] = pipeline_counts.get(bucket, 0) + 1
             scheduled = meta.get("scheduled_for")
-            is_placeable = d.status in (
-                DraftStatus.APPROVED,
-                DraftStatus.PUBLISHED,
-                "approved",
-                "published",
+            scheduled_in_window = (
+                isinstance(scheduled, str) and scheduled[:10] in by_date
             )
-            if is_placeable and isinstance(scheduled, str) and scheduled[:10] in by_date:
+            # A post is "planned" only once it is approved AND has a date —
+            # which is exactly when it appears on the calendar grid.
+            if decided and scheduled_in_window:
+                if bucket:
+                    counts[bucket] = counts.get(bucket, 0) + 1
                 by_date[scheduled[:10]].append(str(d.id))
             if d.status in (
                 DraftStatus.PENDING_REVIEW,
@@ -367,8 +375,13 @@ class PublishingPlanService:
 
         review_items = await self._serialize_review_queue(org_id, review_drafts[:12])
         gaps = compute_gaps(targets, counts)
+        # What still needs *creating* — unlike `gaps`, this already accounts for
+        # drafts awaiting review or scheduling, so Auto Generate does not
+        # re-generate work that is already sitting in the queue.
+        generation_gaps = compute_gaps(targets, pipeline_counts)
         slots = self._build_slots(workdays, by_date, draft_by_id, gaps)
         total_count = sum(counts.values())
+        in_review_count = max(0, sum(pipeline_counts.values()) - total_count)
         return {
             "window": {
                 "mode": resolved.mode,
@@ -378,7 +391,10 @@ class PublishingPlanService:
             "target": targets,
             "counts": counts,
             "gaps": gaps,
+            "pipeline_counts": pipeline_counts,
+            "generation_gaps": generation_gaps,
             "total_count": total_count,
+            "in_review_count": in_review_count,
             "days_left": days_left_in_window(today, end=end),
             "workdays": [
                 {
@@ -391,9 +407,9 @@ class PublishingPlanService:
             "slots": slots,
             "review_queue": review_items,
             "needs_capture": {
-                k: gaps[k]
+                k: generation_gaps[k]
                 for k in ("success_story", "personal_achievement")
-                if gaps.get(k, 0) > 0
+                if generation_gaps.get(k, 0) > 0
             },
         }
 
@@ -474,7 +490,9 @@ class PublishingPlanService:
     ) -> dict[str, Any]:
         """Generate educational drafts until the educational gap is filled."""
         plan = await self.get_plan(org_id, today=today)
-        gap = int(plan["gaps"].get("educational", 0))
+        # Gate on what still needs creating, not on what is scheduled —
+        # otherwise unreviewed drafts would be regenerated every click.
+        gap = int(plan["generation_gaps"].get("educational", 0))
         mode = (plan.get("window") or {}).get("mode") or "fortnight"
         if gap <= 0:
             return {
@@ -556,7 +574,7 @@ class PublishingPlanService:
             capture_budget = max(0, capture_budget - len(generated))
 
         for content_type in ("success_story", "personal_achievement"):
-            gap = int(plan_mid["gaps"].get(content_type, 0))
+            gap = int(plan_mid["generation_gaps"].get(content_type, 0))
             if gap <= 0:
                 continue
             n = gap if capture_budget is None else min(gap, capture_budget)
@@ -615,7 +633,7 @@ class PublishingPlanService:
 
         seeded = await self.seed_calendar(org_id, today=today)
         plan = await self.get_plan(org_id, today=today)
-        gaps = plan.get("gaps") or {}
+        gaps = plan.get("generation_gaps") or {}
         needs_capture = {
             k: int(gaps.get(k, 0))
             for k in ("success_story", "personal_achievement")

@@ -99,6 +99,8 @@ export interface StrategistBriefing {
     target?: Record<string, number>;
     counts?: Record<string, number>;
     gaps?: Record<string, number>;
+    /** Approved-but-undated + still-in-review drafts: in flight, not yet planned. */
+    in_review_count?: number;
     window?: { mode?: 'weekly' | 'fortnight' | string; start?: string; end?: string };
     days_left?: number;
     slots?: PlanSlot[];

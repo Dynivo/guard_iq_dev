@@ -155,6 +155,7 @@ async def test_fill_educational_skips_when_gap_zero() -> None:
     svc.get_plan = AsyncMock(
         return_value={
             "gaps": {"educational": 0, "success_story": 0, "personal_achievement": 0},
+            "generation_gaps": {"educational": 0, "success_story": 0, "personal_achievement": 0},
             "counts": {"educational": 6, "success_story": 3, "personal_achievement": 1},
             "window": {"mode": "fortnight"},
         }
@@ -173,6 +174,7 @@ async def test_regenerate_skips_when_all_gaps_zero() -> None:
     svc = PublishingPlanService(session)
     filled = {
         "gaps": {"educational": 0, "success_story": 0, "personal_achievement": 0},
+        "generation_gaps": {"educational": 0, "success_story": 0, "personal_achievement": 0},
         "counts": {"educational": 3, "success_story": 1, "personal_achievement": 1},
         "total_count": 5,
         "target": {"educational": 3, "success_story": 1, "personal_achievement": 1, "total": 5},
@@ -208,6 +210,7 @@ async def test_regenerate_fills_capture_and_queues_image() -> None:
 
     plan_open = {
         "gaps": {"educational": 0, "success_story": 1, "personal_achievement": 0},
+        "generation_gaps": {"educational": 0, "success_story": 1, "personal_achievement": 0},
         "counts": {"educational": 6, "success_story": 2, "personal_achievement": 1},
         "total_count": 9,
         "target": {"educational": 6, "success_story": 3, "personal_achievement": 1, "total": 10},
@@ -220,6 +223,7 @@ async def test_regenerate_fills_capture_and_queues_image() -> None:
     plan_closed = {
         **plan_open,
         "gaps": {"educational": 0, "success_story": 0, "personal_achievement": 0},
+        "generation_gaps": {"educational": 0, "success_story": 0, "personal_achievement": 0},
         "counts": {"educational": 6, "success_story": 3, "personal_achievement": 1},
         "total_count": 10,
         "needs_capture": {},

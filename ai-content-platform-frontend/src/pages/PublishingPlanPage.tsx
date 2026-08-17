@@ -184,6 +184,7 @@ export function PublishingPlanPage() {
           windowEnd={planWindow?.end}
           daysLeft={briefing.plan_health?.days_left}
           counts={briefing.plan_health?.counts}
+          inReviewCount={briefing.plan_health?.in_review_count}
           target={briefing.plan_health?.target}
           gaps={gaps}
           generating={generating}

@@ -10,6 +10,7 @@ export function PlanCommandBar({
   counts,
   target,
   gaps,
+  inReviewCount,
   generating,
   seedingCalendar,
   clearingCalendar,
@@ -25,6 +26,7 @@ export function PlanCommandBar({
   counts?: Record<string, number>;
   target?: Record<string, number>;
   gaps?: Record<string, number>;
+  inReviewCount?: number;
   generating?: boolean;
   seedingCalendar?: boolean;
   clearingCalendar?: boolean;
@@ -71,14 +73,20 @@ export function PlanCommandBar({
               {modeLabel} plan
             </p>
             <p className="truncate text-base font-semibold tracking-tight">
-              {totalC}/{totalT} posts ready
-              {openSlots > 0 ? (
+              {totalC}/{totalT} scheduled
+              {Number(inReviewCount ?? 0) > 0 && (
                 <span className="ml-2 font-normal text-muted-foreground">
-                  · {openSlots} open
+                  · {inReviewCount} awaiting review or date
                 </span>
-              ) : (
-                <span className="ml-2 font-normal text-muted-foreground">· mix filled</span>
               )}
+              {Number(inReviewCount ?? 0) === 0 &&
+                (openSlots > 0 ? (
+                  <span className="ml-2 font-normal text-muted-foreground">
+                    · {openSlots} open
+                  </span>
+                ) : (
+                  <span className="ml-2 font-normal text-muted-foreground">· mix filled</span>
+                ))}
             </p>
             <p className="truncate text-xs text-muted-foreground">
               {windowStart && windowEnd
