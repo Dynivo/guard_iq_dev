@@ -16,6 +16,7 @@ import dramatiq
 from sqlalchemy import update as sql_update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.workers.broker import ensure_broker
 
@@ -61,16 +62,30 @@ async def _score_saved_articles(
     """AI relevance must run inside the worker — FastAPI event handlers are not here.
 
     Await each score before the Dramatiq event loop exits (create_task would cancel).
+    Capped by RELEVANCE_AUTOSCORE_BATCH_CAP, same as the inline path in
+    post_ingest.notify_articles_imported — a large burst only scores the
+    first N; the rest stay at their post-ingest keyword-only status.
     """
     if not article_ids:
         return
+
+    cap = get_settings().RELEVANCE_AUTOSCORE_BATCH_CAP
+    to_score = article_ids[:cap] if cap > 0 else article_ids
+    deferred = len(article_ids) - len(to_score)
+    if deferred:
+        logger.info(
+            "worker.auto_relevance_batch_cap scoring=%d/%d deferred=%d",
+            len(to_score),
+            len(article_ids),
+            deferred,
+        )
 
     from app.modules.ai.application.factory import AIOrchestratorFactory
     from app.modules.intelligence.application.workflow import IntelligenceWorkflow
 
     scored = 0
     failed = 0
-    for aid in article_ids:
+    for aid in to_score:
         try:
             async with factory() as session:
                 workflow = IntelligenceWorkflow(session, AIOrchestratorFactory.create())

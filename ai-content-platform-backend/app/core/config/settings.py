@@ -116,6 +116,14 @@ class Settings(BaseSettings):
     # is a real LLM call. Enable once you're ready to pay for the backlog.
     RELEVANCE_RECOVERY_ENABLED: bool = False
 
+    # Per-ingest-run cap on how many freshly-saved articles get an immediate
+    # AI relevance LLM call. A burst larger than this (e.g. a big first-time
+    # source backfill) only auto-scores the first N; the rest stay at their
+    # post-ingest keyword-only status="scored" state and are picked up later
+    # only if RELEVANCE_RECOVERY_ENABLED is on — otherwise they're never
+    # auto-scored, which is the point: this bounds LLM spend per burst.
+    RELEVANCE_AUTOSCORE_BATCH_CAP: int = 100
+
     # Periodic background loop that evaluates each enabled source's
     # `schedule_cron` and dispatches an ingest run when it's due (same path
     # as clicking "Run" in Sources). Requires the API process to stay running
