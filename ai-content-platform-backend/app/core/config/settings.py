@@ -116,6 +116,12 @@ class Settings(BaseSettings):
     # is a real LLM call. Enable once you're ready to pay for the backlog.
     RELEVANCE_RECOVERY_ENABLED: bool = False
 
+    # Hard ceiling on new articles saved per single source ingest run,
+    # independent of each source's own connector max_items config. Counts
+    # only net-new saves — duplicates skipped along the way don't count
+    # against it, so this never cuts a run short due to dedup noise.
+    MAX_ARTICLES_PER_SOURCE_RUN: int = 100
+
     # Process-wide cap on how many freshly-saved articles get an immediate AI
     # relevance LLM call within a rolling window — global, not per ingest run.
     # A burst spread across many sources (e.g. many due at once) still shares

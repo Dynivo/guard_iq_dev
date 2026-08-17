@@ -96,7 +96,13 @@ class IngestWorkflow:
         if writer is None and hasattr(self._article_repo, "_session"):
             writer = PgEnrichmentWriter(self._article_repo._session)
 
+        from app.core.config import get_settings
+
+        save_cap = get_settings().MAX_ARTICLES_PER_SOURCE_RUN
+
         for art in result.articles:
+            if save_cap > 0 and saved >= save_cap:
+                break
             canonical = art.canonical_url or normalize_url(art.url)
             if await self._article_repo.exists_by_url(org_id, canonical):
                 continue
