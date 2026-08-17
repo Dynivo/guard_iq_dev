@@ -101,6 +101,22 @@ async def _ensure_admin(session: AsyncSession, org_id: uuid.UUID) -> uuid.UUID:
     return user_id
 
 
+# Brand-kit settings that only ever lived in the DB, so a reset silently
+# reverted them and made working features look broken. Most important is
+# default_image_count=2: at 1 the second ("white card") infographic variant
+# is never generated at all.
+DEFAULT_BRAND_EXTRA_SETTINGS: dict = {
+    "default_image_count": 2,
+    "auto_generate_image_with_draft": False,
+    "publishing_window": "fortnight",
+    "publishing_targets": {
+        "educational": 6,
+        "success_story": 3,
+        "personal_achievement": 1,
+    },
+}
+
+
 async def _ensure_brand_kit(session: AsyncSession, org_id: uuid.UUID) -> None:
     from pathlib import Path
 
@@ -112,16 +128,24 @@ async def _ensure_brand_kit(session: AsyncSession, org_id: uuid.UUID) -> None:
     )
     existing = result.scalar_one_or_none()
     if existing:
+        changed = []
         if profile_md and not (existing.client_profile_md or "").strip():
             existing.client_profile_md = profile_md
+            changed.append("client_profile_md")
+        merged = {**DEFAULT_BRAND_EXTRA_SETTINGS, **(existing.extra_settings or {})}
+        if merged != (existing.extra_settings or {}):
+            existing.extra_settings = merged
+            changed.append("extra_settings")
+        if changed:
             await session.flush()
-            print("  Backfilled brand kit client_profile_md")
+            print(f"  Backfilled brand kit: {', '.join(changed)}")
         else:
             print("  Brand kit already exists")
         return
 
     session.add(
         BrandKit(
+            extra_settings=dict(DEFAULT_BRAND_EXTRA_SETTINGS),
             organization_id=org_id,
             name="GuardIQ Consulting",
             primary_color="#003366",
