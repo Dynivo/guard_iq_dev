@@ -42,11 +42,19 @@ class ListArticlesUseCase:
         category: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        include_hidden: bool = False,
     ) -> dict[str, Any]:
         articles = await self._repo.list_by_org(
-            org_id, status=status, category=category, limit=limit, offset=offset
+            org_id,
+            status=status,
+            category=category,
+            limit=limit,
+            offset=offset,
+            include_hidden=include_hidden,
         )
-        total = await self._repo.count_by_org(org_id, status=status, category=category)
+        total = await self._repo.count_by_org(
+            org_id, status=status, category=category, include_hidden=include_hidden
+        )
         source_names = await self._repo.source_names_for(
             org_id, [a.source_id for a in articles]
         )
@@ -57,6 +65,23 @@ class ListArticlesUseCase:
             "offset": offset,
             "category": category,
         }
+
+
+class SetArticleHiddenUseCase:
+    """Soft-hide/unhide an article from the default feed. Never changes
+    `status` — a hidden article stays relevant/irrelevant and keeps
+    contributing to the brand-profile learning signal; it just stops
+    showing up by default."""
+
+    def __init__(self, article_repo: PgArticleRepository) -> None:
+        self._repo = article_repo
+
+    async def execute(self, org_id: uuid.UUID, article_id: uuid.UUID, hidden: bool) -> dict[str, Any]:
+        article = await self._repo.set_hidden(org_id, article_id, hidden)
+        if article is None:
+            raise NotFoundError("Article", str(article_id))
+        source_names = await self._repo.source_names_for(org_id, [article.source_id])
+        return _article_to_dict(article, source_names.get(article.source_id))
 
 
 class ListArticleCategoriesUseCase:
@@ -203,6 +228,7 @@ def _article_to_dict(a: Any, source_name: str | None = None) -> dict[str, Any]:
         "published_at": a.published_at.isoformat() if a.published_at else None,
         "author": a.author,
         "status": a.status,
+        "hidden": meta.get("hidden") is True,
         "category": normalize_category(getattr(a, "category", None)),
         "tags": getattr(a, "tags", None) or [],
         "language": getattr(a, "language", None),

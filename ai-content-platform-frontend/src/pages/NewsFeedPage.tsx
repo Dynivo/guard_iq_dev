@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Check,
-  ExternalLink,
+  EyeOff,
   FileText,
   ImageIcon,
   Loader2,
@@ -15,7 +15,7 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronRight,
-  TrendingUp,
+  Gauge,
 } from 'lucide-react';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { useJobPolling } from '@/hooks/useJobPolling';
@@ -58,6 +58,7 @@ interface ArticleRow {
   summary?: string | null;
   url?: string | null;
   status?: string;
+  hidden?: boolean;
   source_name?: string | null;
   category?: string | null;
   relevance_score?: number | null;
@@ -147,7 +148,7 @@ export function NewsFeedPage() {
   const [category, setCategory] = useState('');
   const [topicKey, setTopicKey] = useState('');
   const [relevanceFilter, setRelevanceFilter] = useState<RelevanceFilter>('relevant');
-  const [sortBy, setSortBy] = useState<SortKey>('newest');
+  const [sortBy, setSortBy] = useState<SortKey>('relevance');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
@@ -274,6 +275,19 @@ export function NewsFeedPage() {
       invalidateArticles();
     } catch {
       toast.error('Could not update relevance');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const hideArticle = async (id: string) => {
+    setBusy(`hide-${id}`);
+    try {
+      await apiClient.patch(`/articles/${id}/hide`, { hidden: true });
+      toast.success('Hidden — still counts toward learning, just off your feed');
+      invalidateArticles();
+    } catch {
+      toast.error('Could not hide story');
     } finally {
       setBusy(null);
     }
@@ -548,7 +562,8 @@ export function NewsFeedPage() {
             {pageItems.map((a) => {
               const chip = statusChip(a.status);
               const relBusy = busy === `rel-${a.id}`;
-              const trendHit = momentumByTopic.get((a.category || '').toLowerCase());
+              const hideBusy = busy === `hide-${a.id}`;
+              const score = typeof a.ai_relevance === 'number' ? a.ai_relevance : null;
               return (
                 <li
                   key={a.id}
@@ -560,17 +575,28 @@ export function NewsFeedPage() {
                       <span className="text-xs text-muted-foreground">
                         {fitLabel(a.relevance_score, a.ai_relevance)}
                       </span>
-                      {typeof trendHit === 'number' && trendHit > 0 && (
+                      {score != null && (
                         <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
-                          <TrendingUp className="h-3 w-3" />
-                          {Math.round(trendHit)}
+                          <Gauge className="h-3 w-3" />
+                          {score}/5
                         </span>
                       )}
                       {a.admin_override?.status && (
                         <span className="text-xs text-muted-foreground">· You decided</span>
                       )}
                     </div>
-                    <p className="mt-1.5 font-medium leading-snug text-foreground">{a.title}</p>
+                    {a.url ? (
+                      <a
+                        href={a.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1.5 block font-medium leading-snug text-foreground hover:underline"
+                      >
+                        {a.title}
+                      </a>
+                    ) : (
+                      <p className="mt-1.5 font-medium leading-snug text-foreground">{a.title}</p>
+                    )}
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       {[a.source_name, a.category, a.sentiment?.label].filter(Boolean).join(' · ') ||
                         '—'}
@@ -584,13 +610,20 @@ export function NewsFeedPage() {
                   </div>
 
                   <div className="flex shrink-0 flex-wrap items-center gap-1.5 sm:justify-end">
-                    {a.url && (
-                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                        <a href={a.url} target="_blank" rel="noreferrer" aria-label="Open article">
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      disabled={hideBusy}
+                      title="Hide from feed — still counts toward learning"
+                      onClick={() => hideArticle(a.id)}
+                    >
+                      {hideBusy ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <EyeOff className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
                     <Button
                       size="sm"
                       variant={a.status === 'relevant' ? 'default' : 'outline'}

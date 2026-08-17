@@ -106,6 +106,7 @@ class PgArticleRepository:
         category: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        include_hidden: bool = False,
     ) -> list[Article]:
         stmt = (
             select(Article)
@@ -118,6 +119,10 @@ class PgArticleRepository:
             stmt = stmt.where(Article.status == status)
         if category:
             stmt = stmt.where(Article.category == category)
+        if not include_hidden:
+            stmt = stmt.where(
+                func.coalesce(Article.metadata_json["hidden"].astext, "false") != "true"
+            )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
@@ -126,6 +131,7 @@ class PgArticleRepository:
         org_id: uuid.UUID,
         status: str | None = None,
         category: str | None = None,
+        include_hidden: bool = False,
     ) -> int:
         stmt = select(func.count()).select_from(Article).where(
             Article.organization_id == org_id
@@ -134,8 +140,31 @@ class PgArticleRepository:
             stmt = stmt.where(Article.status == status)
         if category:
             stmt = stmt.where(Article.category == category)
+        if not include_hidden:
+            stmt = stmt.where(
+                func.coalesce(Article.metadata_json["hidden"].astext, "false") != "true"
+            )
         result = await self._session.execute(stmt)
         return result.scalar() or 0
+
+    async def set_hidden(
+        self, org_id: uuid.UUID, article_id: uuid.UUID, hidden: bool
+    ) -> Article | None:
+        """Soft-hide/unhide — never touches `status`, so relevant/irrelevant
+        classification (and the learning signal it feeds) is unaffected."""
+        result = await self._session.execute(
+            select(Article).where(Article.id == article_id, Article.organization_id == org_id)
+        )
+        article = result.scalar_one_or_none()
+        if article is None:
+            return None
+        meta = dict(article.metadata_json or {})
+        meta["hidden"] = hidden
+        article.metadata_json = meta
+        from sqlalchemy.orm import attributes
+
+        attributes.flag_modified(article, "metadata_json")
+        return article
 
     async def list_categories(self, org_id: uuid.UUID) -> list[dict]:
         stmt = (

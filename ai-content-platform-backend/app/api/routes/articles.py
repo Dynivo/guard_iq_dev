@@ -5,16 +5,20 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, Query, Request
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.auth import get_current_user
 from app.api.schemas.envelope import success_response
+from app.core.constants import MembershipRole
+from app.core.security import require_role
 from app.infrastructure.postgres import get_async_session
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.news.application.use_cases import (
     GetArticleUseCase,
     ListArticleCategoriesUseCase,
     ListArticlesUseCase,
+    SetArticleHiddenUseCase,
 )
 from app.modules.news.infrastructure.enrichment_store import list_org_trends
 from app.modules.news.infrastructure.repositories import PgArticleRepository
@@ -29,6 +33,7 @@ async def list_articles(
     category: str | None = Query(None, description="Filter by category"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
+    include_hidden: bool = Query(False, description="Include hidden articles"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
 ) -> dict:
@@ -41,7 +46,34 @@ async def list_articles(
         category=category,
         limit=limit,
         offset=offset,
+        include_hidden=include_hidden,
     )
+    request_id = getattr(request.state, "request_id", "")
+    return success_response(result, request_id=request_id)
+
+
+class SetHiddenBody(BaseModel):
+    hidden: bool = True
+
+
+@router.patch("/{article_id}/hide")
+async def set_article_hidden(
+    article_id: uuid.UUID,
+    body: SetHiddenBody,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(require_role(MembershipRole.EDITOR)),
+    session: AsyncSession = Depends(get_async_session),
+) -> dict:
+    """Soft-hide (or unhide) an article from the default feed. Does not
+    change relevant/irrelevant status — the learning signal is unaffected."""
+    repo = PgArticleRepository(session)
+    use_case = SetArticleHiddenUseCase(repo)
+    result = await use_case.execute(
+        org_id=current_user.organization_id,
+        article_id=article_id,
+        hidden=body.hidden,
+    )
+    await session.commit()
     request_id = getattr(request.state, "request_id", "")
     return success_response(result, request_id=request_id)
 
