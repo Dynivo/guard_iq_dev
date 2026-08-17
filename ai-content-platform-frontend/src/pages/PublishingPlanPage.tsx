@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { useJobPolling } from '@/hooks/useJobPolling';
@@ -10,14 +11,18 @@ import { Skeleton } from '@/design-system/ui/skeleton';
 import { toast } from 'sonner';
 import { MonthlyCalendar } from '@/components/calendar/MonthlyCalendar';
 import { PlanCommandBar, type StrategistBriefing } from '@/components/plan';
+import { routes } from '@/lib/routes';
 
 interface FillEducationalResult {
   generated?: unknown[];
   message?: string;
+  /** Drafts already in flight but not yet approved+dated — why nothing was generated. */
+  waiting_for_review_or_date?: number;
   plan?: { needs_capture?: Record<string, number> };
 }
 
 export function PublishingPlanPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [generating, setGenerating] = useState(false);
   const [seedingCalendar, setSeedingCalendar] = useState(false);
@@ -73,11 +78,19 @@ export function PublishingPlanPage() {
     if (autoGenComplete) {
       const result = (autoGenJob?.result || {}) as FillEducationalResult;
       const n = result.generated?.length ?? 0;
-      toast.success(
-        n > 0
-          ? `${n} educational post(s) generated — approve them in Drafts to schedule.`
-          : result.message || 'Educational quota already filled for this window'
-      );
+      const waiting = Number(result.waiting_for_review_or_date ?? 0);
+      if (n > 0) {
+        toast.success(`${n} educational post(s) generated — approve them in Drafts to schedule.`);
+      } else if (waiting > 0) {
+        // Not an error, but not a success either — nothing was generated
+        // because drafts are already queued. Point at the real next action.
+        toast.message(
+          result.message || `${waiting} draft(s) already waiting — approve them in Drafts.`,
+          { action: { label: 'Open Drafts', onClick: () => navigate(routes.drafts) } }
+        );
+      } else {
+        toast.success(result.message || 'Educational quota already filled for this window');
+      }
       const needs = result.plan?.needs_capture || {};
       const needParts = Object.entries(needs)
         .filter(([, v]) => Number(v) > 0)

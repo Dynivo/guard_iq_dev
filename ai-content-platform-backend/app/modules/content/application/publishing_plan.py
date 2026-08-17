@@ -495,11 +495,29 @@ class PublishingPlanService:
         gap = int(plan["generation_gaps"].get("educational", 0))
         mode = (plan.get("window") or {}).get("mode") or "fortnight"
         if gap <= 0:
+            # Nothing to create, but the slot may still be unfilled because a
+            # draft is sitting unreviewed or undated. Say which, otherwise this
+            # reads as "quota filled" next to a mix chip saying "need 1".
+            waiting = max(
+                0,
+                int((plan.get("pipeline_counts") or {}).get("educational", 0))
+                - int((plan.get("counts") or {}).get("educational", 0)),
+            )
+            if waiting > 0:
+                noun = "draft" if waiting == 1 else "drafts"
+                message = (
+                    f"{waiting} educational {noun} already waiting in Drafts — "
+                    "approve and set a date to fill this slot. "
+                    "Nothing generated, to avoid duplicates."
+                )
+            else:
+                message = f"Educational quota already filled for this {mode}"
             return {
                 "generated": [],
                 "skipped_already_drafted": 0,
                 "gap_remaining": 0,
-                "message": f"Educational quota already filled for this {mode}",
+                "waiting_for_review_or_date": waiting,
+                "message": message,
             }
 
         n = gap if max_generate is None else min(gap, max_generate)
