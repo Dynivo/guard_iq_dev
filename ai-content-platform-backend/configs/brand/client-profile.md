@@ -128,11 +128,17 @@ accredited.
 
 ## 6. Relevance test
 
-Prefer **including** useful cyber / IT / compliance stories over rejecting them.
-Score generously when the topic is in scope — LinkedIn volume needs a steady
-pipeline. Admin thumbs will correct false positives.
+**Primary subject test, applied before scoring:** is the article's OWN subject
+matter substantively a security incident, vulnerability, compliance/regulatory
+development, or IT-operations practice — in any sector? A genuine cross-sector
+case study (a breach, fine, or control failure anywhere) passes fully if the
+lesson transfers to a regulated SME. It fails if the article is really about
+something else (product news, a company's own feature announcement, general
+AI/tech commentary) and a security angle would have to be invented to connect
+it — even if that invented angle sounds plausible. If it fails this test,
+score 1 regardless of any tangential angle that could be constructed.
 
-Use the four questions as guidance, not a hard veto for every item:
+Use the four questions below only after the primary subject test passes:
 
 **1. Does it affect a UK SME or regulated practice (roughly 5–150 people)?**
 Enterprise or US stories still count if there is a clear lesson a small UK
@@ -153,17 +159,19 @@ in if SMEs are affected.
 
 ### Scoring guide (important — use this scale)
 
+All tiers below require passing the primary subject test first.
+
 | Score | Meaning |
 |---|---|
 | **5** | Perfect: UK + target sector + actionable this week |
-| **4** | Strong: clear cyber/IT/compliance fit for this brand |
-| **3** | Good: in-scope topic (security, M365, phishing, ransomware, GDPR, Cyber Essentials, SME IT) even if not sector-specific |
-| **2** | Borderline but usable: related tech/security/ops news with a post angle |
-| **1** | Out of scope: sports, celebrity, pure politics, consumer gadgets, crypto hype, funding rounds with no security lesson |
+| **4** | Strong: clear cyber/IT/compliance incident/advisory fit for this brand |
+| **3** | Good: genuine cross-sector case study or in-scope advisory (security, M365, phishing, ransomware, GDPR, Cyber Essentials, SME IT) where the lesson clearly transfers |
+| **2** | Real security/IT-ops substance but a weaker or more generic hook (e.g. a widely-covered vendor advisory with limited SME actionability) |
+| **1** | Fails the primary subject test, or clearly out of scope: sports, celebrity, pure politics, consumer gadgets, crypto hype, funding rounds with no security lesson |
 
-**Mark relevant (score ≥ 2)** for anything that is primarily about cybersecurity,
-IT operations, compliance, Microsoft 365 security, or SME digital risk.
-Reserve score 1 for clearly unrelated topics.
+**Mark relevant (score ≥ 2)** only for articles that pass the primary subject
+test. Do not score based on what a post *could* say — score based on what the
+article *is* about.
 
 ### Weight up
 

@@ -2,7 +2,7 @@
 # Variables are injected at runtime; body is the prompt template.
 
 name: relevance_scoring
-version: "1.1"
+version: "2.0"
 owner: platform
 description: >
   Score an article's relevance to the client's business,
@@ -35,10 +35,42 @@ body: |
   Summary: {article_summary}
   Body: {article_body}
 
+  === PRIMARY SUBJECT TEST (apply before scoring) ===
+  Ask: is this article's OWN subject matter substantively a security
+  incident, vulnerability, compliance/regulatory development, or IT-
+  operations practice — in any sector? Cross-sector case studies count
+  fully here: a breach, fine, or control failure in ANY industry is
+  in scope if the lesson transfers to a regulated SME.
+
+  It fails this test if the article is primarily product news, a
+  company's own feature/marketing announcement, general AI/tech
+  industry commentary, or anything else where a security angle would
+  have to be invented rather than reported. Test it this way: could
+  you summarize the article's own point without mentioning "shadow
+  IT," "GDPR," "data protection," or "SMEs" at all? If yes, it fails
+  this test — that means the connection is being manufactured by the
+  screener, not reported by the article.
+
+  Examples that FAIL despite sounding security-adjacent:
+  - An AI company's blog post about their own product features
+    ("even if" it mentions security models or safety research)
+  - "How AI is changing X industry" trend pieces
+  - Consumer AI product launches or updates
+  - General tech-industry commentary that only becomes relevant
+    through a "staff might use this, which touches shadow IT" leap
+
+  Examples that PASS the test (any sector):
+  - A real breach, fine, or control failure — the lesson transfers
+  - A vulnerability or advisory affecting software SMEs actually run
+  - A regulatory/compliance change (any of the listed frameworks)
+  - Genuine phishing/ransomware/credential-theft reporting
+
+  If it fails the primary subject test, score 1 regardless of any
+  tangential angle you could construct. Do not score based on what a
+  post COULD say — score based on what the article IS about.
+
   === INSTRUCTIONS ===
-  Evaluate the article against the client profile. Prefer including
-  cyber / IT / compliance / Microsoft 365 / SME digital-risk stories.
-  Return JSON only:
+  Evaluate the article against the client profile. Return JSON only:
 
   {
     "relevant": true/false,
@@ -47,17 +79,29 @@ body: |
     "framework": "DSPT | CyberEssentials | GDPR | SRA | FRC | CQC | none",
     "audience": "reactive | managed | both",
     "angle": "one sentence on what the post would say",
-    "reason": "why it passed or failed"
+    "reason": "why it passed or failed the primary subject test"
   }
 
-  Scoring:
-  - 4–5: strong UK / sector / actionable fit
-  - 3: clear cyber, IT, compliance, M365, phishing, ransomware, or GDPR angle
-  - 2: borderline but usable tech/security/ops story with a post angle
-  - 1: clearly off-topic (sports, celebrity, pure politics, consumer gadgets)
+  Scoring (all tiers require passing the primary subject test above):
+  - 5: strong UK / target-sector / actionable this week
+  - 4: clear cyber, IT, compliance, M365, phishing, ransomware, or
+       GDPR incident/advisory — strong fit even if sector-generic
+  - 3: genuine cross-sector case study or in-scope advisory; the
+       lesson clearly transfers to a regulated SME
+  - 2: real security/IT-ops substance but a weaker or more generic
+       hook (e.g. widely-covered vendor advisory with limited SME
+       actionability)
+  - 1: fails the primary subject test, OR clearly off-topic entirely
 
-  Set relevant=true when score >= 2. Use score 1 only for clear misses.
+  Set relevant=true when score >= 2.
 
 eval_notes: >
-  Prefer recall for in-scope cyber/IT/compliance. Score >= 2 is relevant.
-  Score 1 only for obvious off-topic.
+  v2.0 — replaced "prefer recall / score generously / default
+  relevant: true" with a primary-subject test applied before scoring.
+  The old version scored AI-product-news and company blog posts as
+  relevant by inventing shadow-IT/GDPR angles that weren't in the
+  article's actual content — 96% of "relevant" scores were tagged
+  cross-sector and 92% scored only 2-3, indicating volume over
+  precision. This version keeps genuine cross-sector case studies
+  fully eligible but requires the article itself to be substantively
+  about security/compliance, not merely spinnable into it.
