@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 import sys
 from datetime import datetime, timezone
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from typing import Any
 
 import orjson
@@ -49,8 +51,13 @@ class StructuredFormatter(logging.Formatter):
         return orjson.dumps(log_entry).decode("utf-8")
 
 
-def setup_logging(level: str = "INFO") -> None:
-    """Configure the root logger with structured formatting."""
+def setup_logging(level: str = "INFO", log_dir: str = "logs") -> None:
+    """Configure the root logger with structured formatting.
+
+    Logs to stdout (as before) AND to a rotating file on disk, so there is
+    something recoverable if the process crashes or the terminal running it
+    is closed — stdout alone vanishes with the window.
+    """
     root = logging.getLogger()
     root.setLevel(getattr(logging, level.upper(), logging.INFO))
 
@@ -58,6 +65,23 @@ def setup_logging(level: str = "INFO") -> None:
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(StructuredFormatter())
         root.addHandler(handler)
+
+        try:
+            log_path = Path(log_dir)
+            log_path.mkdir(parents=True, exist_ok=True)
+            file_handler = RotatingFileHandler(
+                log_path / "app.log",
+                maxBytes=10 * 1024 * 1024,
+                backupCount=5,
+                encoding="utf-8",
+            )
+            file_handler.setFormatter(StructuredFormatter())
+            root.addHandler(file_handler)
+        except OSError:
+            # Read-only filesystem or permissions issue — stdout logging still works.
+            logging.getLogger(__name__).warning(
+                "Could not open log file in %s; file logging disabled", log_dir
+            )
 
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)

@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Building2,
   Cpu,
+  FileDown,
+  Loader2,
   Mic,
   Moon,
   Palette,
@@ -11,7 +14,9 @@ import {
   Monitor,
   Sparkles,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useApiQuery } from '@/hooks/useApiQuery';
+import { apiClient } from '@/api/client';
 import type { ApiEnvelope } from '@/api/types';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/design-system/ui/card';
@@ -66,6 +71,32 @@ export function SettingsPage() {
     '/organizations/current'
   );
   const org = data?.data;
+  const [exporting, setExporting] = useState(false);
+
+  const exportDiagnostics = async () => {
+    setExporting(true);
+    try {
+      const res = await apiClient.get('/diagnostics/export', {
+        responseType: 'blob',
+        timeout: 30_000,
+      });
+      const disposition = res.headers['content-disposition'] as string | undefined;
+      const filename = disposition?.match(/filename="?([^"]+)"?/)?.[1] || 'diagnostics.zip';
+      const url = URL.createObjectURL(res.data as Blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success('Diagnostics exported — send the file to your agency');
+    } catch {
+      toast.error('Could not export diagnostics');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -202,6 +233,36 @@ export function SettingsPage() {
             <Button asChild variant="outline" size="sm">
               <Link to={routes.capture}>Open Capture</Link>
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FileDown className="h-4 w-4 text-accent" />
+              Diagnostics
+            </CardTitle>
+            <CardDescription>
+              If something looks wrong, export a bundle to send to your agency.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              Includes recent job history and server logs — never passwords or API keys.
+            </p>
+            <Button variant="outline" size="sm" disabled={exporting} onClick={exportDiagnostics}>
+              {exporting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FileDown className="h-3.5 w-3.5" />
+              )}
+              Export diagnostics
+            </Button>
+            <p className="text-xs">
+              If the app won't even start, these logs are also saved on the server in the{' '}
+              <code className="rounded bg-muted px-1 py-0.5">logs/</code> folder — zip that
+              and send it instead.
+            </p>
           </CardContent>
         </Card>
       </div>
