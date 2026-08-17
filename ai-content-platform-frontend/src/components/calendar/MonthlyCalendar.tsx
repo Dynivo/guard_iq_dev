@@ -74,8 +74,9 @@ export function MonthlyCalendar({
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
-  const [assigning, setAssigning] = useState<string | null>(null);
-  const [scheduleDates, setScheduleDates] = useState<Record<string, string>>({});
+  const [assigning, setAssigning] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleDraftId, setScheduleDraftId] = useState('');
 
   const { data, isLoading, isError, refetch } = useApiQuery<ApiEnvelope<CalendarMonthView>>(
     ['publishing-calendar', String(year), String(month)],
@@ -105,16 +106,14 @@ export function MonthlyCalendar({
     setMonth(t.getMonth() + 1);
   };
 
-  const assign = async (draftId: string, date: string) => {
-    setAssigning(draftId);
+  const assign = async () => {
+    if (!scheduleDraftId || !scheduleDate) return;
+    setAssigning(true);
     try {
-      await apiClient.patch(`/drafts/${draftId}/schedule`, { scheduled_for: date });
-      toast.success(`Scheduled for ${date}`);
-      setScheduleDates((prev) => {
-        const next = { ...prev };
-        delete next[draftId];
-        return next;
-      });
+      await apiClient.patch(`/drafts/${scheduleDraftId}/schedule`, { scheduled_for: scheduleDate });
+      toast.success(`Scheduled for ${scheduleDate}`);
+      setScheduleDraftId('');
+      setScheduleDate('');
       queryClient.invalidateQueries({ queryKey: ['publishing-calendar'] });
       queryClient.invalidateQueries({ queryKey: ['to-post'] });
       queryClient.invalidateQueries({ queryKey: ['strategist-briefing'] });
@@ -122,7 +121,7 @@ export function MonthlyCalendar({
     } catch {
       toast.error('Could not schedule');
     } finally {
-      setAssigning(null);
+      setAssigning(false);
     }
   };
 
@@ -155,7 +154,7 @@ export function MonthlyCalendar({
         <div>
           <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
           <p className="text-xs text-muted-foreground">
-            {view.quota_hint || 'Brand publishing mix'} · AI plan posts only (manual News drafts excluded)
+            {view.quota_hint || 'Brand publishing mix'} · AI plan posts + any approved draft
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -261,7 +260,7 @@ export function MonthlyCalendar({
         </div>
       </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <div className="rounded-xl border border-border bg-card p-4">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Approved — ready to schedule
         </p>
@@ -274,51 +273,57 @@ export function MonthlyCalendar({
             onAction={() => navigate(routes.drafts)}
           />
         ) : (
-          <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {unscheduled.map((item) => (
-              <li
-                key={item.id}
-                className="rounded-lg border border-[var(--color-border)] bg-white px-3 py-2"
+          <>
+            <div className="mt-3 flex flex-wrap items-end gap-2">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Date</span>
+                <input
+                  type="date"
+                  className="h-9 rounded-md border border-input bg-background px-2.5 text-sm text-foreground"
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                />
+              </label>
+              <label className="flex min-w-[220px] flex-1 flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Draft</span>
+                <select
+                  className="h-9 rounded-md border border-input bg-background px-2.5 text-sm text-foreground"
+                  value={scheduleDraftId}
+                  onChange={(e) => setScheduleDraftId(e.target.value)}
+                >
+                  <option value="">Choose an approved draft…</option>
+                  {unscheduled
+                    .filter((item) => item.draft_id)
+                    .map((item) => (
+                      <option key={item.id} value={item.draft_id as string}>
+                        {item.title} · {(item.content_type || 'post').replace(/_/g, ' ')}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <Button
+                type="button"
+                size="sm"
+                disabled={!scheduleDate || !scheduleDraftId || assigning}
+                onClick={() => void assign()}
               >
-                <p className="line-clamp-2 text-sm font-medium">{item.title}</p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">
-                  {(item.content_type || 'post').replace(/_/g, ' ')}
-                </p>
-                <div className="mt-2 flex items-center gap-1.5">
-                  <input
-                    type="date"
-                    className="h-8 min-w-0 flex-1 rounded-md border border-[var(--color-border)] bg-white px-2 text-xs text-[#3c4043]"
-                    value={item.draft_id ? scheduleDates[item.draft_id] || '' : ''}
-                    onChange={(e) => {
-                      if (!item.draft_id) return;
-                      const value = e.target.value;
-                      setScheduleDates((prev) => ({ ...prev, [item.draft_id as string]: value }));
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-8 shrink-0"
-                    disabled={
-                      !item.draft_id || !scheduleDates[item.draft_id] || assigning === item.draft_id
-                    }
-                    onClick={() => {
-                      const date = item.draft_id ? scheduleDates[item.draft_id] : '';
-                      if (!item.draft_id || !date) return;
-                      void assign(item.draft_id, date);
-                    }}
-                  >
-                    {assigning === item.draft_id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      'Schedule'
-                    )}
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                {assigning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Schedule'}
+              </Button>
+            </div>
+            <ul className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {unscheduled.map((item) => (
+                <li
+                  key={item.id}
+                  className="rounded-lg border border-border bg-background px-3 py-2"
+                >
+                  <p className="line-clamp-2 text-sm font-medium text-foreground">{item.title}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {(item.content_type || 'post').replace(/_/g, ' ')}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
 

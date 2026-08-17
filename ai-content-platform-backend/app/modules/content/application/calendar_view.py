@@ -86,8 +86,15 @@ class CalendarViewService:
 
         for d in drafts:
             meta = d.metadata_json if isinstance(d.metadata_json, dict) else {}
-            # Manual News drafts never appear on the Content Intelligence calendar
-            if not is_plan_origin(meta):
+            # Manual News drafts only surface here once a decision has been made
+            # (approved/published) — undecided ones stay in the Drafts review queue.
+            decided = d.status in (
+                DraftStatus.APPROVED,
+                DraftStatus.PUBLISHED,
+                "approved",
+                "published",
+            )
+            if not is_plan_origin(meta) and not decided:
                 continue
             scheduled = meta.get("scheduled_for")
             mix = normalize_mix_type(d.content_type) or (

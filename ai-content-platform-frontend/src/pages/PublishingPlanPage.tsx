@@ -174,7 +174,7 @@ export function PublishingPlanPage() {
     <div className="pb-10">
       <PageHeader
         title="Plan"
-        description="AI selects news to match your brand mix, then generates LinkedIn posts + images. Manual News drafts stay in Drafts — not here."
+        description="AI selects news to match your brand mix, then generates LinkedIn posts + images. Approve a draft in Drafts and it's ready to schedule here."
       />
 
       <div className="space-y-8">
