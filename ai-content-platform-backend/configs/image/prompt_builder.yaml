@@ -16,9 +16,11 @@ templates:
     no clutter. Thin accent-colour ({accent_color}) diagonal line cutting off the top-right corner.
 
 
-    LOGO (top center, about 15% of image height): {logo_description_on_dark}. Below the
-    icon, bold white sans-serif wordmark text reading exactly "{brand_name_upper}". Below
-    that, a thin horizontal accent-colour divider line.
+    LOGO AREA (top center, about 15% of image height): leave this area completely
+    empty — pure background, no icon, no wordmark, no shape or text of any kind.
+    A real logo image will be composited into that exact spot in a separate step
+    after generation; anything you draw there will conflict with it. Below that
+    empty area, a thin horizontal accent-colour divider line.
 
 
     EYEBROW LABEL (small caps, accent colour, centered, below the divider): "{eyebrow}"

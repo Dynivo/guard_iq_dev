@@ -264,7 +264,10 @@ class VisualWorkflow:
                 seed_override=(abs(hash(f"{draft_id}:{variant_index}")) % (2**31))
                 if variant_index
                 else None,
-                logo_bytes=logo_bytes,
+                # No logo_bytes here on purpose — the prompt tells the model to
+                # leave that area empty (configs/image/prompt_builder.yaml), and
+                # the real logo file is composited on deterministically below
+                # instead of asking the model to reproduce it from a reference.
             )
         )
 
@@ -356,6 +359,16 @@ class VisualWorkflow:
         blobs = getattr(engine._assets, "blobs", {}) or {}
         gallery_size = 0
 
+        # Real logo file, composited on after generation — never asked of the
+        # model itself. Same approach as the second image variant; see
+        # logo_stamp.py.
+        from app.modules.image.application.logo_stamp import (
+            default_brand_logo_bytes,
+            stamp_brand_logo,
+        )
+
+        logo_mark = logo_bytes or default_brand_logo_bytes()
+
         try:
             for asset in result.assets:
                 role = asset.role
@@ -368,6 +381,11 @@ class VisualWorkflow:
                         f"Missing image bytes for role={role} job={job.id} — "
                         f"cannot persist to {backend}"
                     )
+                if logo_mark and gallery_asset is not None and asset.role == gallery_asset.role:
+                    try:
+                        blob = stamp_brand_logo(blob, logo_mark, position="top_center", scale=0.15)
+                    except Exception as exc:  # noqa: BLE001 — ship the unstamped image over failing the job
+                        logger.warning("logo_stamp_failed job=%s: %s", job.id, exc)
                 written = persist_png(self._storage, key, blob)
                 artifact = ImageJobArtifact(
                     job_id=job.id,
