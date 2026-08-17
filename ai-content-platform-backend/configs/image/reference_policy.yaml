@@ -24,7 +24,15 @@ roles:
     prompt_hint: "Use this exact brand logo mark for identity fidelity; place once only."
   brand_style:
     mime_type: image/png
-    prompt_hint: "Match the color mood and graphic language of this brand style reference."
+    prompt_hint: >-
+      STYLE REFERENCE — the next image is an approved house-style example.
+      Match its visual language: composition and whitespace, illustration
+      treatment, colour handling, type hierarchy and restraint, and overall
+      level of detail. Aim for this much visual calm — one clear focal
+      illustration, generous breathing room, no crowding. Do NOT copy any of
+      its text, headline, statistics, icons or subject matter; all wording and
+      content must come from the CONTENT section of the prompt. Reproduce the
+      style only, never the substance.
   previous_creative:
     mime_type: image/png
     prompt_hint: "Keep visual continuity with this previous creative without copying layout verbatim."

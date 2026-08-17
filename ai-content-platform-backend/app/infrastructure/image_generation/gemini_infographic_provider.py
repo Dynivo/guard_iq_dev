@@ -224,6 +224,12 @@ class GeminiInfographicProvider:
                     max_bytes,
                 )
                 continue
+            # Label each reference before its bytes — without this the model
+            # receives an unexplained image and has no way to tell a style
+            # exemplar from something it should reproduce literally.
+            hint = str(ref.get("prompt_hint") or "").strip()
+            if hint:
+                parts.append(types.Part.from_text(text=hint))
             parts.append(types.Part.from_bytes(data=bytes(raw), mime_type=mime))
 
         return parts

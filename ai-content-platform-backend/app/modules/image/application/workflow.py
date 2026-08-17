@@ -528,6 +528,7 @@ class VisualWorkflow:
         from app.modules.image.application.gemini_infographic_prompt import (
             build_gemini_infographic_prompt,
         )
+        from app.modules.image.application.brand_assets import default_style_reference
         from app.modules.image.application.logo_stamp import (
             default_brand_logo_bytes,
             pick_best_corner,
@@ -574,6 +575,11 @@ class VisualWorkflow:
         mark = logo_bytes or (
             default_brand_logo_bytes() if design_spec.logo.enabled else None
         )
+        # House-style exemplar (assets/brand/style_reference.*), sent to Gemini
+        # as a visual reference so output matches an approved look instead of
+        # drifting on prompt wording alone. None when no file is bundled, in
+        # which case generation falls back to the text prompt only.
+        style_ref = default_style_reference()
         # Never hand the logo to Gemini as a generation reference — an AI
         # reproduction can drift (placement, cropping, redrawing). Always leave
         # empty space in the prompt (include_logo=False below) and composite the
@@ -583,6 +589,8 @@ class VisualWorkflow:
             include_logo=False,
             logo_bytes=None,
             brand=brand,
+            brand_style_bytes=style_ref[0] if style_ref else None,
+            brand_style_mime=style_ref[1] if style_ref else None,
         )
 
         critic = VisualCreativeCritic()

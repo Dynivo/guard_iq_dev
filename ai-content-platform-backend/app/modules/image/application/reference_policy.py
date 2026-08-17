@@ -51,6 +51,7 @@ class ReferenceImagePolicy:
         logo_bytes: bytes | None = None,
         brand: dict[str, Any] | None = None,
         brand_style_bytes: bytes | None = None,
+        brand_style_mime: str | None = None,
         previous_creative_bytes: bytes | None = None,
     ) -> ReferenceBundle:
         cfg = _policy_cfg()
@@ -90,7 +91,9 @@ class ReferenceImagePolicy:
                 ReferenceImage(
                     role="brand_style",
                     data=brand_style_bytes,
-                    mime_type=str(role_cfg.get("mime_type") or "image/png"),
+                    mime_type=str(
+                        brand_style_mime or role_cfg.get("mime_type") or "image/png"
+                    ),
                     prompt_hint=str(role_cfg.get("prompt_hint") or ""),
                 )
             )
