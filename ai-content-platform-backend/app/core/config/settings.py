@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     APP_DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
+    # Directory for the rotating on-disk log file — survives a crash or a
+    # closed terminal, unlike the stdout-only stream. Relative to the process
+    # working directory (normally the backend repo root).
+    LOG_DIR: str = "logs"
 
     # ── Database ─────────────────────────────────────────────
     DATABASE_URL: str = (
@@ -111,6 +115,13 @@ class Settings(BaseSettings):
     # since flipping it on immediately re-scores every existing orphan — each
     # is a real LLM call. Enable once you're ready to pay for the backlog.
     RELEVANCE_RECOVERY_ENABLED: bool = False
+
+    # Periodic background loop that evaluates each enabled source's
+    # `schedule_cron` and dispatches an ingest run when it's due (same path
+    # as clicking "Run" in Sources). Requires the API process to stay running
+    # continuously — it does not persist a separate scheduler process.
+    SOURCE_CRON_ENABLED: bool = True
+    SOURCE_CRON_INTERVAL_SECONDS: int = 60
 
     # ── LLM Provider Keys ────────────────────────────────────
     OPENAI_API_KEY: str = ""

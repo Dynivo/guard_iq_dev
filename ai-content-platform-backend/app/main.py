@@ -24,6 +24,7 @@ from app.api.routes import (
     capture,
     carousels,
     consensus,
+    diagnostics,
     drafts,
     health,
     images,
@@ -55,7 +56,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application startup and shutdown lifecycle."""
     get_settings.cache_clear()
     settings = get_settings()
-    setup_logging(settings.LOG_LEVEL)
+    setup_logging(settings.LOG_LEVEL, log_dir=settings.LOG_DIR)
     try:
         from app.modules.consensus.application.config_loader import load_consensus_config
 
@@ -119,6 +120,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         asyncio.create_task(relevance_recovery_loop(async_session_factory))
     except Exception:  # noqa: BLE001
         logger.exception("Failed to schedule relevance orphan recovery")
+
+    try:
+        import asyncio
+
+        from app.modules.news.application.source_cron import source_cron_loop
+
+        asyncio.create_task(source_cron_loop(async_session_factory))
+    except Exception:  # noqa: BLE001
+        logger.exception("Failed to schedule source cron loop")
     yield
     logger.info(
         "Shutting down AI Content Platform Backend",
@@ -171,6 +181,7 @@ def create_app() -> FastAPI:
     app.include_router(analytics.router, prefix=api_prefix)
     app.include_router(consensus.router, prefix=api_prefix)
     app.include_router(jobs.router, prefix=api_prefix)
+    app.include_router(diagnostics.router, prefix=api_prefix)
     app.include_router(media.router, prefix=api_prefix)
 
     return app
