@@ -26,7 +26,7 @@ The application should not be exposed directly to the internet in its current fo
 
 1. Run the full backend test suite and frontend TypeScript production build on the final code.
 2. Run dependency vulnerability checks and review any reported production dependency issue.
-3. Run the manual **Mac installation smoke** GitHub Actions workflow, then rehearse `INSTALLATION_GUIDE.md` once on the client’s Mac or another clean Mac account.
+3. Rehearse `INSTALLATION_GUIDE.md` once on the client’s Mac or another clean Mac account.
 4. Confirm the client has their own OpenAI, Gemini, Azure Speech, and Azure Translator credentials and billing limits.
 5. Rotate any provider key or password previously shared in chat, source control, screenshots, or email.
 6. Give the client the project without `.env`, `.env.local`, database dumps, logs, generated media, virtual environments, `node_modules`, or developer-agent folders.

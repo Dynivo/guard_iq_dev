@@ -2,8 +2,6 @@
 
 This tool helps turn relevant technology, cybersecurity, compliance, and business news into client-ready social content.
 
-It was built for **Guard IQ**, the IT support company. Guard IQ is the client brand, not the name of the tool.
-
 Installation and deployment are documented separately in the [Mac installation guide](INSTALLATION_GUIDE.md).
 
 The client can create or manage the two AI provider accounts here:

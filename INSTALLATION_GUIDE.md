@@ -12,7 +12,7 @@ This guide is written so the project folder and this file can be given to Claude
 
 ## 1. Confirm the project and Mac
 
-Open Terminal in the project root—the folder containing this guide, `ai-content-platform-backend`, and `ai-content-platform-frontend`—then confirm:
+Open Terminal in the project root—the folder containing this guide, `ai-content-platform-backend`, and `ai-content-platform-frontend`. Confirm the working folder, supported macOS version, and Mac architecture:
 
 ```bash
 pwd
@@ -160,12 +160,6 @@ The installing agent should verify all of the following without making paid AI c
 6. The white image contains the exact supplied Guard IQ logo added by the app, not a redrawn approximation.
 7. Voice capture and translation work if Azure credentials were supplied.
 8. Stop the app with Control-C and start it again with `./start_mac.sh`; existing data remains present.
-
-## Quick installation test before handover
-
-The repository includes a manual GitHub Actions workflow named **Mac installation smoke**. Run it from **GitHub → Actions → Mac installation smoke → Run workflow**. It performs a clean dependency install, starts PostgreSQL, applies every migration, seeds the database, runs backend tests, builds the frontend, and checks both local services on a GitHub-hosted Mac without using paid AI APIs.
-
-Use `macos-15` first. Select `macos-15-intel` only if the client has an Intel Mac. This automated check catches setup and architecture problems, but it does not replace the short sign-in and browser acceptance check on the client’s actual Mac.
 
 ## Daily use
 
