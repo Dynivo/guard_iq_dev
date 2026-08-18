@@ -731,7 +731,6 @@ async def main() -> None:
         print(f"  News sources updated: {news_sync.get('sources_updated')}")
         print(f"  Brand → /app/brand")
         print(f"  Dashboard → /app/brand/intelligence?profileId={profile.id}")
-        print("  Next: .venv/bin/python scripts/sync_brand_news_and_rescore.py")
 
 
 if __name__ == "__main__":

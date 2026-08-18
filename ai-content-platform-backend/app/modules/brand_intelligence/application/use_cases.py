@@ -152,7 +152,7 @@ class BrandIntelligenceUseCases:
                 "linkedin_session_required",
                 "Connect LinkedIn once (Playwright session) so we can fetch profile, posts, "
                 "images, and engagement from the URL. Use POST /brand-intelligence/session/linkedin/start "
-                "then save storage_state, or run scripts/linkedin_session_login.py",
+                "then save storage_state.",
             )
 
         if brand_profile_id:

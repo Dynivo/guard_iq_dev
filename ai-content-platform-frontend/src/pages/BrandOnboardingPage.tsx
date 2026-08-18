@@ -427,8 +427,7 @@ export function BrandOnboardingPage() {
         const d = detail as { message?: string; code?: string };
         if (d.message) msg = d.message;
         if (d.code === 'linkedin_session_required') {
-          msg =
-            'Connect LinkedIn once first (scripts/linkedin_session_login.py + save session). Then paste only the profile URL.';
+          msg = 'LinkedIn profile import requires a saved server-side session.';
         }
       }
       toast.error(msg);
@@ -684,8 +683,7 @@ export function BrandOnboardingPage() {
             <p className="font-medium text-foreground">One-time LinkedIn connect</p>
             <ol className="list-decimal space-y-1 pl-4">
               <li>
-                Run <code className="text-[11px]">scripts/linkedin_session_login.py</code> on the
-                server/dev machine and log in once.
+                Ask an administrator to configure a server-side LinkedIn session.
               </li>
               <li>Save the session via Brand Intelligence session API (or ask an admin).</li>
               <li>Come back here, paste only the URL, continue the wizard, then Analyze.</li>

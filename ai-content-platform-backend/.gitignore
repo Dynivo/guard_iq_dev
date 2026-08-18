@@ -11,7 +11,6 @@ __pycache__/
 *.egg-info/
 .Python
 
-!scripts/run_worker.sh
 !scripts/run_backend.sh
 !scripts/setup.sh
 

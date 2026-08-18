@@ -127,7 +127,7 @@ class Settings(BaseSettings):
     # `schedule_cron` and dispatches an ingest run when it's due (same path
     # as clicking "Run" in Sources). Requires the API process to stay running
     # continuously — it does not persist a separate scheduler process.
-    SOURCE_CRON_ENABLED: bool = True
+    SOURCE_CRON_ENABLED: bool = False
     SOURCE_CRON_INTERVAL_SECONDS: int = 60
     # Caps how many due sources fire per sweep — a fresh install has every
     # seeded source due at once (no last_fetched_at yet); this staggers their
