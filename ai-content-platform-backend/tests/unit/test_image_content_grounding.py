@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import SimpleNamespace
 
 from app.modules.image.application.content_subject import (
+    build_card_copy,
     build_content_subject,
     inject_content_into_brief,
 )
@@ -23,6 +25,30 @@ from app.modules.image.domain.models import CompositionPlan, EnrichedVisualBrief
 class _Row:
     object_key: str
     label: str = ""
+
+
+class _CardCopyOrchestrator:
+    async def complete(self, *_args, **_kwargs):
+        return SimpleNamespace(
+            text=(
+                '{"eyebrow":"WINDOWS SECURITY ALERT",'
+                '"headline":"Ignoring Administrator Protection",'
+                '"subtext":"Weak protection can expose privileged access",'
+                '"education_labels":["Default safeguards","Admin access exposed",'
+                '"Breach impact"],"stat_number":"","stat_caption":""}'
+            )
+        )
+
+
+async def test_card_copy_authors_three_grounded_education_labels() -> None:
+    copy = await build_card_copy(
+        hook="Ignoring Administrator Protection",
+        body="Weak protection can expose privileged access and increase breach impact.",
+        orchestrator=_CardCopyOrchestrator(),
+    )
+    assert copy["education_labels"] == (
+        "Default safeguards; Admin access exposed; Breach impact"
+    )
 
 
 def test_select_gallery_prefers_optimized_per_job() -> None:
@@ -171,6 +197,7 @@ def test_prompt_builder_injects_brand_kit_hexes() -> None:
             "content_subject": "UK compliance focus",
             "must_depict": "stat callout",
             "short_labels": "34 threats; Detect; Resolve",
+            "education_labels": "Threat detected; Admin exposed; Breach impact",
             "text_in_image": True,
             "eyebrow": "COMPLIANCE ALERT",
             "headline": "34 threats detected across UK practices this quarter",
@@ -205,6 +232,15 @@ def test_prompt_builder_injects_brand_kit_hexes() -> None:
     assert "ARE YOU COVERED?" not in req.positive_prompt
     assert "callout box" not in req.positive_prompt.lower()
     assert "callout_title" not in req.parameters["card_copy"]
+    assert "exact official logo image is attached" in req.positive_prompt
+    assert "THE RISK CHAIN" in req.positive_prompt
+    assert "Threat detected; Admin exposed; Breach impact" in req.positive_prompt
+    assert "Do not add a footer" in req.positive_prompt
+    assert req.parameters["card_copy"]["education_heading"] == "THE RISK CHAIN"
+    assert (
+        req.parameters["card_copy"]["education_labels"]
+        == "Threat detected; Admin exposed; Breach impact"
+    )
     assert req.parameters["palette"][0] == "#0A1F2B"
     assert req.metadata["text_in_image"] is True
 

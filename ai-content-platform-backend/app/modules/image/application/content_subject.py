@@ -495,7 +495,7 @@ def _deterministic_card_copy(
 async def _author_card_copy(
     *, hook: str, body: str, cta: str, orchestrator: Any, organization_id: str | None
 ) -> dict[str, str] | None:
-    """Ask the AI for tighter alert-card copy; falls back to the deterministic extractor.
+    """Ask the AI for tighter alert-card copy and grounded educational labels.
 
     Same best-effort pattern as ``_author_visual_concept`` — this is the text that gets
     rendered directly onto the image, so it must stay short and grounded in the real post,
@@ -505,19 +505,22 @@ async def _author_card_copy(
         return None
     prompt = (
         "You write the on-image copy for a branded LinkedIn 'alert card' graphic "
-        "(dark card, small eyebrow label, big headline, one-line subtext, a bordered "
-        "callout box with a title + one supporting line). Given this post, extract copy "
+        "(dark card, small eyebrow label, big headline, short subtext, and a three-panel "
+        "educational strip). Given this post, extract copy "
         "for each slot from the ACTUAL post content below — do not invent facts. Keep it "
         "punchy and short; this text is rendered directly onto an image, not a caption.\n\n"
         f"HOOK: {hook}\n"
         f"BODY: {(body or '')[:1500]}\n"
         f"CTA: {cta}\n\n"
+        "The three education labels must teach a logical progression from issue to "
+        "exposure/action to impact. If the post is not a risk progression, use three "
+        "grounded key takeaways instead.\n\n"
         "Respond with ONLY JSON:\n"
         '{"eyebrow": "2-4 word category label, all caps, e.g. CYBER THREAT ALERT", '
         '"headline": "the main factual claim, <=90 characters, perfect spelling", '
         '"subtext": "one supporting sentence with the key stat/fact, <=110 characters", '
-        '"callout_title": "short punchy question or imperative, all caps, <=45 characters", '
-        '"callout_body": "one sentence on the consequence/risk or action, <=110 characters", '
+        '"education_labels": ["2-4 word issue label", "2-4 word exposure or action label", '
+        '"2-4 word impact label"], '
         '"stat_number": "the single standout number/stat from the post, e.g. 800+ or 5x or 34 '
         '(empty string if the post has no real number)", '
         '"stat_caption": "short caption for that number, <=60 characters, real text not invented"}'
@@ -536,14 +539,21 @@ async def _author_card_copy(
             ("eyebrow", 40),
             ("headline", 100),
             ("subtext", 140),
-            ("callout_title", 60),
-            ("callout_body", 140),
             ("stat_number", 12),
             ("stat_caption", 60),
         ):
             val = _clean(str(data.get(key) or ""), limit).strip(" .")
             if val:
                 out[key] = val
+        raw_labels = data.get("education_labels")
+        if isinstance(raw_labels, list):
+            labels: list[str] = []
+            for item in raw_labels[:3]:
+                label = _clean(str(item), 40).strip(" .")
+                if label and 1 < len(label.split()) <= 5:
+                    labels.append(label)
+            if len(labels) == 3:
+                out["education_labels"] = "; ".join(labels)
         return out if out.get("headline") else None
     except Exception as exc:  # noqa: BLE001
         logger.warning("AI card-copy authoring failed, using deterministic fallback: %s", exc)

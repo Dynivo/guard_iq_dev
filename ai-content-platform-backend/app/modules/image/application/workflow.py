@@ -229,7 +229,7 @@ class VisualWorkflow:
 
         # Second image slot ("white card") only — ported gemini_infographic
         # pipeline. Variant 0 ("blue card", alert_card) falls through to the
-        # unchanged code below, exactly as it always has.
+        # dark educational-card pipeline below.
         if variant_index == 1:
             return await self._execute_gemini_infographic(
                 job=job,
@@ -252,6 +252,13 @@ class VisualWorkflow:
 
         engine = engine or self._engine
 
+        # The dark card now receives the real logo as a model reference, matching
+        # the white-card approach. Fall back to the bundled official mark when a
+        # Brand Kit logo has not been uploaded.
+        from app.modules.image.application.logo_stamp import default_brand_logo_bytes
+
+        logo_reference = logo_bytes or default_brand_logo_bytes()
+
         result = await engine.run(
             ImagePipelineRequest(
                 organization_id=str(org_id),
@@ -264,10 +271,7 @@ class VisualWorkflow:
                 seed_override=(abs(hash(f"{draft_id}:{variant_index}")) % (2**31))
                 if variant_index
                 else None,
-                # No logo_bytes here on purpose — the prompt tells the model to
-                # leave that area empty (configs/image/prompt_builder.yaml), and
-                # the real logo file is composited on deterministically below
-                # instead of asking the model to reproduce it from a reference.
+                logo_bytes=logo_reference,
             )
         )
 
@@ -359,15 +363,10 @@ class VisualWorkflow:
         blobs = getattr(engine._assets, "blobs", {}) or {}
         gallery_size = 0
 
-        # Real logo file, composited on after generation — never asked of the
-        # model itself. Same approach as the second image variant; see
-        # logo_stamp.py.
-        from app.modules.image.application.logo_stamp import (
-            default_brand_logo_bytes,
-            stamp_brand_logo,
-        )
-
-        logo_mark = logo_bytes or default_brand_logo_bytes()
+        # Gemini/OpenAI integrate the attached logo reference into the image.
+        # Keep deterministic stamping only as a compatibility fallback for
+        # providers that cannot consume reference images.
+        from app.modules.image.application.logo_stamp import stamp_brand_logo
 
         try:
             for asset in result.assets:
@@ -381,9 +380,16 @@ class VisualWorkflow:
                         f"Missing image bytes for role={role} job={job.id} — "
                         f"cannot persist to {backend}"
                     )
-                if logo_mark and gallery_asset is not None and asset.role == gallery_asset.role:
+                if (
+                    logo_reference
+                    and result.provider not in {"gemini", "openai"}
+                    and gallery_asset is not None
+                    and asset.role == gallery_asset.role
+                ):
                     try:
-                        blob = stamp_brand_logo(blob, logo_mark, position="top_center", scale=0.15)
+                        blob = stamp_brand_logo(
+                            blob, logo_reference, position="top_center", scale=0.09
+                        )
                     except Exception as exc:  # noqa: BLE001 — ship the unstamped image over failing the job
                         logger.warning("logo_stamp_failed job=%s: %s", job.id, exc)
                 written = persist_png(self._storage, key, blob)

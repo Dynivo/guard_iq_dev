@@ -12,40 +12,54 @@ style_order:
 templates:
   alert_card: >-
     Design a single square (1:1) LinkedIn graphic for {brand_name}, a {brand_personality}.
-    Dark navy background ({primary_color}), premium flat corporate style, generous margins,
-    no clutter. Thin accent-colour ({accent_color}) diagonal line cutting off the top-right corner.
+    This is a premium dark-navy educational alert card: authoritative, useful, and visually
+    polished. The content and typography remain the focus; do not turn it into an illustration-led
+    poster, animated explainer, technical dashboard, or futuristic concept image. Use a deep
+    tonal navy background ({primary_color}), restrained editorial depth, generous 56–64px margins,
+    a very faint oversized window-pane geometry, extremely subtle grid lines, delicate grain,
+    and one thin accent-colour ({accent_color}) diagonal line at the top-right corner.
 
 
-    LOGO AREA (top center, about 15% of image height): leave this area completely
-    empty — pure background, no icon, no wordmark, no shape or text of any kind.
-    A real logo image will be composited into that exact spot in a separate step
-    after generation; anything you draw there will conflict with it. Below that
-    empty area, a thin horizontal accent-colour divider line.
+    OFFICIAL LOGO HEADER (top centre, about 9% of image height): an exact official logo image
+    is attached to this request. Use that attached logo exactly once, preserving its lettering,
+    proportions, stars, shield, colours, and wordmark. Do not redraw, simplify, restyle, recolour,
+    place it inside an invented badge, or add another company name. Give it generous clear space.
+    Place a thin horizontal accent-colour divider beneath it.
 
 
-    EYEBROW LABEL (small caps, accent colour, centered, below the divider): "{eyebrow}"
+    CATEGORY LABEL (small uppercase, accent colour, expanded letter spacing, left aligned):
+    render this exact text with perfect spelling: "{eyebrow}"
 
 
-    HEADLINE (large, bold, white, sans-serif, centered, render this exact text with perfect
-    spelling, max 2 lines): "{headline}"
+    HEADLINE (large bold white modern sans-serif, left aligned): render this exact text with
+    perfect spelling: "{headline}". Balance it across no more than 3 comfortable lines; maintain
+    strong mobile readability and do not crowd the margins or let it dominate the whole canvas.
 
 
-    SUBTEXT (smaller, light grey, centered, below headline, render this exact text with
-    perfect spelling, one line): "{subtext}"
+    SUPPORTING EXPLANATION (smaller pale blue-white, left aligned below the headline): render this
+    exact text with perfect spelling: "{subtext}". Keep it clearly readable as educational context,
+    using no more than 2 balanced lines. Header plus copy should use roughly the upper 62% of the canvas.
 
 
-    Thin horizontal divider line (accent colour, low opacity), then generous empty space
-    below it before the footer — no bordered box, no call-to-action panel, no extra text block.
+    EDUCATIONAL STRIP (lower section): add a thin divider and the exact small uppercase heading
+    "{education_heading}". Below it create exactly 3 equal, compact, subtly translucent navy panels
+    in one horizontal sequence. Render one grounded 2–4 word label per panel, in this exact order,
+    using the semicolon-separated list: {short_labels}. Do not paraphrase, duplicate, truncate, or
+    invent labels. Give every panel one small consistent flat-line icon suited to its label, equal
+    visual weight, and generous spacing. Connect the panels with one thin accent-colour line and
+    restrained arrowheads; introduce one small amber warning accent only at the final transition.
+    The sequence must teach the reader the progression at a glance while remaining readable on mobile.
 
 
-    FOOTER (bottom left, small): white bold wordmark "{brand_name_upper}" and below it in
-    accent colour smaller text: "{footer_tagline}"
+    Do not add a footer, service list, second wordmark, CTA box, button, paragraph, or any other text.
 
 
     Overall composition must match a premium B2B SaaS security-brand aesthetic (think
-    Cloudflare, CrowdStrike, Vanta marketing graphics) — clean typographic hierarchy, lots
-    of negative space, no illustrations of people, no hackers, no padlock clip art, no
-    stock photography.{variant_note}
+    Cloudflare, CrowdStrike, Vanta marketing graphics) — clean editorial information design,
+    strong hierarchy, generous negative space, crisp flat-line icons, subtle depth rather than a
+    large illustration, no people, no hackers, no generic padlock, no stock photography, no SIM
+    card, no computer chip, no circular security rings, no radar/HUD, no neon cyberpunk glow,
+    no glossy 3D icons, and nothing touching the frame edge.{variant_note}
 
   stat_diagram_card: >-
     Design a single square (1:1) LinkedIn graphic for {brand_name}, a {brand_personality}.
@@ -92,7 +106,9 @@ default_workflow_version: "1"
 default_negative: >-
   blurry text, misspelled words, extra logos, watermarks, cluttered layout, neon glow,
   cartoon style, duplicate text, overlapping elements, decorative sparkles, mixed icon
-  styles, glossy 3d icons, bordered CTA panel, unrequested button or badge
+  styles, glossy 3d icons, bordered CTA panel, unrequested button or badge, company-name
+  footer, service-list footer, second wordmark, SIM card, computer chip, circular security
+  rings, radar interface, sci-fi HUD, giant illustration, giant headline
 logo_description_on_dark: >-
   a simple white outline shield icon with a checkmark inside it, with three small
   five-pointed gold/yellow stars arranged above the shield

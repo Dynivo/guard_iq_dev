@@ -109,12 +109,45 @@ class DefaultImagePromptBuilder:
         stat_number = str(meta.get("stat_number") or "NEW").strip()
         stat_caption = str(meta.get("stat_caption") or headline).strip()
         short_labels = (
-            str(meta.get("short_labels") or meta.get("body_key_ideas") or "").strip()
+            str(
+                meta.get("education_labels")
+                or meta.get("short_labels")
+                or meta.get("body_key_ideas")
+                or ""
+            ).strip()
             or "Key insight; Stay secure; Act early"
         )
-        footer_tagline = str(
-            meta.get("footer_tagline") or brand.get("services_line") or brand.get("footer_text") or ""
-        ).strip() or brand_name.upper()
+        labels = [
+            " ".join(item.strip().split()[:4])
+            for item in short_labels.split(";")
+            if item.strip()
+        ]
+        for fallback in ("Key issue", "What it exposes", "Why it matters"):
+            if len(labels) >= 3:
+                break
+            if fallback.lower() not in {label.lower() for label in labels}:
+                labels.append(fallback)
+        short_labels = "; ".join(labels[:3])
+        education_blob = f"{eyebrow} {headline} {subtext}".lower()
+        education_heading = (
+            "THE RISK CHAIN"
+            if any(
+                term in education_blob
+                for term in (
+                    "alert",
+                    "risk",
+                    "breach",
+                    "threat",
+                    "exposed",
+                    "vulnerab",
+                    "attack",
+                    "malware",
+                    "ransomware",
+                    "phishing",
+                )
+            )
+            else "KEY TAKEAWAYS"
+        )
         # Free-text guidance from the "Options" tip field on the draft page — e.g.
         # a client asking to change something about an already-generated image.
         image_guidance = str(meta.get("image_guidance") or "").strip()
@@ -148,7 +181,7 @@ class DefaultImagePromptBuilder:
             stat_number=stat_number,
             stat_caption=stat_caption,
             short_labels=short_labels,
-            footer_tagline=footer_tagline,
+            education_heading=education_heading,
             variant_note=variant_note,
         )
         if image_guidance:
@@ -196,6 +229,8 @@ class DefaultImagePromptBuilder:
                     "eyebrow": eyebrow,
                     "headline": headline,
                     "subtext": subtext,
+                    "education_heading": education_heading,
+                    "education_labels": short_labels,
                     "stat_number": stat_number,
                     "stat_caption": stat_caption,
                 },
