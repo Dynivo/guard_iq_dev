@@ -17,6 +17,8 @@ class UserRepository(Protocol):
 
     async def create(self, email: str, display_name: str, hashed_password: str) -> UserRecord: ...
 
+    async def update_password(self, user_id: uuid.UUID, hashed_password: str) -> None: ...
+
 
 class MembershipRepository(Protocol):
     """Port for membership lookups."""

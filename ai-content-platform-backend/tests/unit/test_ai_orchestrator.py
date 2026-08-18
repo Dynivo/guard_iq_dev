@@ -12,6 +12,7 @@ from app.modules.ai.application.circuit_breaker import CircuitBreakerRegistry
 from app.modules.ai.application.cost import YamlCostEstimator
 from app.modules.ai.application.factory import AIOrchestratorFactory
 from app.modules.ai.application.orchestrator import DefaultAIOrchestrator
+from app.modules.ai.application.provider_budgets import ProviderBudgetExceeded
 from app.modules.ai.domain.models import OrchestratorRequest
 from app.modules.ai_cache.infrastructure.memory_cache import InMemoryAICache
 from app.modules.providers.application.router import DefaultCapabilityRouter
@@ -182,6 +183,84 @@ def test_cache_hit() -> None:
     assert r2.cache_hit is True
 
 
+def test_paid_call_reserves_and_settles_provider_budget() -> None:
+    class _Budget:
+        def __init__(self) -> None:
+            self.reserved: list[dict] = []
+            self.settled: list[float] = []
+
+        async def reserve(self, organization_id, **kwargs):
+            self.reserved.append({"organization_id": organization_id, **kwargs})
+            return object()
+
+        async def settle(self, reservation, *, actual_cost_usd):
+            self.settled.append(actual_cost_usd)
+
+        async def cancel(self, reservation):
+            raise AssertionError("successful call should not cancel its reservation")
+
+    budget = _Budget()
+    router = DefaultCapabilityRouter(YamlCapabilityConfigLoader(CONFIGS / "default.yaml"))
+    orch = DefaultAIOrchestrator(
+        router=router,
+        provider_factory=_FakeFactory({"gemini": _StaticProvider("gemini")}),
+        cache=InMemoryAICache(),
+        budget_guard=budget,  # type: ignore[arg-type]
+    )
+    org_id = uuid.uuid4()
+    result = asyncio.run(
+        orch.execute(
+            OrchestratorRequest(
+                capability="summarization",
+                prompt="summarize this",
+                organization_id=org_id,
+                bypass_cache=True,
+            )
+        )
+    )
+    assert result.success
+    assert budget.reserved[0]["organization_id"] == org_id
+    assert budget.reserved[0]["estimated_cost_usd"] > 0
+    assert budget.settled == [0.0]
+
+
+def test_provider_budget_blocks_provider_call() -> None:
+    class _CountingProvider(_StaticProvider):
+        def __init__(self) -> None:
+            super().__init__("gemini")
+            self.calls = 0
+
+        async def complete(self, request: CompletionRequest) -> CompletionResult:
+            self.calls += 1
+            return await super().complete(request)
+
+    class _BlockedBudget:
+        async def reserve(self, organization_id, **kwargs):
+            raise ProviderBudgetExceeded("monthly limit reached")
+
+    provider = _CountingProvider()
+    router = DefaultCapabilityRouter(YamlCapabilityConfigLoader(CONFIGS / "default.yaml"))
+    orch = DefaultAIOrchestrator(
+        router=router,
+        provider_factory=_FakeFactory({"gemini": provider}),
+        cache=InMemoryAICache(),
+        budget_guard=_BlockedBudget(),  # type: ignore[arg-type]
+    )
+    result = asyncio.run(
+        orch.execute(
+            OrchestratorRequest(
+                capability="summarization",
+                prompt="summarize this",
+                organization_id=uuid.uuid4(),
+                bypass_cache=True,
+            )
+        )
+    )
+    assert result.success is False
+    assert "monthly limit reached" in (result.error_message or "")
+    assert provider.calls == 0
+
+
 def test_sensitive_not_cached() -> None:
     cache = InMemoryAICache()
     loader = YamlCapabilityConfigLoader(CONFIGS / "default.yaml")
@@ -311,7 +390,12 @@ def test_test_provider_streaming() -> None:
 
 
 def test_orchestrator_streaming() -> None:
-    orch = AIOrchestratorFactory.create(config_path=CONFIGS / "default.yaml")
+    router = DefaultCapabilityRouter(YamlCapabilityConfigLoader(CONFIGS / "default.yaml"))
+    orch = DefaultAIOrchestrator(
+        router=router,
+        provider_factory=_FakeFactory({"openai": _StaticProvider("openai")}),
+        cache=InMemoryAICache(),
+    )
     chunks = []
 
     async def collect():

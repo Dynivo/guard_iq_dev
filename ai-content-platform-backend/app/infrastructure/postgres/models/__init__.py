@@ -68,6 +68,8 @@ from app.infrastructure.postgres.models.learning import (
 )
 from app.infrastructure.postgres.models.ai_ops import (
     LlmCall,
+    ProviderBudget,
+    ProviderBudgetReservation,
     PromptEvalRun,
     PromptGoldenCase,
     PromptReplay,
@@ -168,6 +170,8 @@ __all__ = [
     "Job",
     "JobEvent",
     "LlmCall",
+    "ProviderBudget",
+    "ProviderBudgetReservation",
     "MediaAsset",
     "Membership",
     "NewsSource",

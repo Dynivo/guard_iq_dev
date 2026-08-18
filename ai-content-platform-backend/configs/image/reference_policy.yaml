@@ -31,14 +31,17 @@ roles:
       level of detail. Aim for this much visual calm — one clear focal
       illustration, generous breathing room, no crowding. Do NOT copy any of
       its text, headline, statistics, icons or subject matter; all wording and
-      content must come from the CONTENT section of the prompt. Reproduce the
+      content must come from the CONTENT section of the prompt. Do not copy or
+      render the logo, wordmark or company name visible in this reference; the
+      application adds the exact supplied logo after generation. Reproduce the
       style only, never the substance.
   previous_creative:
     mime_type: image/png
     prompt_hint: "Keep visual continuity with this previous creative without copying layout verbatim."
 
 logo_correction:
-  # Prefer model-integrated logo; stamp only when critic says missing/wrong
+  # The Gemini workflow always stamps the supplied logo after generation.
+  # These values control its placement and sizing.
   stamp_when_critic_flags: true
   never_duplicate: true
   default_stamp_position: bottom_right

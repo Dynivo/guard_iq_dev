@@ -41,7 +41,7 @@ class DefaultAssetAnalyzer:
             w, h = img.size
             # Quantize for dominant colors
             small = img.resize((64, 64))
-            colors = list(small.getdata())
+            colors = list(small.get_flattened_data())
             counted = Counter((r // 32 * 32, g // 32 * 32, b // 32 * 32) for r, g, b in colors)
             for (r, g, b), _ in counted.most_common(5):
                 dominant.append(_hex(r, g, b))
@@ -52,7 +52,7 @@ class DefaultAssetAnalyzer:
             step = max(1, h // 40)
             for y in range(0, h, step):
                 band = gray.crop((0, y, w, min(h, y + step)))
-                pixels = list(band.getdata())
+                pixels = list(band.get_flattened_data())
                 row_means.append((y / h, sum(pixels) / max(1, len(pixels))))
             for y_norm, mean in row_means:
                 if mean > 200 or mean < 25:

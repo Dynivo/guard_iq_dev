@@ -1,8 +1,7 @@
-"""Multimodal visual creative critic — scores Gemini outputs via chat provider."""
+"""Multimodal visual creative critic — scores the actual generated image."""
 
 from __future__ import annotations
 
-import base64
 import json
 import re
 from dataclasses import dataclass, field
@@ -13,6 +12,8 @@ from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.modules.image.application.config_loader import load_yaml
 from app.modules.image.domain.design_spec import VisualDesignSpec
+from app.modules.ai.application.cost import YamlCostEstimator
+from app.modules.ai.application.provider_budgets import ProviderBudgetService
 
 logger = get_logger(__name__)
 
@@ -87,8 +88,72 @@ def _heuristic_critic(spec: VisualDesignSpec) -> CriticResult:
 class VisualCreativeCritic:
     """Scores image bytes against design constraints via configurable chat provider."""
 
-    def __init__(self, chat_complete: Any | None = None) -> None:
+    def __init__(
+        self,
+        chat_complete: Any | None = None,
+        multimodal_complete: Any | None = None,
+    ) -> None:
         self._chat_complete = chat_complete
+        self._multimodal_complete = multimodal_complete
+
+    async def _complete_with_gemini(
+        self,
+        prompt: str,
+        image_bytes: bytes,
+        organization_id: Any | None = None,
+    ) -> str:
+        """Send the PNG as a real image part through the official Gemini SDK."""
+        from google import genai
+        from google.genai import types
+
+        settings = get_settings()
+        key = str(getattr(settings, "GEMINI_API_KEY", "") or "").strip()
+        if not key:
+            raise RuntimeError("GEMINI_API_KEY is required for visual quality review")
+        model = str(
+            getattr(settings, "GEMINI_VISUAL_CRITIC_MODEL", "")
+            or "gemini-flash-latest"
+        )
+        budgets = ProviderBudgetService()
+        # Image tokenisation varies by vendor/model. Reserve a deliberately
+        # conservative amount, then settle using response token counts.
+        reservation = await budgets.reserve(
+            organization_id,
+            provider="gemini",
+            model=model,
+            estimated_cost_usd=0.01,
+        )
+        client = genai.Client(api_key=key)
+        try:
+            response = await client.aio.models.generate_content(
+                model=model,
+                contents=[
+                    types.Part.from_text(text=prompt),
+                    types.Part.from_bytes(data=image_bytes, mime_type="image/png"),
+                ],
+                config=types.GenerateContentConfig(
+                    temperature=0.1,
+                    max_output_tokens=800,
+                    response_mime_type="application/json",
+                ),
+            )
+        except Exception:
+            await budgets.cancel(reservation)
+            raise
+        usage = getattr(response, "usage_metadata", None)
+        tokens_in = int(getattr(usage, "prompt_token_count", 0) or 0)
+        tokens_out = int(getattr(usage, "candidates_token_count", 0) or 0)
+        actual = YamlCostEstimator().estimate(
+            provider="gemini",
+            model=model,
+            tokens_in=tokens_in,
+            tokens_out=tokens_out,
+        )
+        await budgets.settle(
+            reservation,
+            actual_cost_usd=actual if tokens_in or tokens_out else 0.01,
+        )
+        return str(getattr(response, "text", "") or "")
 
     def enabled_for_mode(self, creative_mode: str) -> bool:
         settings = get_settings()
@@ -116,6 +181,7 @@ class VisualCreativeCritic:
         spec: VisualDesignSpec,
         *,
         brand: dict[str, Any] | None = None,
+        organization_id: Any | None = None,
     ) -> CriticResult:
         brand = brand or {}
         if not image_bytes:
@@ -128,30 +194,6 @@ class VisualCreativeCritic:
                 passed=False,
                 raw={"mode": "empty"},
             )
-
-        if self._chat_complete is None:
-            try:
-                from app.infrastructure.llm.base import CompletionRequest
-                from app.modules.providers.infrastructure.provider_factory import (
-                    DefaultProviderFactory,
-                )
-
-                settings = get_settings()
-                provider = DefaultProviderFactory().create(
-                    str(getattr(settings, "DEFAULT_LLM_PROVIDER", None) or "gemini")
-                )
-
-                async def _complete(req: CompletionRequest) -> Any:
-                    return await provider.complete(req)
-
-                self._chat_complete = _complete
-            except Exception as exc:  # noqa: BLE001
-                logger.warning("visual_critic_provider_unavailable: %s", exc)
-                result = _heuristic_critic(spec)
-                result.passed = result.overall >= self.threshold()
-                return result
-
-        from app.infrastructure.llm.base import CompletionRequest
 
         facts = list(spec.factual_constraints)[:12]
         prompt = (
@@ -169,23 +211,30 @@ class VisualCreativeCritic:
             "and invented metrics."
         )
 
-        # Many chat adapters are text-only; pass image as base64 hint in prompt metadata.
-        b64 = base64.b64encode(image_bytes[:350_000]).decode("ascii")
-        rich_prompt = (
-            f"{prompt}\n\nIMAGE_PNG_BASE64_PREFIX (truncated for transport):\n{b64[:8000]}..."
-        )
-
         try:
-            completion = await self._chat_complete(
-                CompletionRequest(
-                    prompt=rich_prompt,
-                    system_message="Return valid JSON only. No markdown.",
-                    temperature=0.1,
-                    max_tokens=800,
-                    response_format="json",
+            if self._multimodal_complete is not None:
+                text = await self._multimodal_complete(prompt, image_bytes)
+            elif self._chat_complete is not None:
+                # Backwards-compatible injection point for unit/integration
+                # callers. Production uses the true multimodal path above.
+                from app.infrastructure.llm.base import CompletionRequest
+
+                completion = await self._chat_complete(
+                    CompletionRequest(
+                        prompt=prompt,
+                        system_message="Return valid JSON only. No markdown.",
+                        temperature=0.1,
+                        max_tokens=800,
+                        response_format="json",
+                    )
                 )
-            )
-            text = getattr(completion, "text", None) or str(completion)
+                text = getattr(completion, "text", None) or str(completion)
+            else:
+                text = await self._complete_with_gemini(
+                    prompt,
+                    image_bytes,
+                    organization_id=organization_id,
+                )
             data = _extract_json(text)
         except Exception as exc:  # noqa: BLE001
             logger.warning("visual_critic_llm_failed: %s", exc)

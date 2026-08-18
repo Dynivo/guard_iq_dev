@@ -12,38 +12,46 @@ Usage:
 from __future__ import annotations
 
 import asyncio
-import shutil
 import sys
 import uuid
-from datetime import datetime, timezone
 from pathlib import Path
 
 # Ensure the project root is on sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.security.password import hash_password
-from app.infrastructure.postgres.session import async_session_factory, async_engine
+from app.infrastructure.postgres.session import async_session_factory
 from app.infrastructure.postgres.models.identity import Membership, Organization, User
 from app.infrastructure.postgres.models.branding import BrandKit
-from app.infrastructure.postgres.models.news import NewsSource
 from app.infrastructure.postgres.models.ai_ops import ProviderConfig
 from app.infrastructure.postgres.models.intelligence import Claim
 from app.infrastructure.postgres.models.brand_intelligence import BrandProfileRow, BrandPersonaRow, NeverSayPolicyRow
 from app.modules.brand_intelligence.domain.models import ProfileKind, PersonaKind
 
 
-ORG_NAME = "GuardIQ"
+ORG_NAME = "Guard IQ"
 ORG_SLUG = "guardiq"
 ADMIN_EMAIL = "admin@guardiq.com"
-ADMIN_PASSWORD = "Admin123!"
 ADMIN_DISPLAY_NAME = "Admin"
 # Legacy seed email rejected by EmailStr (.local is reserved) — migrate on re-seed.
 _LEGACY_ADMIN_EMAIL = "admin@guardiq.local"
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+def _admin_password() -> str:
+    password = get_settings().SEED_ADMIN_PASSWORD.strip()
+    if len(password) < 12:
+        raise RuntimeError(
+            "SEED_ADMIN_PASSWORD must be set to a unique value of at least "
+            "12 characters before creating or migrating the admin account"
+        )
+    return password
 
 
 async def _ensure_org(session: AsyncSession) -> uuid.UUID:
@@ -71,7 +79,7 @@ async def _ensure_admin(session: AsyncSession, org_id: uuid.UUID) -> uuid.UUID:
     legacy_user = legacy.scalar_one_or_none()
     if legacy_user:
         legacy_user.email = ADMIN_EMAIL
-        legacy_user.password_hash = hash_password(ADMIN_PASSWORD)
+        legacy_user.password_hash = hash_password(_admin_password())
         await session.flush()
         print(f"  Migrated admin email {_LEGACY_ADMIN_EMAIL} -> {ADMIN_EMAIL}: {legacy_user.id}")
         return legacy_user.id
@@ -83,7 +91,7 @@ async def _ensure_admin(session: AsyncSession, org_id: uuid.UUID) -> uuid.UUID:
             organization_id=org_id,
             email=ADMIN_EMAIL,
             display_name=ADMIN_DISPLAY_NAME,
-            password_hash=hash_password(ADMIN_PASSWORD),
+            password_hash=hash_password(_admin_password()),
         )
     )
     await session.flush()
@@ -107,7 +115,7 @@ async def _ensure_admin(session: AsyncSession, org_id: uuid.UUID) -> uuid.UUID:
 # is never generated at all.
 DEFAULT_BRAND_EXTRA_SETTINGS: dict = {
     "default_image_count": 2,
-    "auto_generate_image_with_draft": False,
+    "auto_generate_image_with_draft": True,
     "publishing_window": "fortnight",
     "publishing_targets": {
         "educational": 6,
@@ -147,23 +155,26 @@ async def _ensure_brand_kit(session: AsyncSession, org_id: uuid.UUID) -> None:
         BrandKit(
             extra_settings=dict(DEFAULT_BRAND_EXTRA_SETTINGS),
             organization_id=org_id,
-            name="GuardIQ Consulting",
-            primary_color="#003366",
-            secondary_color="#FFFFFF",
-            accent_color="#0066CC",
+            name="Guard IQ",
+            primary_color="#0A1F2B",
+            secondary_color="#1A5CB0",
+            accent_color="#0D7377",
             font_heading="Inter",
             font_body="Inter",
             tone_json={
-                "voice": "professional",
-                "style": "educational",
-                "positioning": "security-led",
+                "voice": "direct, founder-led, no fluff",
+                "style": "practical and educational",
+                "positioning": "security-led IT for regulated businesses",
                 "avoid": ["clickbait", "jargon", "fear-mongering"],
             },
-            footer_text="GuardIQ — Security-led IT for regulated businesses",
+            footer_text="Guard IQ — Managed IT & Security for Regulated Businesses",
             services_line="IT Support | Cybersecurity | Compliance",
             client_profile_path="configs/brand/client-profile.md",
             client_profile_md=profile_md,
-            description="Blue/white consulting aesthetic — CrowdStrike/Cloudflare-class",
+            description=(
+                "Founder-led managed IT and cybersecurity for regulated SMEs in "
+                "North West and Central London."
+            ),
         )
     )
     await session.flush()
@@ -182,12 +193,12 @@ async def _ensure_news_sources(session: AsyncSession, org_id: uuid.UUID) -> None
 
 async def _ensure_provider_configs(session: AsyncSession, org_id: uuid.UUID) -> None:
     configs = [
-        {"capability": "relevance", "provider": "gemini", "model": "gemini-2.0-flash", "priority": 0},
-        {"capability": "planning", "provider": "gemini", "model": "gemini-2.0-flash", "priority": 0},
-        {"capability": "copywriting", "provider": "gemini", "model": "gemini-2.0-flash", "priority": 0},
-        {"capability": "carousel_copy", "provider": "gemini", "model": "gemini-2.0-flash", "priority": 0},
-        {"capability": "image_prompt", "provider": "gemini", "model": "gemini-2.0-flash", "priority": 0},
-        {"capability": "preference_summary", "provider": "gemini", "model": "gemini-2.0-flash", "priority": 0},
+        {"capability": "relevance", "provider": "gemini", "model": "gemini-flash-latest", "priority": 0},
+        {"capability": "planning", "provider": "gemini", "model": "gemini-flash-latest", "priority": 0},
+        {"capability": "copywriting", "provider": "gemini", "model": "gemini-flash-latest", "priority": 0},
+        {"capability": "carousel_copy", "provider": "gemini", "model": "gemini-flash-latest", "priority": 0},
+        {"capability": "image_prompt", "provider": "gemini", "model": "gemini-flash-latest", "priority": 0},
+        {"capability": "preference_summary", "provider": "gemini", "model": "gemini-flash-latest", "priority": 0},
     ]
     for cfg in configs:
         result = await session.execute(
@@ -290,6 +301,12 @@ async def seed() -> None:
         await _ensure_seed_claims(session, org_id)
         await _ensure_default_brand_profile(session, org_id)
         await session.commit()
+    # Complete the one-time Guard IQ projection (founder persona, approved
+    # brand memory, supplied logo and guidelines). The helper skips safely
+    # once the projection marker is present, so the main seed stays idempotent.
+    from scripts.seed_shailesh_guardiq_brand import seed_guard_iq_brand
+
+    await seed_guard_iq_brand()
     print("=== Seed complete ===")
 
 

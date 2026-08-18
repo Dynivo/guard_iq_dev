@@ -20,6 +20,8 @@ from openai import AsyncOpenAI
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.modules.ai.application.cost import YamlCostEstimator
+from app.modules.ai.application.provider_budgets import ProviderBudgetService
 
 logger = get_logger(__name__)
 
@@ -39,6 +41,7 @@ async def check_rendered_text(
     *,
     api_key: str | None = None,
     client: AsyncOpenAI | None = None,
+    organization_id: Any | None = None,
 ) -> TextAccuracyResult:
     copy_lines = "\n".join(
         f"{k}: {v}" for k, v in (card_copy or {}).items() if v and k != "brand_name"
@@ -63,7 +66,15 @@ async def check_rendered_text(
         f"INTENDED COPY:\n{copy_lines}\n\n"
         'Respond with ONLY JSON: {"text_ok": true|false, "issues": ["short description", ...]}'
     )
+    budgets = ProviderBudgetService()
+    reservation = None
     try:
+        reservation = await budgets.reserve(
+            organization_id,
+            provider="openai",
+            model=_MODEL,
+            estimated_cost_usd=0.01,
+        )
         oc = client or AsyncOpenAI(api_key=key)
         result = await oc.chat.completions.create(
             model=_MODEL,
@@ -83,9 +94,23 @@ async def check_rendered_text(
             max_tokens=300,
         )
         data = json.loads(result.choices[0].message.content or "{}")
+        usage = getattr(result, "usage", None)
+        tokens_in = int(getattr(usage, "prompt_tokens", 0) or 0)
+        tokens_out = int(getattr(usage, "completion_tokens", 0) or 0)
+        actual = YamlCostEstimator().estimate(
+            provider="openai",
+            model=_MODEL,
+            tokens_in=tokens_in,
+            tokens_out=tokens_out,
+        )
+        await budgets.settle(
+            reservation,
+            actual_cost_usd=actual if tokens_in or tokens_out else 0.01,
+        )
         issues = tuple(str(i) for i in (data.get("issues") or []))[:8]
         passed = bool(data.get("text_ok", True)) and not issues
         return TextAccuracyResult(checked=True, passed=passed, issues=issues)
     except Exception as exc:  # noqa: BLE001 — best-effort, never block generation
+        await budgets.cancel(reservation)
         logger.warning("Text-accuracy check failed, treating as passed: %s", exc)
         return TextAccuracyResult(checked=False, passed=True)

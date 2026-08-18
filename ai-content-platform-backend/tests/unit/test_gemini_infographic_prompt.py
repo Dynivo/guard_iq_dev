@@ -2,8 +2,8 @@
 
 Each case pins a bug the previous structured-slot prompt produced: an emoji
 drawn into the headline, a mid-sentence fragment rendered verbatim because
-the body was pre-chopped into a `subheadline` slot, and the model being told
-never to draw the logo (which forced post-hoc compositing).
+the body was pre-chopped into a `subheadline` slot, and the model being asked
+to redraw the supplied logo instead of leaving identity placement to the app.
 """
 
 from __future__ import annotations
@@ -84,14 +84,14 @@ def test_prompt_forbids_rendering_truncated_text() -> None:
     assert "truncated" in negative
 
 
-def test_logo_reference_tells_model_to_place_the_attached_mark() -> None:
+def test_logo_is_reserved_for_deterministic_post_generation_stamp() -> None:
     positive, _ = build_gemini_infographic_prompt(
         _spec(), brand=_BRAND, draft={"hook": "h", "body": "b"}, logo_as_reference=True
     )
-    assert "A logo image is attached" in positive
-    # The old prompt did the opposite — it reserved blank space and banned the
-    # model from drawing anything there.
-    assert "must be left" not in positive
+    assert "Do not render any logo" in positive
+    assert "Do not copy a logo visible in a style reference" in positive
+    assert "exact supplied logo to be added after image generation" in positive
+    assert "A logo image is attached" not in positive
 
 
 def _flat_light_canvas() -> bytes:

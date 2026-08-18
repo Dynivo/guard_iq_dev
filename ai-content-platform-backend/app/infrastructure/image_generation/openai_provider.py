@@ -15,6 +15,7 @@ from app.core.config import get_settings
 from app.core.exceptions import AppError
 from app.core.logging import get_logger
 from app.modules.image.domain.models import ImageGenerationRequest, ImageGenerationResult
+from app.modules.ai.application.provider_budgets import ProviderBudgetService
 
 logger = get_logger(__name__)
 
@@ -112,6 +113,14 @@ class OpenAIImageProvider:
 
         meta_in = dict(request.metadata or {})
         correlation_id = meta_in.get("correlation_id") or meta_in.get("request_id")
+        estimated_cost = estimate_image_cost(model, quality, pricing=self._pricing)
+        budgets = ProviderBudgetService()
+        reservation = await budgets.reserve(
+            meta_in.get("organization_id"),
+            provider="openai",
+            model=model,
+            estimated_cost_usd=estimated_cost,
+        )
 
         client = self._get_client()
         is_gpt_image = model.startswith("gpt-image") or model.startswith("chatgpt-image")
@@ -163,15 +172,23 @@ class OpenAIImageProvider:
 
                 response = await client.images.generate(**create_kwargs)
         except AuthenticationError as exc:
+            await budgets.cancel(reservation)
             raise AppError(f"OpenAI authentication failed: {exc}") from exc
         except APIError as exc:
+            await budgets.cancel(reservation)
             raise AppError(f"OpenAI Images API error: {exc}") from exc
         except OpenAIError as exc:
+            await budgets.cancel(reservation)
             raise AppError(f"OpenAI Images API error: {exc}") from exc
 
-        image_bytes = await self._extract_bytes(response)
+        try:
+            image_bytes = await self._extract_bytes(response)
+        except Exception:
+            await budgets.cancel(reservation)
+            raise
         latency_ms = int((time.perf_counter() - started) * 1000)
-        cost = estimate_image_cost(model, quality, pricing=self._pricing)
+        cost = estimated_cost
+        await budgets.settle(reservation, actual_cost_usd=cost)
 
         out_w, out_h = request.width, request.height
         if "x" in api_size and api_size != "auto":

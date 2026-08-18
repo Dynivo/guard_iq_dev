@@ -3,9 +3,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 if [ ! -f .env ]; then
-    echo "No .env found — copying .env.development"
-    cp .env.development .env
+    echo "No .env found. Copy .env.example to .env and fill in the required values."
+    exit 1
 fi
 
 echo "Starting FastAPI backend..."
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+exec .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000

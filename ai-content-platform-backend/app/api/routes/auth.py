@@ -6,10 +6,20 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.auth import get_current_user
-from app.api.schemas.auth import LoginRequest, RefreshRequest, TokenResponse, UserResponse
+from app.api.schemas.auth import (
+    ChangePasswordRequest,
+    LoginRequest,
+    RefreshRequest,
+    TokenResponse,
+    UserResponse,
+)
 from app.api.schemas.envelope import success_response
 from app.infrastructure.postgres import get_async_session
-from app.modules.auth.application.use_cases import LoginUseCase, RefreshTokenUseCase
+from app.modules.auth.application.use_cases import (
+    ChangePasswordUseCase,
+    LoginUseCase,
+    RefreshTokenUseCase,
+)
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.infrastructure.repositories import (
     PgMembershipRepository,
@@ -78,3 +88,21 @@ async def get_me(
         ).model_dump(),
         request_id=request_id,
     )
+
+
+@router.post("/change-password")
+async def change_password(
+    body: ChangePasswordRequest,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> dict:
+    """Change the signed-in user's password after checking the current one."""
+    use_case = ChangePasswordUseCase(PgUserRepository(session))
+    await use_case.execute(
+        current_user.user_id,
+        current_password=body.current_password,
+        new_password=body.new_password,
+    )
+    request_id = getattr(request.state, "request_id", "")
+    return success_response({"password_changed": True}, request_id=request_id)

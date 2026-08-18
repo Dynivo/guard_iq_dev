@@ -44,7 +44,7 @@ async def test_registry_loads_writing_from_plan() -> None:
     comps = PromptBuilderFactory.create_components(prompts_dir=PROMPTS)
     latest = await comps["registry"].get_latest("writing_from_plan")
     assert latest is not None
-    assert latest.version == "1.0"
+    assert latest.version == "1.1"
     assert latest.status == PromptStatus.ACTIVE
     assert latest.approval_status == ApprovalStatus.APPROVED
     assert latest.sections
@@ -75,7 +75,7 @@ async def test_builder_from_plan_and_knowledge() -> None:
         )
     )
     assert request.valid, request.errors
-    assert request.prompt_version == "1.0"
+    assert request.prompt_version == "1.1"
     assert "DSPT" in request.prompt or "DSPT" in request.system_message
     assert "## TASK" in request.prompt or "task" in request.sections
     assert request.metrics.get("prompt_size", 0) > 0

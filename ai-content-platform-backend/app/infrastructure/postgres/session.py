@@ -55,15 +55,22 @@ def _ssl_context() -> ssl.SSLContext:
         logger.info("Postgres TLS using CA bundle: %s", ca)
         return ssl.create_default_context(cafile=ca)
 
-    if flag != "require-insecure":
-        logger.warning(
-            "No DATABASE_SSL_CA (or certs/rds-global-bundle.pem) — using TLS without "
-            "certificate verification. Download Amazon RDS global-bundle.pem for production."
-        )
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-    return ctx
+    if flag == "require-insecure":
+        if settings.APP_ENV.lower() == "production":
+            raise RuntimeError(
+                "DATABASE_SSL=require-insecure is not allowed in production; "
+                "configure DATABASE_SSL_CA instead"
+            )
+        logger.warning("Postgres TLS certificate verification disabled for development")
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        return ctx
+
+    # Use the operating system trust store when no application-specific CA is
+    # configured. Connection failure is safer than silently accepting an
+    # unverified database certificate.
+    return ssl.create_default_context()
 
 
 def engine_connect_args(database_url: str) -> dict[str, Any]:

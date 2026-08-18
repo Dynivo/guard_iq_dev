@@ -88,17 +88,17 @@ def build_gemini_infographic_prompt(
     hook = strip_emoji(str(draft.get("hook") or spec.headline or "").strip())
     body = strip_emoji(str(draft.get("body") or spec.subheadline or "").strip())
 
+    # Logo placement is deliberately outside the model: image models can
+    # redraw a supplied identity reference. The workflow composites the exact
+    # uploaded PNG after generation, so Gemini only needs to leave room.
+    _ = logo_as_reference  # retained for backwards-compatible callers
     logo_instruction = (
-        "- A logo image is attached: use it for branding. Place it once, small, "
-        "in whichever corner suits the finished composition, with clear space "
-        "around it. Reproduce it exactly as given — do not redraw, restyle, "
-        "recolour or add any wordmark or tagline beside it."
-        if logo_as_reference and spec.logo.enabled
-        else (
-            "- Do not render any logo, wordmark or badge."
-            if not spec.logo.enabled
-            else "- Do not draw a logo; brand it with colour and type only."
-        )
+        "- Do not render any logo, wordmark, badge, company-name lockup or "
+        "placeholder logo. Do not copy a logo visible in a style reference. "
+        "Leave one clean, uncluttered corner with enough breathing room for "
+        "the exact supplied logo to be added after image generation."
+        if spec.logo.enabled
+        else "- Do not render any logo, wordmark or badge."
     )
 
     aspect = str(

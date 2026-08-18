@@ -114,7 +114,7 @@ class DefaultImageValidator:
                 composition_score = min(1.0, composition_score + 0.15)
 
             gray = img.convert("L")
-            data = list(gray.getdata())
+            data = list(gray.get_flattened_data())
             sample = data[:: max(1, len(data) // 2000)]
             if len(sample) > 2:
                 var = statistics.pvariance(sample)
@@ -140,7 +140,7 @@ class DefaultImageValidator:
                 step = max(
                     1, (rgb.width * rgb.height) // int(self._cfg.get("palette_sample_pixels") or 64)
                 )
-                pixels = list(rgb.getdata())[::step]
+                pixels = list(rgb.get_flattened_data())[::step]
                 targets = _brand_rgb_targets(brief, brand)
                 if pixels and targets:
                     near = sum(1 for px in pixels if _near_any_brand(px, targets))

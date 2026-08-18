@@ -8,6 +8,7 @@ from app.core.config import get_settings
 from app.modules.ai.application.cost import YamlCostEstimator
 from app.modules.ai.application.health import ProviderHealthRegistry
 from app.modules.ai.application.lifecycle import InMemoryLifecycleStore
+from app.modules.ai.application.provider_budgets import ProviderBudgetService
 from app.modules.ai.application.orchestrator import DefaultAIOrchestrator
 from app.modules.ai.application.postgres_recorder import PostgresRequestRecorder
 from app.modules.ai.application.plugins import (
@@ -68,4 +69,5 @@ class AIOrchestratorFactory:
             pre_processors=[PromptSanitizer()],
             post_processors=[CitationExtractor(), OutputFormatter()],
             validators=CompositeValidator([JsonValidator(), LengthValidator()]),
+            budget_guard=ProviderBudgetService(),
         )

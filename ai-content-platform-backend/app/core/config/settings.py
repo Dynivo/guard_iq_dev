@@ -58,6 +58,10 @@ class Settings(BaseSettings):
     # ── JWT ──────────────────────────────────────────────────
     JWT_SECRET_KEY: str = "CHANGE-ME"
     JWT_REFRESH_SECRET_KEY: str = "CHANGE-ME-REFRESH"
+    # Required only when scripts/seed_database.py must create or migrate the
+    # initial administrator. Keeping it out of source prevents a predictable
+    # delivery credential from being baked into every fresh installation.
+    SEED_ADMIN_PASSWORD: str = ""
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
     JWT_REFRESH_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days (session kept via refresh)
@@ -100,6 +104,7 @@ class Settings(BaseSettings):
     # a retry with specific feedback if it scores below IMAGE_QUALITY_THRESHOLD.
     # Each retry is a real extra Gemini image call — costs more per generation.
     IMAGE_VISUAL_CRITIC_ENABLED: bool = True
+    GEMINI_VISUAL_CRITIC_MODEL: str = "gemini-flash-latest"
     IMAGE_QUALITY_THRESHOLD: float = 82.0
     IMAGE_MAX_RETRIES: int = 2
     # If every Gemini attempt fails outright, retry once via this provider before

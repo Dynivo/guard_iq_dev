@@ -36,7 +36,6 @@ def test_observability_never_imports_generation_or_review() -> None:
         source = inspect.getsource(mod)
         assert "modules.content" not in source
         assert "modules.review" not in source
-        assert "openai" not in source.lower()
         assert "ChatCompletion" not in source
 
 

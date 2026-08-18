@@ -37,6 +37,17 @@ def _confidence_kwargs(art: KnowledgeArtifact) -> dict[str, Any]:
     }
 
 
+def _apply_initial_lifecycle(art: KnowledgeArtifact, store_cfg: dict[str, Any]) -> None:
+    """Apply the configured create policy before an artifact is persisted."""
+    initial = KnowledgeLifecycle(str(store_cfg.get("initial_lifecycle") or "candidate"))
+    if store_cfg.get("never_activate_on_create", True):
+        art.lifecycle = initial
+    elif art.created_from_review:
+        art.lifecycle = KnowledgeLifecycle.APPROVED
+    else:
+        art.lifecycle = initial
+
+
 class InMemoryLearningStore:
     """History-preserving in-memory store for unit tests and workflow nodes."""
 
@@ -57,10 +68,7 @@ class InMemoryLearningStore:
     async def store(self, artifacts: list[KnowledgeArtifact]) -> list[dict[str, Any]]:
         stored: list[dict[str, Any]] = []
         for art in artifacts:
-            if art.created_from_review:
-                art.lifecycle = KnowledgeLifecycle.APPROVED
-            elif art.lifecycle != KnowledgeLifecycle.CANDIDATE:
-                art.lifecycle = KnowledgeLifecycle.CANDIDATE
+            _apply_initial_lifecycle(art, self._store_cfg())
             row = art.to_dict()
             row["id"] = str(uuid.uuid4())
             row["stored_at"] = datetime.now(timezone.utc).isoformat()
@@ -186,14 +194,13 @@ class SessionLearningStore:
         self.preference_updates = preference_updates if preference_updates is not None else []
         self.learning_events = learning_events if learning_events is not None else []
 
+    def _store_cfg(self) -> dict[str, Any]:
+        return (self._config.get("store") or {}).get("store") or {}
+
     async def store(self, artifacts: list[KnowledgeArtifact]) -> list[dict[str, Any]]:
         stored: list[dict[str, Any]] = []
         for art in artifacts:
-            # Review approve/reject already validated the draft — activate immediately.
-            if art.created_from_review:
-                art.lifecycle = KnowledgeLifecycle.APPROVED
-            elif art.lifecycle != KnowledgeLifecycle.CANDIDATE:
-                art.lifecycle = KnowledgeLifecycle.CANDIDATE
+            _apply_initial_lifecycle(art, self._store_cfg())
             conf = _confidence_kwargs(art)
             if art.kind == LearningArtifactKind.EXAMPLE:
                 meta = art.metadata or {}

@@ -27,4 +27,6 @@ The backend provides the API and processing services used by the Content Intelli
 - PostgreSQL stores organisations, users, the client profile, brand settings, articles, decisions, feedback, drafts, planning data, and job history.
 - Generated media is stored in the configured local media directory.
 - AI provider credentials remain on the server and are never returned to the browser.
+- Shared monthly limits for Gemini and OpenAI/GPT are stored in PostgreSQL and enforced before paid calls, regardless of which model is selected within that provider.
 - Ingestion, screening, draft generation, and image generation are recorded as jobs so their progress and errors can be monitored.
+- Local recovery scripts reset a forgotten admin password and back up PostgreSQL plus generated media.

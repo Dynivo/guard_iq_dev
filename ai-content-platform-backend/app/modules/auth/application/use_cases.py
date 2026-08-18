@@ -5,10 +5,10 @@ from __future__ import annotations
 import uuid
 
 from app.core.constants import MembershipRole
-from app.core.exceptions import AuthenticationError
+from app.core.exceptions import AuthenticationError, ValidationError
 from app.core.logging import get_logger
 from app.core.security.jwt import create_access_token, create_refresh_token, decode_token
-from app.core.security.password import verify_password
+from app.core.security.password import hash_password, verify_password
 from app.modules.auth.domain.entities import AuthenticatedUser, TokenPair
 from app.modules.auth.domain.ports import MembershipRepository, UserRepository
 
@@ -104,3 +104,29 @@ class GetCurrentUserUseCase:
             organization_id=org_id,
             role=role,
         )
+
+
+class ChangePasswordUseCase:
+    """Replace the signed-in user's password after verifying the current one."""
+
+    def __init__(self, user_repo: UserRepository) -> None:
+        self._user_repo = user_repo
+
+    async def execute(
+        self,
+        user_id: uuid.UUID,
+        *,
+        current_password: str,
+        new_password: str,
+    ) -> None:
+        user = await self._user_repo.get_by_id(user_id)
+        if user is None or not user.is_active:
+            raise AuthenticationError("User not found or deactivated")
+        if not verify_password(current_password, user.password_hash):
+            raise AuthenticationError("Current password is incorrect")
+        if current_password == new_password:
+            raise ValidationError("New password must be different from the current password")
+        if len(new_password.encode("utf-8")) > 72:
+            raise ValidationError("New password must be no more than 72 UTF-8 bytes")
+        await self._user_repo.update_password(user_id, hash_password(new_password))
+        logger.info("User changed password: user_id=%s", user_id)

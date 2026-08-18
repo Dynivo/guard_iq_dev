@@ -56,6 +56,15 @@ class PgUserRepository:
     async def create(self, email: str, display_name: str, hashed_password: str) -> UserRecord:
         raise NotImplementedError("User creation goes through seed/admin flows")
 
+    async def update_password(self, user_id: uuid.UUID, hashed_password: str) -> None:
+        stmt = select(User).where(User.id == user_id)
+        result = await self._session.execute(stmt)
+        user = result.scalar_one_or_none()
+        if user is None:
+            raise ValueError("User not found")
+        user.password_hash = hashed_password
+        await self._session.flush()
+
 
 class PgMembershipRepository:
     """SQLAlchemy-based membership repository returning domain records."""

@@ -33,7 +33,7 @@ def default_brand_logo_bytes() -> bytes | None:
 def _knockout_light_background(logo: Image.Image, *, threshold: int = 248) -> Image.Image:
     """Make near-white logo canvas transparent so it sits cleanly on dark/light creatives."""
     rgba = logo.convert("RGBA")
-    pixels = list(rgba.getdata())
+    pixels = list(rgba.get_flattened_data())
     out = []
     for r, g, b, a in pixels:
         if a < 12:

@@ -4,6 +4,7 @@ import {
   Building2,
   Cpu,
   FileDown,
+  KeyRound,
   Loader2,
   Mic,
   Moon,
@@ -22,11 +23,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/des
 import { Skeleton } from '@/design-system/ui/skeleton';
 import { Badge } from '@/design-system/ui/badge';
 import { Button } from '@/design-system/ui/button';
+import { Input } from '@/design-system/ui/input';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { startOnboardingTour } from '@/lib/onboarding';
 import { routes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
+import { ProviderBudgetsCard } from '@/components/ProviderBudgetsCard';
 
 interface OrgCurrent {
   id?: string;
@@ -58,13 +61,43 @@ const SHORTCUTS = [
 
 export function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { data, isLoading } = useApiQuery<ApiEnvelope<OrgCurrent>>(
     ['org-current'],
     '/organizations/current'
   );
   const org = data?.data;
   const [exporting, setExporting] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  const changePassword = async () => {
+    if (newPassword.length < 12) {
+      toast.error('New password must be at least 12 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      await apiClient.post('/auth/change-password', {
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
+      toast.success('Password changed. Sign in again with the new password.');
+      logout();
+      window.location.href = routes.login;
+    } catch (error: unknown) {
+      const message = (error as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      toast.error(message || 'Could not change password');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   const exportDiagnostics = async () => {
     setExporting(true);
@@ -99,6 +132,7 @@ export function SettingsPage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
+        <ProviderBudgetsCard />
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -122,6 +156,53 @@ export function SettingsPage() {
                 {user?.role || 'editor'}
               </Badge>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <KeyRound className="h-4 w-4 text-accent" />
+              Change password
+            </CardTitle>
+            <CardDescription>
+              Replace the temporary handover password after first sign-in.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Input
+              type="password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              placeholder="Current password"
+              autoComplete="current-password"
+            />
+            <Input
+              type="password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              placeholder="New password (12+ characters)"
+              autoComplete="new-password"
+              maxLength={72}
+            />
+            <Input
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder="Confirm new password"
+              autoComplete="new-password"
+              maxLength={72}
+            />
+            <Button
+              size="sm"
+              disabled={
+                changingPassword || !currentPassword || !newPassword || !confirmPassword
+              }
+              onClick={changePassword}
+            >
+              {changingPassword && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Change password
+            </Button>
           </CardContent>
         </Card>
 

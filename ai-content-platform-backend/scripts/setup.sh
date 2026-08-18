@@ -29,25 +29,22 @@ echo "── Prerequisites ──"
 check_cmd python3
 check_cmd pip3
 check_cmd psql
-check_cmd redis-cli
 
 echo ""
 echo "── Services ──"
 check_service "PostgreSQL" "localhost" "5432"
-check_service "Redis" "localhost" "6379"
 
 echo ""
 if [ "$MISSING" -ne 0 ]; then
     echo "Some prerequisites are missing. Install them before continuing:"
     echo ""
     echo "  macOS:"
-    echo "    brew install postgresql@16 redis python@3.11"
+    echo "    brew install postgresql@16 python@3.11"
     echo "    brew services start postgresql@16"
-    echo "    brew services start redis"
     echo ""
     echo "  Ubuntu/Debian:"
-    echo "    sudo apt install postgresql redis python3 python3-pip python3-venv"
-    echo "    sudo systemctl start postgresql redis"
+    echo "    sudo apt install postgresql python3 python3-pip python3-venv"
+    echo "    sudo systemctl start postgresql"
     echo ""
     echo "  Then create the database:"
     echo "    createdb ai_content_platform"
@@ -61,7 +58,8 @@ echo "── Quick start ──"
 echo "  python3 -m venv .venv"
 echo "  source .venv/bin/activate"
 echo "  pip install -r requirements.txt"
-echo "  cp .env.development .env"
+echo "  cp .env.example .env"
+echo "  # Fill in secrets, including SEED_ADMIN_PASSWORD"
 echo "  createdb ai_content_platform  # if not already created"
 echo "  alembic upgrade head"
 echo "  python scripts/seed_database.py"

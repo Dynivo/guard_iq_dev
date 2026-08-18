@@ -4,7 +4,12 @@ This tool helps turn relevant technology, cybersecurity, compliance, and busines
 
 It was built for **Guard IQ**, the IT support company. Guard IQ is the client brand, not the name of the tool.
 
-Installation and deployment are documented separately.
+Installation and deployment are documented separately in the [Mac installation guide](INSTALLATION_GUIDE.md).
+
+The client can create or manage the two AI provider accounts here:
+
+- [Google AI Studio](https://aistudio.google.com/welcome)
+- [OpenAI Platform](https://platform.openai.com/login)
 
 ## What the tool does
 
@@ -27,5 +32,7 @@ Installation and deployment are documented separately.
 
 - [Backend](ai-content-platform-backend/README.md) — data, screening, generation, storage, and job processing.
 - [Frontend](ai-content-platform-frontend/README.md) — pages, controls, and the client-facing workflow.
+- [Delivery review](DELIVERY_REVIEW.md) — final checks, security boundary, and password handover.
+- [Security](SECURITY.md) — supported deployment, controls, limitations, and recovery.
 
 If an operation fails or appears stuck, check **Jobs** in the application. A diagnostics export is available from **Settings** for the development team.

@@ -15,6 +15,7 @@ from app.core.config import get_settings
 from app.core.exceptions import AppError
 from app.core.logging import get_logger
 from app.modules.image.domain.models import ImageGenerationRequest, ImageGenerationResult
+from app.modules.ai.application.provider_budgets import ProviderBudgetService
 
 logger = get_logger(__name__)
 
@@ -102,6 +103,14 @@ class GeminiImageProvider:
 
         meta_in = dict(request.metadata or {})
         correlation_id = meta_in.get("correlation_id") or meta_in.get("request_id")
+        estimated_cost = estimate_image_cost(model, "medium", pricing=self._pricing)
+        budgets = ProviderBudgetService()
+        reservation = await budgets.reserve(
+            meta_in.get("organization_id"),
+            provider="gemini",
+            model=model,
+            estimated_cost_usd=estimated_cost,
+        )
 
         client = self._client
         owns_client = client is None
@@ -111,17 +120,24 @@ class GeminiImageProvider:
             resp = await client.post(url, json=body)
             resp.raise_for_status()
         except httpx.HTTPStatusError as exc:
+            await budgets.cancel(reservation)
             raise AppError(f"Gemini image generation error: {exc.response.text[:500]}") from exc
         except httpx.HTTPError as exc:
+            await budgets.cancel(reservation)
             raise AppError(f"Gemini image generation error: {exc}") from exc
         finally:
             if owns_client:
                 await client.aclose()
 
         data = resp.json()
-        image_bytes = self._extract_bytes(data)
+        try:
+            image_bytes = self._extract_bytes(data)
+        except Exception:
+            await budgets.cancel(reservation)
+            raise
         latency_ms = int((time.perf_counter() - started) * 1000)
-        cost = estimate_image_cost(model, "medium", pricing=self._pricing)
+        cost = estimated_cost
+        await budgets.settle(reservation, actual_cost_usd=cost)
 
         out_w, out_h = request.width, request.height
         try:

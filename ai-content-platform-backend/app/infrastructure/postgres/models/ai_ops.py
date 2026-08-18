@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date, datetime
+from decimal import Decimal
 
-from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -110,3 +112,36 @@ class ProviderConfig(Base, UUIDPrimaryKeyMixin, TimestampMixin, OrgScopedMixin):
     config_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+
+class ProviderBudget(Base, UUIDPrimaryKeyMixin, TimestampMixin, OrgScopedMixin):
+    """Current-month hard spending ceiling shared by every model at a provider."""
+
+    __tablename__ = "provider_budgets"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id", "provider", name="uq_provider_budgets_org_provider"
+        ),
+    )
+
+    provider: Mapped[str] = mapped_column(String(50), nullable=False)
+    monthly_limit_usd: Mapped[Decimal] = mapped_column(
+        Numeric(12, 6), nullable=False, default=Decimal("10.000000")
+    )
+    month_start: Mapped[date] = mapped_column(Date, nullable=False)
+    spent_usd: Mapped[Decimal] = mapped_column(
+        Numeric(12, 6), nullable=False, default=Decimal("0.000000")
+    )
+    is_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class ProviderBudgetReservation(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    """Short-lived reservation preventing concurrent calls from overspending."""
+
+    __tablename__ = "provider_budget_reservations"
+
+    budget_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("provider_budgets.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    amount_usd: Mapped[Decimal] = mapped_column(Numeric(12, 6), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)

@@ -1,6 +1,6 @@
 """JWT token creation and verification.
 
-Uses python-jose with HMAC-SHA256 for stateless authentication.
+Uses PyJWT with HMAC-SHA256 for stateless authentication.
 Access and refresh tokens have separate secrets so a leaked access
 token cannot mint refresh tokens and vice versa.
 """
@@ -10,7 +10,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from jose import JWTError, jwt
+import jwt
+from jwt import InvalidTokenError
 
 from app.core.config import get_settings
 from app.core.exceptions import AuthenticationError
@@ -46,7 +47,7 @@ def decode_token(token: str, token_type: str = "access") -> dict[str, Any]:
     )
     try:
         payload = jwt.decode(token, secret, algorithms=[settings.JWT_ALGORITHM])
-    except JWTError as exc:
+    except InvalidTokenError as exc:
         raise AuthenticationError("Token is invalid or expired") from exc
 
     if payload.get("type") != token_type:

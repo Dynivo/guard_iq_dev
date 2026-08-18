@@ -144,6 +144,11 @@ class DefaultVisualIntelligenceEngine:
             variant_index=request.variant_index,
             seed_override=request.seed_override,
         )
+        prompt_req.metadata = {
+            **dict(prompt_req.metadata or {}),
+            "organization_id": request.organization_id,
+            "correlation_id": request.correlation_id,
+        }
         ph = prompt_req.prompt_hash()
         cached = self._prompt_cache.get(ph)
         if cached is None:
@@ -197,6 +202,10 @@ class DefaultVisualIntelligenceEngine:
             brand=dict((record.result_metadata or {}).get("brand") or {}),
             replay_of_job_id=record.job_id,
         )
+        prompt_req.metadata = {
+            **dict(prompt_req.metadata or {}),
+            "organization_id": request.organization_id,
+        }
         policy = self._policy.validate(brief, scene, composition, brand=request.brand)
         return await self._finish_from_prompt(
             request=request,
@@ -232,7 +241,11 @@ class DefaultVisualIntelligenceEngine:
             and get_settings().IMAGE_TEXT_ACCURACY_CHECK_ENABLED
         ):
             card_copy = dict(prompt_req.parameters.get("card_copy") or {})
-            text_result = await check_rendered_text(gen.image_bytes, card_copy)
+            text_result = await check_rendered_text(
+                gen.image_bytes,
+                card_copy,
+                organization_id=request.organization_id,
+            )
         return gen, validation, text_result
 
     async def _finish_from_prompt(

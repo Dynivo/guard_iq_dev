@@ -2,11 +2,12 @@
 """Seed Shailesh Bhudia / Guard IQ Brand Intelligence from LinkedIn profile data.
 
 Idempotent for the first org. Runs Collect → Analyze → Approve through Brand
-Intelligence (URL-seed LinkedIn path). Replaces prior incorrect Hybrd seed.
+Intelligence (URL-seed LinkedIn path), then records a projection marker so a
+normal re-seed does not destroy or duplicate approved brand memory.
 
 Usage:
     cd ai-content-platform-backend
-    .venv/bin/python scripts/seed_shailesh_guardiq_brand.py
+    python scripts/seed_shailesh_guardiq_brand.py
 """
 
 from __future__ import annotations
@@ -17,6 +18,9 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 from sqlalchemy import delete, select
 
@@ -49,6 +53,7 @@ WEBSITE = "https://guardiq.co.uk"
 COMPANY = "Guard IQ"
 FOUNDER = "Shailesh Bhudia"
 PROFILE_NAME = "Shailesh Bhudia — Guard IQ"
+SUPPLIED_LOGO_PATH = Path(__file__).resolve().parents[1] / "assets" / "brand" / "guard_iq_logo.png"
 
 HEADLINE = (
     "Guard IQ | Managed IT & Security for Regulated Businesses | Cyber Essentials Certified"
@@ -304,20 +309,6 @@ Claims must be accurate. We are Cyber Essentials certified. Do not invent certif
 or imply regulatory approval we do not hold.
 """
 
-# Minimal Guard IQ shield mark (SVG) for Brand Kit / typography compositing.
-LOGO_SVG = """\
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Guard IQ">
-  <rect width="512" height="512" rx="64" fill="#0A1F2B"/>
-  <path d="M256 72 L400 128 V248 C400 340 336 412 256 440 C176 412 112 340 112 248 V128 Z"
-        fill="none" stroke="#1A5CB0" stroke-width="28" stroke-linejoin="round"/>
-  <path d="M256 120 L360 164 V248 C360 318 314 370 256 392 C198 370 152 318 152 248 V164 Z"
-        fill="#0D7377"/>
-  <text x="256" y="270" text-anchor="middle" font-family="Arial, Helvetica, sans-serif"
-        font-size="96" font-weight="700" fill="#FFFFFF">IQ</text>
-</svg>
-"""
-
-
 async def _org_id(session) -> uuid.UUID:
     result = await session.execute(select(Organization).order_by(Organization.created_at.asc()).limit(1))
     org = result.scalar_one_or_none()
@@ -458,11 +449,14 @@ async def _upload_brand_assets(
     storage = get_storage_provider()
     logo_id = uuid.uuid4()
     guidelines_id = uuid.uuid4()
-    logo_key = f"{org_id}/brand/{profile_id}/logo/{logo_id}.svg"
+    logo_key = f"{org_id}/brand/{profile_id}/logo/{logo_id}.png"
     guidelines_key = f"{org_id}/brand/{profile_id}/guideline/{guidelines_id}.md"
 
+    if not SUPPLIED_LOGO_PATH.is_file():
+        raise RuntimeError(f"Supplied Guard IQ logo is missing: {SUPPLIED_LOGO_PATH}")
+
     logo_stored = storage.put_bytes(
-        logo_key, LOGO_SVG.encode("utf-8"), content_type="image/svg+xml"
+        logo_key, SUPPLIED_LOGO_PATH.read_bytes(), content_type="image/png"
     )
     guidelines_stored = storage.put_bytes(
         guidelines_key,
@@ -479,7 +473,7 @@ async def _upload_brand_assets(
     )
     variants = dict(logo.variants_json or {})
     variants["primary"] = logo_stored.storage_key
-    variants["svg"] = logo_stored.storage_key
+    variants["png"] = logo_stored.storage_key
     logo.variants_json = variants
     logo.primary_key = logo_stored.storage_key
     await uc.logos.upsert(logo)
@@ -491,11 +485,11 @@ async def _upload_brand_assets(
     artifacts = [
         {
             "kind": "logo",
-            "filename": "guard-iq-logo.svg",
+            "filename": "guard_iq_logo.png",
             "storage_key": logo_stored.storage_key,
-            "mime_type": "image/svg+xml",
+            "mime_type": "image/png",
             "variant": "primary",
-            "extracted_text": "Guard IQ primary logo (shield + IQ)",
+            "extracted_text": "Supplied Guard IQ primary logo (shield + GUARD IQ wordmark)",
         },
         {
             "kind": "guideline",
@@ -646,6 +640,14 @@ async def _project_kit(session, org_id: uuid.UUID) -> None:
     if not kit:
         print("  No Brand Kit — skip projection")
         return
+    screening_profile_path = (
+        Path(__file__).resolve().parents[1] / "configs" / "brand" / "client-profile.md"
+    )
+    screening_profile_md = (
+        screening_profile_path.read_text(encoding="utf-8")
+        if screening_profile_path.is_file()
+        else CLIENT_PROFILE_MD
+    )
     await kits.update(
         kit.id,
         {
@@ -670,7 +672,10 @@ async def _project_kit(session, org_id: uuid.UUID) -> None:
                 "company": COMPANY,
                 "website": WEBSITE,
             },
-            "client_profile_md": CLIENT_PROFILE_MD,
+            # Relevance screening needs the detailed audience/inclusion/exclusion
+            # document. CLIENT_PROFILE_MD above is the shorter brand-import
+            # summary and must not replace this operational profile.
+            "client_profile_md": screening_profile_md,
             "font_heading": "Inter",
             "font_body": "Inter",
             "extra_settings": {
@@ -688,11 +693,22 @@ async def _project_kit(session, org_id: uuid.UUID) -> None:
     print("  Brand Kit updated (Guard IQ + guidelines/fonts)")
 
 
-async def main() -> None:
+async def seed_guard_iq_brand(*, force: bool = False) -> None:
     print("=== Seed Shailesh Bhudia / Guard IQ Brand Intelligence ===")
     async with async_session_factory() as session:
         org_id = await _org_id(session)
         uc = BrandIntelligenceUseCases(session)
+        existing_kit = await uc.brand_kits.get_by_org_id(org_id)
+        already_projected = bool(
+            existing_kit
+            and (existing_kit.extra_settings or {}).get("brand_intelligence_seed")
+            == "shailesh_guardiq"
+            and existing_kit.logo_object_key
+        )
+        if already_projected and not force:
+            print("  Guard IQ brand projection already present — skipped")
+            return
+
         profile = await _ensure_profile(uc, org_id)
         await _ensure_persona_and_never_say(uc, org_id, profile.id)
         await session.commit()
@@ -729,8 +745,11 @@ async def main() -> None:
         print(f"  Missing assets: {missing}")
         print(f"  News query: {(news_sync.get('policy') or {}).get('primary_query')}")
         print(f"  News sources updated: {news_sync.get('sources_updated')}")
-        print(f"  Brand → /app/brand")
-        print(f"  Dashboard → /app/brand/intelligence?profileId={profile.id}")
+        print("  Brand → /app/brand")
+
+
+async def main() -> None:
+    await seed_guard_iq_brand(force="--force" in sys.argv[1:])
 
 
 if __name__ == "__main__":

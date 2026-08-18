@@ -21,6 +21,10 @@ from app.modules.ai.application.lifecycle import (
     InMemoryLifecycleStore,
     InMemoryRequestRecorder,
 )
+from app.modules.ai.application.provider_budgets import (
+    ProviderBudgetExceeded,
+    ProviderBudgetService,
+)
 from app.modules.ai.application.plugins import (
     CompositeValidator,
     JsonValidator,
@@ -79,6 +83,7 @@ class DefaultAIOrchestrator:
         pre_processors: list | None = None,
         post_processors: list | None = None,
         validators: CompositeValidator | None = None,
+        budget_guard: ProviderBudgetService | None = None,
     ) -> None:
         self._router = router
         self._factory = provider_factory
@@ -95,6 +100,9 @@ class DefaultAIOrchestrator:
         self._validators = validators or CompositeValidator(
             [JsonValidator(), LengthValidator()]
         )
+        # Tests and embedded callers may omit durable accounting; the
+        # production factory always supplies the real guard.
+        self._budgets = budget_guard
 
     async def complete(self, capability: str, prompt: str, **overrides: Any) -> CompletionResult:
         req = OrchestratorRequest(
@@ -282,12 +290,35 @@ class DefaultAIOrchestrator:
             provider = self._factory.create(target.provider, model=target.model)
             attempts = max(1, decision.retry.max_attempts)
             for attempt in range(1, attempts + 1):
+                reservation = None
+                paid_cost = 0.0
                 if attempt > 1:
                     life.transition(AIRequestState.RETRYING, detail=f"attempt={attempt}")
                     await self._lifecycle.save(life)
                 try:
                     completion_req = self._build_completion_request(
                         request, decision, target
+                    )
+                    # Reserve a conservative worst-case amount before making a
+                    # paid call. The actual token cost replaces it on success.
+                    estimated_input_tokens = max(1, len(request.prompt) // 4)
+                    estimated_output_tokens = int(
+                        request.max_tokens or decision.max_tokens or 4096
+                    )
+                    reservation = (
+                        await self._budgets.reserve(
+                            request.organization_id,
+                            provider=target.provider,
+                            model=target.model,
+                            estimated_cost_usd=self._cost.estimate(
+                                provider=target.provider,
+                                model=target.model,
+                                tokens_in=estimated_input_tokens,
+                                tokens_out=estimated_output_tokens,
+                            ),
+                        )
+                        if self._budgets is not None
+                        else None
                     )
                     result = await asyncio.wait_for(
                         provider.complete(completion_req),
@@ -299,6 +330,7 @@ class DefaultAIOrchestrator:
                         tokens_in=result.tokens_in,
                         tokens_out=result.tokens_out,
                     )
+                    paid_cost = float(result.cost_estimate or 0.0)
                     result.retries = total_retries
 
                     ok, verr = self._validators.validate(
@@ -356,6 +388,11 @@ class DefaultAIOrchestrator:
                             "evaluation_status": "pending",
                         }
                     )
+                    if self._budgets is not None:
+                        await self._budgets.settle(
+                            reservation,
+                            actual_cost_usd=paid_cost,
+                        )
 
                     outcome = OrchestratorResult(
                         success=True,
@@ -377,7 +414,28 @@ class DefaultAIOrchestrator:
                     for post in self._post:
                         outcome = await post.process(request, outcome)
                     return outcome
+                except ProviderBudgetExceeded as exc:
+                    # A model at its ceiling may fall back to another configured
+                    # model, but retrying the same model cannot help.
+                    last_error = str(exc)
+                    logger.warning(
+                        "model_budget_exceeded",
+                        extra={
+                            "provider": target.provider,
+                            "model": target.model,
+                            "organization_id": str(request.organization_id or ""),
+                        },
+                    )
+                    break
                 except Exception as exc:  # noqa: BLE001
+                    if reservation is not None and self._budgets is not None:
+                        if paid_cost > 0:
+                            await self._budgets.settle(
+                                reservation,
+                                actual_cost_usd=paid_cost,
+                            )
+                        else:
+                            await self._budgets.cancel(reservation)
                     last_error = str(exc)
                     total_retries += 1
                     self._health.record_failure(

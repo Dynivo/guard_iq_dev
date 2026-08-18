@@ -23,6 +23,7 @@ from app.core.config import get_settings
 from app.core.exceptions import AppError
 from app.core.logging import get_logger
 from app.modules.image.domain.models import ImageGenerationRequest, ImageGenerationResult
+from app.modules.ai.application.provider_budgets import ProviderBudgetService
 
 logger = get_logger(__name__)
 
@@ -283,6 +284,16 @@ class GeminiInfographicProvider:
             response_modalities=modalities,
             image_config=types.ImageConfig(**image_config_kwargs),
         )
+        estimated_cost = estimate_gemini_image_cost(
+            model, quality_tier, pricing=self._pricing
+        )
+        budgets = ProviderBudgetService()
+        reservation = await budgets.reserve(
+            meta_in.get("organization_id"),
+            provider="gemini",
+            model=model,
+            estimated_cost_usd=estimated_cost,
+        )
 
         prompt = request.prompt or ""
         neg = (request.negative_prompt or "").strip()
@@ -322,15 +333,23 @@ class GeminiInfographicProvider:
                     timeout=self._timeout,
                 )
         except TimeoutError as exc:
+            await budgets.cancel(reservation)
             raise AppError(f"Gemini image generation timed out after {self._timeout}s") from exc
         except AppError:
+            await budgets.cancel(reservation)
             raise
         except Exception as exc:  # noqa: BLE001 — normalize vendor errors
+            await budgets.cancel(reservation)
             raise AppError(f"Gemini image API error: {exc}") from exc
 
-        image_bytes = _extract_inline_image_bytes(response)
+        try:
+            image_bytes = _extract_inline_image_bytes(response)
+        except Exception:
+            await budgets.cancel(reservation)
+            raise
         latency_ms = int((time.perf_counter() - started) * 1000)
-        cost = estimate_gemini_image_cost(model, quality_tier, pricing=self._pricing)
+        cost = estimated_cost
+        await budgets.settle(reservation, actual_cost_usd=cost)
 
         metadata: dict[str, Any] = {
             "style": request.style,

@@ -605,15 +605,14 @@ class VisualWorkflow:
         # drifting on prompt wording alone. None when no file is bundled, in
         # which case generation falls back to the text prompt only.
         style_ref = default_style_reference()
-        # Hand the logo to Gemini as a reference image so it places the mark
-        # natively, in a spot that suits the composition it just built.
-        # Deterministic compositing stays as a fallback only (see
-        # should_stamp_logo below) — always-stamping is what forced a fixed
-        # corner and a visible backing plate over the model's own layout.
+        # Do not ask Gemini to redraw the supplied logo. Image models can
+        # reinterpret even an attached identity reference, which produced a
+        # generic shield/wordmark in otherwise good creatives. The exact
+        # brand-kit PNG is composited after generation instead.
         refs = ref_policy.resolve(
             mode=reference_mode,
-            include_logo=True,
-            logo_bytes=mark,
+            include_logo=False,
+            logo_bytes=None,
             brand=brand,
             brand_style_bytes=style_ref[0] if style_ref else None,
             brand_style_mime=style_ref[1] if style_ref else None,
@@ -674,6 +673,7 @@ class VisualWorkflow:
                         "output_format": "png",
                     },
                     metadata={
+                        "organization_id": str(org_id),
                         "creative_mode": mode,
                         "archetype": design_spec.design_archetype,
                         "attempt": attempt_idx,
@@ -779,7 +779,12 @@ class VisualWorkflow:
             critic_payload: dict[str, Any] = {"overall": 90.0, "passed": True, "issues": []}
             if critic_enabled:
                 await self._set_job_phase(job, "quality_check", attempt=attempt)
-                critique = await critic.critique(image_bytes, design_spec, brand=brand)
+                critique = await critic.critique(
+                    image_bytes,
+                    design_spec,
+                    brand=brand,
+                    organization_id=org_id,
+                )
                 critic_payload = critique.to_dict()
                 score = float(critique.overall)
                 if score > best_score:
@@ -810,15 +815,10 @@ class VisualWorkflow:
         final_bytes = best_bytes
 
         await self._set_job_phase(job, "applying_brand", attempt=attempt)
-        # Gemini places the logo itself from the reference image. Composite one
-        # on only when the critic reports it missing or wrong — this is the
-        # policy reference_policy.yaml always described ("prefer
-        # model-integrated logo; stamp only when critic says missing/wrong").
-        needs_stamp = mark is not None and ref_policy.should_stamp_logo(
-            critic_result=best_critic,
-            logo_enabled=design_spec.logo.enabled,
-            stamp_policy=refs.stamp_policy,
-        )
+        # Always apply the exact supplied logo after Gemini has produced the
+        # artwork. This makes brand identity deterministic and does not depend
+        # on the probabilistic visual critic recognising a redrawn logo.
+        needs_stamp = mark is not None and design_spec.logo.enabled
         if needs_stamp:
             scale = float(refs.stamp_policy.get("default_stamp_scale") or 0.11)
             try:
@@ -843,8 +843,10 @@ class VisualWorkflow:
                 )
                 best_critic["logo_stamped"] = True
                 best_critic["logo_position"] = position
+                best_critic["logo_backing"] = backing
             except Exception as exc:  # noqa: BLE001
-                logger.warning("logo_stamp_correction_failed job=%s: %s", job.id, exc)
+                logger.exception("logo_stamp_failed job=%s: %s", job.id, exc)
+                raise RuntimeError("Could not apply the supplied brand logo") from exc
 
         await self._set_job_phase(job, "finalizing")
         latency_ms = int((time.perf_counter() - started) * 1000) or result_latency
@@ -888,6 +890,10 @@ class VisualWorkflow:
                 "provider_label": (
                     "Premium" if str(quality).lower() in {"premium", "pro"} else "Standard"
                 ),
+                "logo_source": "brand_kit" if needs_stamp else "none",
+                "logo_as_provider_reference": refs.logo_as_reference,
+                "logo_stamped": bool(best_critic.get("logo_stamped")),
+                "logo_position": best_critic.get("logo_position"),
                 "critic": best_critic,
             }
         )
