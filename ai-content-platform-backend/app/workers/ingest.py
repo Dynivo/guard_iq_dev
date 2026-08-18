@@ -17,7 +17,6 @@ from sqlalchemy import update as sql_update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.logging import get_logger
-from app.modules.intelligence.application.autoscore_budget import autoscore_budget
 from app.workers.broker import ensure_broker
 
 logger = get_logger(__name__)
@@ -52,65 +51,6 @@ async def _mark_job_failed(
             await session.commit()
     except Exception:
         logger.exception("Failed to record job failure in DB for job_id=%s", job_id)
-
-
-async def _score_saved_articles(
-    factory: async_sessionmaker[AsyncSession],
-    org_id: uuid.UUID,
-    article_ids: list[str],
-) -> None:
-    """AI relevance must run inside the worker — FastAPI event handlers are not here.
-
-    Await each score before the Dramatiq event loop exits (create_task would cancel).
-    Capped by the shared autoscore_budget, same as the inline path in
-    post_ingest.notify_articles_imported — a large burst only scores what the
-    rolling-window budget allows; the rest stay at their post-ingest
-    keyword-only status. Note: this budget is per-worker-process, so with
-    multiple Dramatiq worker processes each has its own budget.
-    """
-    if not article_ids:
-        return
-
-    granted = autoscore_budget.reserve(len(article_ids))
-    to_score = article_ids[:granted]
-    deferred = len(article_ids) - len(to_score)
-    if deferred:
-        logger.info(
-            "worker.auto_relevance_budget scoring=%d/%d deferred=%d",
-            len(to_score),
-            len(article_ids),
-            deferred,
-        )
-
-    from app.modules.ai.application.factory import AIOrchestratorFactory
-    from app.modules.intelligence.application.workflow import IntelligenceWorkflow
-
-    scored = 0
-    failed = 0
-    for aid in to_score:
-        try:
-            async with factory() as session:
-                workflow = IntelligenceWorkflow(session, AIOrchestratorFactory.create())
-                result = await workflow.run(org_id=org_id, article_id=uuid.UUID(aid))
-                await session.commit()
-                scored += 1
-                logger.info(
-                    "worker.auto_relevance article=%s score=%s status=%s",
-                    aid,
-                    result.get("score"),
-                    result.get("status"),
-                )
-        except Exception:
-            failed += 1
-            logger.exception("worker.auto_relevance_failed article=%s", aid)
-
-    logger.info(
-        "worker.auto_relevance_done org=%s scored=%d failed=%d total=%d",
-        org_id,
-        scored,
-        failed,
-        len(article_ids),
-    )
 
 
 async def _async_ingest(org_id_str: str, source_id_str: str, job_id_str: str) -> None:
@@ -167,7 +107,7 @@ async def _async_ingest(org_id_str: str, source_id_str: str, job_id_str: str) ->
 
             article_ids = list(result.get("article_ids") or [])
 
-            # Best-effort in-process event (analytics etc. if registered in this process)
+            # Record that new articles are waiting for a user-commanded batch.
             from app.modules.news.application.post_ingest import notify_articles_imported
 
             await notify_articles_imported(
@@ -175,9 +115,6 @@ async def _async_ingest(org_id_str: str, source_id_str: str, job_id_str: str) ->
                 source_id=source_id,
                 article_ids=article_ids,
             )
-
-            # Always score in-worker — API process never sees Dramatiq ArticleImported
-            await _score_saved_articles(factory, org_id, article_ids)
 
             logger.info("Dramatiq ingest complete: job_id=%s result=%s", job_id, result)
 

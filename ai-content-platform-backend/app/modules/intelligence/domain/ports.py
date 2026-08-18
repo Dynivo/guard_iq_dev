@@ -15,6 +15,9 @@ class RelevanceResult:
     audience: str | None
     angle: str | None
     reason: str | None
+    decision: str | None = None
+    article_type: str | None = None
+    quality_scores: dict[str, int] | None = None
 
 
 class RelevanceScorer(Protocol):

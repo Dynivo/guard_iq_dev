@@ -7,39 +7,23 @@ import uuid
 
 from app.core.logging import get_logger
 from app.shared.events.ports import EventBus
-from app.shared.events.types import DomainEvent
 
 logger = get_logger(__name__)
 
-# Caps concurrent inline relevance-scoring calls (shared with the orphan-recovery
-# sweep in orphan_recovery.py) so a burst of ingested articles — or a sweep
-# catching up a backlog — can't hold more DB connections than the pool allows.
-# Same fix already applied to inline image ingest earlier this session.
+# Caps the legacy single-article event path. Command-driven batches use their
+# own equivalent concurrency control in screening_batches.py.
 relevance_semaphore = asyncio.Semaphore(5)
 
 
 def register_intelligence_handlers(bus: EventBus, session_factory=None) -> None:
-    """Subscribe ArticleImported → enqueue AI relevance (non-blocking)."""
+    """Keep imports queued until the user explicitly starts a batch.
 
-    async def _handle(event: DomainEvent) -> None:
-        article_id_raw = (event.payload or {}).get("article_id")
-        if not article_id_raw:
-            return
-        try:
-            article_id = uuid.UUID(str(article_id_raw))
-        except ValueError:
-            logger.warning("intelligence.invalid_article_id payload=%s", article_id_raw)
-            return
-
-        org_id = event.organization_id
-        # Never block ingest on LLM scoring — enqueue a background task.
-        asyncio.create_task(
-            _score_in_background(org_id, article_id, session_factory),
-            name=f"relevance-{article_id}",
-        )
-
-    bus.subscribe("ArticleImported", _handle)
-    logger.info("Registered intelligence handlers for ArticleImported")
+    The former ``ArticleImported`` subscriber immediately invoked the LLM for
+    every saved article, bypassing the durable command-driven queue. The
+    single-article scoring helpers remain below for compatibility with direct
+    callers, but ingest no longer subscribes them to the event bus.
+    """
+    logger.info("Automatic ArticleImported relevance screening is disabled")
 
 
 async def _score_in_background(

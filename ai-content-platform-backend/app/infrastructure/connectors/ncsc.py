@@ -13,7 +13,7 @@ from app.modules.news.domain.ports import NormalizedArticle
 logger = get_logger(__name__)
 
 _NCSC_DEFAULT_FEED = (
-    "https://www.ncsc.gov.uk/api/1/services/v1/report-rss-feed.xml"
+    "https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml"
 )
 
 

@@ -92,23 +92,49 @@ interface TrendRow {
   created_at?: string | null;
 }
 
-type RelevanceFilter = 'all' | 'relevant' | 'not_relevant' | 'unscored';
+interface ScreeningJob {
+  id: string;
+  type: string;
+  status: string;
+  payload?: { mode?: 'unscored' | 'relevant'; batch_size?: number };
+  result?: {
+    total?: number;
+    completed?: number;
+    succeeded?: number;
+    failed?: number;
+    waiting?: number;
+  };
+}
+
+interface ScreeningStatusPayload {
+  active: boolean;
+  job?: ScreeningJob | null;
+  pending: number;
+  screening: number;
+  relevant: number;
+  irrelevant: number;
+  batch_size: number;
+  concurrency: number;
+}
+
+type RelevanceFilter = 'all' | 'relevant' | 'rejected' | 'unscored';
 type SortKey = 'newest' | 'relevance' | 'trending';
 
 const PAGE_SIZE = 10;
 
 function statusChip(status?: string) {
   if (status === 'relevant') return { status: 'approved' as const, label: 'Relevant' };
-  if (status === 'irrelevant') return { status: 'rejected' as const, label: 'Not relevant' };
+  if (status === 'reference' || status === 'irrelevant') return { status: 'rejected' as const, label: 'Rejected' };
+  if (status === 'screening') return { status: 'running' as const, label: 'Screening' };
   if (status === 'scored') return { status: 'waiting' as const, label: 'Not yet screened' };
   return { status: 'pending' as const, label: 'New' };
 }
 
 function fitLabel(score?: number | null, ai?: number | null): string {
   if (typeof ai === 'number') {
-    if (ai >= 3) return 'Strong fit';
-    if (ai >= 2) return 'Borderline';
-    return 'Weak fit';
+    if (ai >= 4) return 'Strong fit';
+    if (ai >= 3) return 'Relevant';
+    return 'Rejected';
   }
   if (score == null || Number.isNaN(Number(score))) return 'Unscored';
   const n = Number(score);
@@ -129,7 +155,7 @@ function relevanceRank(a: ArticleRow): number {
 
 function statusToApiParam(filter: RelevanceFilter): string | null {
   if (filter === 'relevant') return 'relevant';
-  if (filter === 'not_relevant') return 'irrelevant';
+  if (filter === 'rejected') return 'irrelevant';
   if (filter === 'unscored') return 'scored';
   return null;
 }
@@ -152,7 +178,7 @@ export function NewsFeedPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
-  const [enriching, setEnriching] = useState(false);
+  const [batchCommand, setBatchCommand] = useState<'unscored' | 'relevant' | null>(null);
   const [showHow, setShowHow] = useState(false);
   const [draftTarget, setDraftTarget] = useState<ArticleRow | null>(null);
   const [draftPhase, setDraftPhase] = useState<DraftPhase>('confirm');
@@ -178,6 +204,19 @@ export function NewsFeedPage() {
   const { data: trendsData } = useApiQuery<
     ApiEnvelope<{ items?: TrendRow[]; total?: number }>
   >(['article-trends'], '/articles/trends?limit=40');
+
+  const { data: screeningData, refetch: refetchScreening } = useApiQuery<
+    ApiEnvelope<ScreeningStatusPayload>
+  >(['article-screening-status'], '/articles/screening-status', {
+    staleTime: 0,
+    refetchInterval: (query) => (query.state.data?.data?.active ? 2500 : false),
+  });
+
+  const screeningStatus = screeningData?.data;
+  const screeningJob = screeningStatus?.job;
+  const screeningActive = Boolean(screeningStatus?.active);
+  const screeningCompleted = Number(screeningJob?.result?.completed || 0);
+  const screeningTotal = Number(screeningJob?.result?.total || screeningJob?.payload?.batch_size || 0);
 
   const articles: ArticleRow[] = useMemo(() => {
     const payload = data?.data;
@@ -270,7 +309,7 @@ export function NewsFeedPage() {
       toast.success(
         status === 'relevant'
           ? 'Marked relevant — brand profile updated'
-          : 'Marked not relevant — brand profile updated'
+          : 'Marked rejected — brand profile updated'
       );
       invalidateArticles();
     } catch {
@@ -372,18 +411,39 @@ export function NewsFeedPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftJobComplete, draftJobFailed, draftJobId]);
 
-  const runEnrichment = async () => {
-    setEnriching(true);
+  const runScreeningBatch = async (mode: 'unscored' | 'relevant') => {
+    setBatchCommand(mode);
     try {
-      const res = await apiClient.post<ApiEnvelope<{ queued?: number }>>('/articles/rescore-new');
-      toast.success(`Queued ${res.data.data?.queued ?? 0} stories for scoring`);
+      const endpoint = mode === 'relevant' ? '/articles/rescore-relevant' : '/articles/rescore-new';
+      const res = await apiClient.post<
+        ApiEnvelope<{ queued?: number; already_active?: boolean; job_id?: string | null }>
+      >(endpoint);
+      const payload = res.data.data;
+      if (payload?.already_active) {
+        toast.info('A screening batch is already running');
+      } else if ((payload?.queued || 0) > 0) {
+        toast.success(
+          mode === 'relevant'
+            ? `Queued ${payload?.queued} relevant stories for rescoring`
+            : `Queued ${payload?.queued} unscored stories for screening`
+        );
+      } else {
+        toast.info(mode === 'relevant' ? 'No relevant stories to rescore' : 'No unscored stories waiting');
+      }
+      await refetchScreening();
       invalidateArticles();
     } catch {
       toast.error('Could not start scoring');
     } finally {
-      setEnriching(false);
+      setBatchCommand(null);
     }
   };
+
+  useEffect(() => {
+    if (screeningJob?.status !== 'complete') return;
+    invalidateArticles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screeningJob?.id, screeningJob?.status]);
 
   if (isLoading) {
     return (
@@ -402,7 +462,7 @@ export function NewsFeedPage() {
   const filters: { key: RelevanceFilter; label: string }[] = [
     { key: 'all', label: 'All' },
     { key: 'relevant', label: 'Relevant' },
-    { key: 'not_relevant', label: 'Not relevant' },
+    { key: 'rejected', label: 'Rejected' },
     { key: 'unscored', label: 'Unscored' },
   ];
 
@@ -412,22 +472,61 @@ export function NewsFeedPage() {
         title="News"
         description="See what’s trending, sort by fit, and draft from the stories that match your brand."
         actions={
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={runEnrichment} disabled={enriching}>
-              {enriching ? 'Scoring…' : 'Rescore'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                refetch();
-                invalidateArticles();
-              }}
-              disabled={isFetching}
-            >
-              <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
-              Refresh
-            </Button>
+          <div className="flex flex-col items-end gap-1.5">
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => runScreeningBatch('unscored')}
+                disabled={screeningActive || batchCommand !== null || Number(screeningStatus?.pending || 0) === 0}
+              >
+                {(screeningActive && screeningJob?.payload?.mode === 'unscored') || batchCommand === 'unscored' ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : null}
+                {screeningActive && screeningJob?.payload?.mode === 'unscored'
+                  ? 'Screening…'
+                  : 'Screen next 100'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => runScreeningBatch('relevant')}
+                disabled={screeningActive || batchCommand !== null || Number(screeningStatus?.relevant || 0) === 0}
+              >
+                {(screeningActive && screeningJob?.payload?.mode === 'relevant') || batchCommand === 'relevant' ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : null}
+                {screeningActive && screeningJob?.payload?.mode === 'relevant'
+                  ? 'Rescoring…'
+                  : 'Rescore relevant'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  refetch();
+                  refetchScreening();
+                  invalidateArticles();
+                }}
+                disabled={isFetching}
+              >
+                <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
+                Refresh
+              </Button>
+            </div>
+            {screeningActive && screeningTotal > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                {screeningJob?.payload?.mode === 'relevant' ? 'Rescoring' : 'Screening'}{' '}
+                {screeningCompleted}/{screeningTotal}
+                {screeningJob?.payload?.mode === 'unscored'
+                  ? ` · ${screeningStatus?.pending ?? screeningJob?.result?.waiting ?? 0} waiting`
+                  : ''}
+              </p>
+            ) : Number(screeningStatus?.pending || 0) > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                {screeningStatus?.pending} waiting · runs only when commanded
+              </p>
+            ) : null}
           </div>
         }
       />
@@ -445,8 +544,13 @@ export function NewsFeedPage() {
         {showHow && (
           <div className="mt-2 max-w-xl space-y-1.5 rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-muted-foreground">
             <p>
-              Stories are scored against your brand profile and auto-sorted into Relevant or Not
-              relevant. Trends show which topics are moving in your feed.
+              Each command screens up to 100 waiting stories against your brand profile. The AI
+              receives the title, summary and available article excerpt. Useful score 3–5
+              opportunities become Relevant; everything else is Rejected.
+            </p>
+            <p>
+              Batches stop when complete. Run the next 100 when you are ready, or use Rescore
+              relevant to explicitly reassess existing recommendations.
             </p>
             <p>
               Use Yes / No to correct a call — that updates Learning and your Brand profile.
@@ -638,7 +742,7 @@ export function NewsFeedPage() {
                       size="sm"
                       variant={a.status === 'irrelevant' ? 'destructive' : 'outline'}
                       disabled={relBusy || a.status === 'irrelevant'}
-                      title="Mark not relevant"
+                      title="Mark rejected"
                       onClick={() => setRelevance(a.id, 'irrelevant')}
                     >
                       <ThumbsDown className="h-3.5 w-3.5" />
@@ -727,7 +831,7 @@ export function NewsFeedPage() {
 
               {draftTarget.status === 'irrelevant' && (
                 <p className="rounded-[var(--radius)] border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-100">
-                  This story is marked not relevant. You can still draft it if you want.
+                  This story is rejected. You can still draft it if you want.
                 </p>
               )}
 

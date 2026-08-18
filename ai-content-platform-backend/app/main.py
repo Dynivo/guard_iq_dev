@@ -111,15 +111,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     try:
         import asyncio
 
-        from app.modules.intelligence.application.orphan_recovery import (
-            recover_orphaned_relevance_scoring_startup,
-            relevance_recovery_loop,
+        from app.modules.intelligence.application.screening_batches import (
+            resume_screening_batches_startup,
         )
 
-        asyncio.create_task(recover_orphaned_relevance_scoring_startup(async_session_factory))
-        asyncio.create_task(relevance_recovery_loop(async_session_factory))
+        asyncio.create_task(resume_screening_batches_startup(async_session_factory))
     except Exception:  # noqa: BLE001
-        logger.exception("Failed to schedule relevance orphan recovery")
+        logger.exception("Failed to resume relevance screening batches")
 
     try:
         import asyncio
@@ -174,9 +172,13 @@ def create_app() -> FastAPI:
     app.include_router(brand_kits.router, prefix=api_prefix)
     app.include_router(brand_kits.alias_router, prefix=api_prefix)
     app.include_router(brand_intelligence.router, prefix=api_prefix)
+    # Register static intelligence endpoints before the generic
+    # ``/articles/{article_id}`` route. Otherwise FastAPI treats paths such as
+    # ``/articles/screening-status`` as an article UUID and returns 422 before
+    # the intended handler can run.
+    app.include_router(intelligence.router, prefix=api_prefix)
     app.include_router(articles.router, prefix=api_prefix)
     app.include_router(sources.router, prefix=api_prefix)
-    app.include_router(intelligence.router, prefix=api_prefix)
     app.include_router(drafts.router, prefix=api_prefix)
     app.include_router(capture.router, prefix=api_prefix)
     app.include_router(publishing_plan.router, prefix=api_prefix)

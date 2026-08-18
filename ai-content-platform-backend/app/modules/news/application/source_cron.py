@@ -1,6 +1,6 @@
 """Periodic cron evaluation for news sources.
 
-Mirrors app/modules/intelligence/application/orphan_recovery.py's pattern: a
+Mirrors the platform's other startup-managed background-loop pattern: a
 long-running asyncio loop started from app lifespan, sweeping the DB on an
 interval rather than holding any in-memory "next run" state — so a source's
 due-ness is always recomputed from `schedule_cron` + `last_fetched_at`

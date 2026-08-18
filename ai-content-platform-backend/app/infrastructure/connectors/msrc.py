@@ -58,6 +58,23 @@ class MSRCConnector(BaseConnector):
             logger.warning("MSRC API: unexpected 'value' type")
             return []
 
+        # The endpoint also returns unrelated legacy release documents. Keep
+        # the monthly security-update summaries used by the original GuardIQ
+        # source and order them newest-first before applying the item limit.
+        updates = [
+            update
+            for update in updates
+            if "security updates" in str(update.get("DocumentTitle") or "").lower()
+        ]
+        updates.sort(
+            key=lambda update: str(
+                update.get("InitialReleaseDate")
+                or update.get("CurrentReleaseDate")
+                or ""
+            ),
+            reverse=True,
+        )
+
         articles: list[NormalizedArticle] = []
         for update in updates[:max_items]:
             doc_id = update.get("ID", "")

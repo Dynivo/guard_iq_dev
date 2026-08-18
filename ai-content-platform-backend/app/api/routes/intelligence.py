@@ -2,23 +2,25 @@
 
 from __future__ import annotations
 
-import asyncio
 import uuid
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.schemas.envelope import success_response
 from app.core.constants import MembershipRole
 from app.core.security import require_role
 from app.infrastructure.postgres import get_async_session
-from app.infrastructure.postgres.models.news import Article
 from app.modules.ai.application.factory import AIOrchestratorFactory
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.intelligence.application.relevance_override import (
     SetArticleRelevanceUseCase,
+)
+from app.modules.intelligence.application.screening_batches import (
+    StartScreeningBatchUseCase,
+    get_screening_status,
+    schedule_screening_batch,
 )
 from app.modules.intelligence.application.workflow import IntelligenceWorkflow
 
@@ -39,34 +41,54 @@ async def rescore_new_articles(
     current_user: AuthenticatedUser = Depends(require_role(MembershipRole.VIEWER)),
     session: AsyncSession = Depends(get_async_session),
 ) -> dict:
-    """Enqueue AI relevance for raw/scored articles (batch soft rescore)."""
+    """Run the next user-commanded batch of up to 100 unscored articles."""
     org_id = current_user.organization_id
-    rows = (
-        await session.execute(
-            select(Article.id)
-            .where(
-                Article.organization_id == org_id,
-                Article.status.in_(("raw", "scored", "normalized")),
-            )
-            .order_by(Article.created_at.desc())
-            .limit(50)
-        )
-    ).scalars().all()
-    ids = [str(r) for r in rows]
-
+    result = await StartScreeningBatchUseCase(session).execute(
+        org_id, mode="unscored"
+    )
+    # Persist the Job and article `screening` claims before its task opens
+    # independent sessions. This is also the duplicate-click boundary.
+    await session.commit()
     from app.infrastructure.postgres.session import async_session_factory
-    from app.modules.intelligence.application.subscribers import _score_in_background
 
-    for aid in ids:
-        asyncio.create_task(
-            _score_in_background(org_id, uuid.UUID(aid), async_session_factory),
-            name=f"rescore-{aid}",
-        )
+    if result.get("queued") and result.get("job_id"):
+        schedule_screening_batch(uuid.UUID(result["job_id"]), async_session_factory)
 
     request_id = getattr(request.state, "request_id", "")
+    return success_response(result, request_id=request_id)
+
+
+@router.post("/rescore-relevant")
+async def rescore_relevant_articles(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(require_role(MembershipRole.EDITOR)),
+    session: AsyncSession = Depends(get_async_session),
+) -> dict:
+    """Explicitly rescore up to 100 least-recently scored relevant articles."""
+    org_id = current_user.organization_id
+    result = await StartScreeningBatchUseCase(session).execute(
+        org_id, mode="relevant"
+    )
+    await session.commit()
+    from app.infrastructure.postgres.session import async_session_factory
+
+    if result.get("queued") and result.get("job_id"):
+        schedule_screening_batch(uuid.UUID(result["job_id"]), async_session_factory)
     return success_response(
-        {"queued": len(ids), "article_ids": ids},
-        request_id=request_id,
+        result, request_id=getattr(request.state, "request_id", "")
+    )
+
+
+@router.get("/screening-status")
+async def screening_status(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(require_role(MembershipRole.VIEWER)),
+    session: AsyncSession = Depends(get_async_session),
+) -> dict:
+    """Return queue depth and durable progress for the active/latest batch."""
+    result = await get_screening_status(session, current_user.organization_id)
+    return success_response(
+        result, request_id=getattr(request.state, "request_id", "")
     )
 
 

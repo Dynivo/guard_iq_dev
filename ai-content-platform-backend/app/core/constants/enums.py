@@ -16,7 +16,9 @@ class ArticleStatus(StrEnum):
     NORMALIZED = "normalized"
     DUPLICATE = "duplicate"
     SCORED = "scored"
+    SCREENING = "screening"
     RELEVANT = "relevant"
+    REFERENCE = "reference"
     IRRELEVANT = "irrelevant"
     USED = "used"
 

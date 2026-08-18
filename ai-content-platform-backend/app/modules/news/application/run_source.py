@@ -54,11 +54,50 @@ class RunAllSourcesUseCase:
         enabled = [s for s in sources if s.enabled]
         enabled.sort(key=lambda s: (s.priority or 0), reverse=True)
 
+        # Persist the complete run-all queue before any inline worker can
+        # acquire and hold a pooled DB connection. Dispatching each job as it
+        # is created can starve this request after the first five workers,
+        # leaving the rest of the source catalogue with no Job row at all.
+        queued = []
+        for source in enabled:
+            job = Job(
+                organization_id=org_id,
+                job_type="ingest",
+                status="pending",
+                payload_json={"source_id": str(source.id)},
+                correlation_id=str(uuid.uuid4()),
+            )
+            self._session.add(job)
+            queued.append((source, job))
+
+        await self._session.flush()
+        for source, job in queued:
+            self._session.add(
+                JobEvent(
+                    job_id=job.id,
+                    event_type="created",
+                    message=f"Ingest job created for source '{source.name}'",
+                )
+            )
+        await self._session.commit()
+
         runner = RunSourceUseCase(self._session)
-        jobs = [
-            await runner.execute(org_id=org_id, source_id=source.id)
-            for source in enabled
-        ]
+        backend = (get_settings().JOB_BACKEND or "inline").strip().lower()
+        jobs: list[dict] = []
+        for source, job in queued:
+            if backend == "dramatiq":
+                await runner._dispatch_dramatiq(str(org_id), str(source.id), str(job.id))
+            else:
+                await runner._dispatch_inline(org_id, source.id, job.id)
+            jobs.append(
+                {
+                    "job_id": str(job.id),
+                    "status": "pending",
+                    "source_id": str(source.id),
+                    "source_name": source.name,
+                    "backend": backend,
+                }
+            )
         return {
             "jobs": jobs,
             "count": len(jobs),

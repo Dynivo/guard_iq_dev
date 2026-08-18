@@ -110,27 +110,11 @@ class Settings(BaseSettings):
     # "inline" runs work in-process; "dramatiq" requires Redis workers.
     JOB_BACKEND: str = "inline"
 
-    # Self-heals articles orphaned at status=scored (relevance task lost to a
-    # restart before it ran) by re-dispatching them on a timer. Off by default
-    # since flipping it on immediately re-scores every existing orphan — each
-    # is a real LLM call. Enable once you're ready to pay for the backlog.
-    RELEVANCE_RECOVERY_ENABLED: bool = False
-
     # Hard ceiling on new articles saved per single source ingest run,
     # independent of each source's own connector max_items config. Counts
     # only net-new saves — duplicates skipped along the way don't count
     # against it, so this never cuts a run short due to dedup noise.
     MAX_ARTICLES_PER_SOURCE_RUN: int = 100
-
-    # Process-wide cap on how many freshly-saved articles get an immediate AI
-    # relevance LLM call within a rolling window — global, not per ingest run.
-    # A burst spread across many sources (e.g. many due at once) still shares
-    # one budget. Articles beyond the budget stay at their post-ingest
-    # keyword-only status="scored" state and are picked up later only if
-    # RELEVANCE_RECOVERY_ENABLED is on — otherwise never auto-scored, which
-    # is the point: this bounds LLM spend regardless of how the burst arrives.
-    RELEVANCE_AUTOSCORE_MAX_PER_WINDOW: int = 100
-    RELEVANCE_AUTOSCORE_WINDOW_SECONDS: int = 3600
 
     # Not-relevant articles have no ongoing value once classified — permanently
     # deleted once they're this many days old (checked every

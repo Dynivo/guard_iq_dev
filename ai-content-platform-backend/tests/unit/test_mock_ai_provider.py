@@ -34,6 +34,8 @@ class TestMockAIProviderRelevance:
         assert "audience" in data
         assert "angle" in data
         assert "reason" in data
+        assert "decision" in data
+        assert "quality" in data
 
     @pytest.mark.asyncio
     async def test_relevance_score_in_range(self, provider: MockAIProvider) -> None:

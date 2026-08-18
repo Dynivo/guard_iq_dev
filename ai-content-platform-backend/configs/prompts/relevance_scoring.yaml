@@ -2,7 +2,7 @@
 # Variables are injected at runtime; body is the prompt template.
 
 name: relevance_scoring
-version: "2.0"
+version: "4.2"
 owner: platform
 description: >
   Score an article's relevance to the client's business,
@@ -21,16 +21,36 @@ variables:
   - name: article_body
     type: text
     required: false
+  - name: article_source
+    type: text
+    required: false
+  - name: article_published_at
+    type: text
+    required: false
+  - name: screening_date
+    type: text
+    required: true
 
 body: |
-  You are a relevance screening assistant for a LinkedIn content
-  platform. Your job is to evaluate whether a news article is
-  worth turning into a LinkedIn post for this specific client.
+  You are the senior editorial gatekeeper for a LinkedIn content
+  platform. Make a binary, precision-first decision about whether this
+  article is strong enough to become a standalone post for this client.
+
+  This is NOT merely a topical cybersecurity classifier. A story can be
+  genuinely about cybersecurity and still be unsuitable as a post because it
+  is stale, thin, repetitive, overly specialist, vendor marketing, or has no
+  useful action for the client's audience.
+
+  The editorial decision rules below override any older/default threshold
+  wording embedded in the client profile.
 
   === CLIENT PROFILE ===
   {client_profile}
 
   === ARTICLE ===
+  Source: {article_source}
+  Published: {article_published_at}
+  Screening date: {screening_date}
   Title: {article_title}
   Summary: {article_summary}
   Body: {article_body}
@@ -69,39 +89,102 @@ body: |
   tangential angle you could construct. Do not score based on what a
   post COULD say — score based on what the article IS about.
 
-  === INSTRUCTIONS ===
-  Evaluate the article against the client profile. Return JSON only:
+  === EDITORIAL GATES (apply after the primary subject test) ===
+  Judge every gate independently from 1 (poor) to 5 (excellent):
+
+  1. audience_fit — useful to a UK owner, practice manager, or operational
+     lead in a 5–70 person regulated firm; not just a SOC/research audience.
+  2. actionability — gives the reader a concrete decision, check, control, or
+     behaviour they can apply. "Patch regularly" alone is weak unless the
+     event is urgent or unusually consequential.
+  3. educational_value — enough substance to explain why something happens,
+     what it changes, and what to do. A bare CVE acknowledgement, build-number
+     correction, teaser, or one-line vendor update is not a standalone post.
+  4. freshness — normally published within 45 days. Older official guidance
+     can inform research, but should be rejected as current news.
+  5. distinctiveness — a specific story or lesson, not routine noise such as
+     another individual CVE from the same patch release or generic threat
+     statistics with no differentiated takeaway.
+  6. brand_authority — GuardIQ can explain it credibly from its real services,
+     target sectors, stack, and regulatory experience without inventing a
+     connection.
+
+  === BINARY DECISION ===
+  - relevant: a useful standalone content opportunity. It passes the primary
+    subject test and all four client relevance questions. Score 3 is allowed
+    for solid, transferable, cross-sector guidance when a non-technical
+    practice manager can learn or do something concrete.
+  - rejected: everything else. This includes articles that are genuinely
+    in-scope but too thin, stale, generic, repetitive, specialist, or weakly
+    actionable, as well as articles that fail the primary subject test.
+
+  Important examples:
+  - Reject a bare "Acknowledgement Updated" CVE.
+  - Reject a minor corrected build number.
+  - Keep one strong Patch Tuesday roundup; reject routine individual CVEs
+    unless actively exploited or unusually important to common SME software.
+  - Reject old NCSC material as current news even when it is authoritative.
+  - Reject deep malware research when the only SME takeaway is generic
+    "use EDR" or "keep patched".
+  - A current UK regulatory change, target-sector incident, M365 identity
+    attack, or widely relevant exploited vulnerability with concrete actions
+    can be relevant.
+
+  === ACCEPTED-NEWS BENCHMARK ===
+  The client's earlier reviewed set accepted the following kinds of stories.
+  Use these as decision-shape examples, not as an instruction to accept every
+  article mentioning the same product or threat:
+  - phishing or malware aimed at a law firm, even outside the UK, when the
+    email-security and staff-awareness lesson transfers directly;
+  - Microsoft 365 device-code phishing or document/Copilot integrity risks
+    with a concrete control or verification step;
+  - current NCSC incident-recovery, passkey, Cyber Essentials, firewall/VPN,
+    router-hardening, or secure-AI-adoption guidance that a small regulated
+    firm can translate into an action;
+  - nation-state framing only when the underlying control failure itself is
+    ordinary and actionable for a small practice, such as exposed router
+    administration or unpatched perimeter equipment.
+
+  That benchmark rejected generic Patch Tuesday summaries, enterprise-only
+  platforms, developer tooling, deep malware mechanics, foreign regulation
+  with no UK equivalent, and nation-state reporting with no small-practice
+  action. Preserve that distinction.
+
+  Evaluate the article against the client profile and return JSON only:
 
   {
-    "relevant": true/false,
+    "decision": "relevant | rejected",
+    "relevant": true,
     "score": 1-5,
+    "article_type": "standalone | reject",
     "sector": "care | healthcare | legal | accountancy | cross-sector",
     "framework": "DSPT | CyberEssentials | GDPR | SRA | FRC | CQC | none",
     "audience": "reactive | managed | both",
+    "quality": {
+      "subject_fit": 1-5,
+      "audience_fit": 1-5,
+      "actionability": 1-5,
+      "educational_value": 1-5,
+      "freshness": 1-5,
+      "distinctiveness": 1-5,
+      "brand_authority": 1-5
+    },
     "angle": "one sentence on what the post would say",
-    "reason": "why it passed or failed the primary subject test"
+    "reason": "specific evidence for the decision, including the weakest gate"
   }
 
-  Scoring (all tiers require passing the primary subject test above):
-  - 5: strong UK / target-sector / actionable this week
-  - 4: clear cyber, IT, compliance, M365, phishing, ransomware, or
-       GDPR incident/advisory — strong fit even if sector-generic
-  - 3: genuine cross-sector case study or in-scope advisory; the
-       lesson clearly transfers to a regulated SME
-  - 2: real security/IT-ops substance but a weaker or more generic
-       hook (e.g. widely-covered vendor advisory with limited SME
-       actionability)
-  - 1: fails the primary subject test, OR clearly off-topic entirely
+  Overall scoring:
+  - 5: exceptional, current, specific, target-sector/UK and immediately useful
+  - 4: strong standalone GuardIQ opportunity; relevant
+  - 3: solid, useful and actionable, though generic or cross-sector; relevant
+  - 2: weak, thin, stale, niche, or generic; rejected
+  - 1: irrelevant or manufactured connection; rejected
 
-  Set relevant=true when score >= 2.
+  Set relevant=true only for decision=relevant and score >= 3.
 
 eval_notes: >
-  v2.0 — replaced "prefer recall / score generously / default
-  relevant: true" with a primary-subject test applied before scoring.
-  The old version scored AI-product-news and company blog posts as
-  relevant by inventing shadow-IT/GDPR angles that weren't in the
-  article's actual content — 96% of "relevant" scores were tagged
-  cross-sector and 92% scored only 2-3, indicating volume over
-  precision. This version keeps genuine cross-sector case studies
-  fully eligible but requires the article itself to be substantively
-  about security/compliance, not merely spinnable into it.
+  v4.2 — binary relevant/rejected outcome for UK regulated firms of 5–70
+  people. Global stories remain eligible when the lesson clearly transfers.
+  Score-3 stories may be relevant when they pass all four relevance questions,
+  matching the accepted-news benchmark. The LLM receives title, summary,
+  source, date, and up to 3,000 characters of available article body.

@@ -6,18 +6,18 @@ sources:
   connector_type: rss
   schedule_cron: 0 */4 * * *
   credibility_score: 100
-  priority: 100
+  priority: 300
   enabled: true
   config:
-    feed_url: https://www.ncsc.gov.uk/api/1/services/v1/report-rss-feed.xml
+    feed_url: https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml
     max_items: 40
 - catalog_id: msrc_security
   name: Microsoft Security (MSRC)
   category: government
-  connector_type: rss
+  connector_type: msrc
   schedule_cron: 0 */6 * * *
   credibility_score: 100
-  priority: 95
+  priority: 290
   enabled: true
   config:
     feed_url: https://api.msrc.microsoft.com/update-guide/rss
@@ -237,7 +237,7 @@ sources:
   connector_type: rss
   schedule_cron: 0 */2 * * *
   credibility_score: 75
-  priority: 80
+  priority: 280
   enabled: true
   config:
     feed_url: https://feeds.feedburner.com/TheHackersNews

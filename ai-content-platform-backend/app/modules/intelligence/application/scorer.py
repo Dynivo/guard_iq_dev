@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -60,6 +61,8 @@ class RelevanceScorer:
         title: str,
         summary: str,
         body_text: str = "",
+        published_at: datetime | None = None,
+        source_name: str | None = None,
     ) -> RelevanceResult:
         """Score an article and persist the result. Returns parsed RelevanceResult."""
         prompt_data = await self._prompt_registry.get_latest("relevance_scoring")
@@ -77,6 +80,9 @@ class RelevanceScorer:
             "article_title": title,
             "article_summary": summary or "",
             "article_body": body_text[:3000] if body_text else "",
+            "article_source": source_name or "Unknown source",
+            "article_published_at": published_at.isoformat() if published_at else "Unknown",
+            "screening_date": datetime.now(timezone.utc).date().isoformat(),
         })
 
         from app.core.observability import ensure_correlation_id
@@ -135,13 +141,46 @@ class RelevanceScorer:
                     audience=None,
                     angle=None,
                     reason="Failed to parse LLM response",
+                    decision="rejected",
+                    article_type="reject",
+                    quality_scores={},
                 )
 
+        score = max(1, min(5, int(data.get("score", 1))))
+        decision = str(data.get("decision") or "").strip().lower()
+        # Binary editorial outcome. Accept the previous prompt's labels while
+        # rolling deployments are in flight, but never persist a third
+        # "reference" outcome. The original accepted-news benchmark retained
+        # useful score-3 stories, so 3 is the minimum binary pass threshold.
+        model_says_relevant = decision in {"relevant", "recommended"}
+        if not decision and isinstance(data.get("relevant"), bool):
+            model_says_relevant = bool(data["relevant"])
+        decision = "relevant" if model_says_relevant and score >= 3 else "rejected"
+
+        quality_raw = data.get("quality") if isinstance(data.get("quality"), dict) else {}
+        quality_scores: dict[str, int] = {}
+        for key in (
+            "subject_fit",
+            "audience_fit",
+            "actionability",
+            "educational_value",
+            "freshness",
+            "distinctiveness",
+            "brand_authority",
+        ):
+            try:
+                quality_scores[key] = max(1, min(5, int(quality_raw.get(key, 1))))
+            except (TypeError, ValueError):
+                quality_scores[key] = 1
+
         return RelevanceResult(
-            score=int(data.get("score", 1)),
+            score=score,
             sector=data.get("sector"),
             framework=data.get("framework"),
             audience=data.get("audience"),
             angle=data.get("angle"),
             reason=data.get("reason"),
+            decision=decision,
+            article_type="standalone" if decision == "relevant" else "reject",
+            quality_scores=quality_scores,
         )

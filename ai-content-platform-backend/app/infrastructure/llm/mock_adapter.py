@@ -27,13 +27,25 @@ def _mock_relevance_response(prompt: str) -> str:
     sectors = ["care", "healthcare", "legal", "accountancy", "cross-sector"]
     frameworks = ["DSPT", "CyberEssentials", "GDPR", "SRA", "FRC", "CQC", "none"]
     audiences = ["reactive", "managed", "both"]
+    decision = "relevant" if score >= 3 else "rejected"
 
     return json.dumps({
-        "relevant": score >= 3,
+        "decision": decision,
+        "relevant": decision == "relevant",
         "score": score,
+        "article_type": "standalone" if decision == "relevant" else "reject",
         "sector": sectors[seed % len(sectors)],
         "framework": frameworks[seed % len(frameworks)],
         "audience": audiences[seed % len(audiences)],
+        "quality": {
+            "subject_fit": score,
+            "audience_fit": score,
+            "actionability": score,
+            "educational_value": score,
+            "freshness": score,
+            "distinctiveness": score,
+            "brand_authority": score,
+        },
         "angle": "Mock angle: demonstrates platform capability without real AI provider",
         "reason": f"Mock scoring — deterministic score {score} based on content hash",
     })

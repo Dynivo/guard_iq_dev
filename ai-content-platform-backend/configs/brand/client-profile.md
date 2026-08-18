@@ -140,7 +140,7 @@ score 1 regardless of any tangential angle that could be constructed.
 
 Use the four questions below only after the primary subject test passes:
 
-**1. Does it affect a UK SME or regulated practice (roughly 5–150 people)?**
+**1. Does it affect a UK regulated firm or practice of roughly 5–70 people?**
 Enterprise or US stories still count if there is a clear lesson a small UK
 firm can act on this month.
 
@@ -165,13 +165,13 @@ All tiers below require passing the primary subject test first.
 |---|---|
 | **5** | Perfect: UK + target sector + actionable this week |
 | **4** | Strong: clear cyber/IT/compliance incident/advisory fit for this brand |
-| **3** | Good: genuine cross-sector case study or in-scope advisory (security, M365, phishing, ransomware, GDPR, Cyber Essentials, SME IT) where the lesson clearly transfers |
-| **2** | Real security/IT-ops substance but a weaker or more generic hook (e.g. a widely-covered vendor advisory with limited SME actionability) |
+| **3** | Relevant when solid and useful: generic or cross-sector is acceptable if the lesson transfers and a practice manager can act or learn |
+| **2** | Rejected: real security/IT-ops substance with only a thin or niche hook (e.g. a bare vendor update or routine individual CVE) |
 | **1** | Fails the primary subject test, or clearly out of scope: sports, celebrity, pure politics, consumer gadgets, crypto hype, funding rounds with no security lesson |
 
-**Mark relevant (score ≥ 2)** only for articles that pass the primary subject
-test. Do not score based on what a post *could* say — score based on what the
-article *is* about.
+**Mark relevant at score ≥ 3 when all four questions pass.** Scores 1–2 are
+rejected. Do not score based on what a
+post *could* say — score based on what the article *is* about.
 
 ### Weight up
 
@@ -206,6 +206,7 @@ article *is* about.
 
 ```json
 {
+  "decision": "relevant | rejected",
   "relevant": true,
   "score": 1-5,
   "sector": "care | healthcare | legal | accountancy | cross-sector",
@@ -216,8 +217,9 @@ article *is* about.
 }
 ```
 
-Default **relevant: true** and **score ≥ 2** for in-scope cyber/IT/compliance.
-Only use score 1 when the story is clearly off-brand.
+Reject in-scope cyber/IT/compliance that lacks audience fit, freshness,
+actionability or standalone educational value. Use **relevant** for score
+3–5 opportunities genuinely worth a GuardIQ post.
 
 ---
 
