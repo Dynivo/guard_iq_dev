@@ -36,11 +36,6 @@ providers:
     reliability: 0.85
     writing_score: 0.8
     cost: 0.55
-  mock:
-    reliability: 1.0
-    writing_score: 0.4
-    cost: 1.0
-
 learning:
   approve_delta: 0.05
   reject_delta: -0.08

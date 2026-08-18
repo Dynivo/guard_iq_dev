@@ -7,7 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from app.infrastructure.image_generation.mock_generator import MockImageGenerator
+from app.infrastructure.image_generation.deterministic_test_generator import (
+    DeterministicTestImageGenerator,
+)
 from app.infrastructure.image_generation.workflow_registry import FileComfyWorkflowRegistry
 from app.modules.image.application.brief import DefaultVisualBriefEnricher
 from app.modules.image.application.composition import DefaultCompositionPlanner
@@ -108,9 +110,9 @@ def test_comfy_registry_loads_without_hardcoded_graph() -> None:
     assert "test scene" in text
 
 
-def test_mock_provider_and_validator_optimizer() -> None:
+def test_deterministic_test_generator_and_validator_optimizer() -> None:
     async def _run() -> None:
-        gen = MockImageGenerator()
+        gen = DeterministicTestImageGenerator()
         result = await gen.generate(
             ImageGenerationRequest(prompt="secure cloud", width=1080, height=1350)
         )
@@ -150,7 +152,7 @@ def test_full_pipeline_memory(draft: dict) -> None:
         )
         assert result.status == "completed"
         assert result.assets
-        assert result.provider == "mock"
+        assert result.provider == "deterministic_test"
         assert result.prompt_hash
         assert result.quality_score > 0
         # no typography artifacts

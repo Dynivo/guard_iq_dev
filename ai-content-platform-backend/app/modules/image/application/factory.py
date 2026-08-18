@@ -18,7 +18,7 @@ logger = get_logger(__name__)
 
 
 class FallbackImageProvider:
-    """Try primary provider; on failure fall back to mock so local demos still produce pixels."""
+    """Try a primary provider and then a separately configured real provider."""
 
     def __init__(self, primary: ImageProvider, fallback: ImageProvider) -> None:
         self._primary = primary
@@ -33,8 +33,9 @@ class FallbackImageProvider:
             return await self._primary.generate(request)
         except Exception as exc:  # noqa: BLE001
             logger.warning(
-                "Primary image provider failed (%s); falling back to mock: %s",
+                "Primary image provider failed (%s); trying provider %s: %s",
                 self.provider_name,
+                getattr(self._fallback, "provider_name", "fallback"),
                 exc,
             )
             result = await self._fallback.generate(request)
@@ -49,8 +50,12 @@ class FallbackImageProvider:
 class VisualIntelligenceFactory:
     @staticmethod
     def create_memory(*, config_dir: Path | None = None) -> DefaultVisualIntelligenceEngine:
-        """In-memory / mock path for unit tests (no durable object store required)."""
-        provider = get_image_provider("mock")
+        """In-memory test path (no durable object store required)."""
+        from app.infrastructure.image_generation.deterministic_test_generator import (
+            DeterministicTestImageGenerator,
+        )
+
+        provider = DeterministicTestImageGenerator()
         metrics = InMemoryImageMetrics()
         orch = DefaultImageOrchestrator(provider, config_dir=config_dir, metrics=metrics)
         return DefaultVisualIntelligenceEngine(
@@ -73,17 +78,18 @@ class VisualIntelligenceFactory:
 
         settings = get_settings()
         primary = get_image_provider(provider_name)
-        name = (provider_name or settings.IMAGE_PROVIDER or "mock").lower().strip()
+        name = (provider_name or settings.IMAGE_PROVIDER or "gemini").lower().strip()
         provider: ImageProvider = primary
-        if name not in {"mock", ""}:
-            provider = FallbackImageProvider(primary, get_image_provider("mock"))
+        fallback_name = str(settings.IMAGE_PROVIDER_FALLBACK or "").lower().strip()
+        if fallback_name and fallback_name != name:
+            provider = FallbackImageProvider(primary, get_image_provider(fallback_name))
         metrics = InMemoryImageMetrics()
         orch = DefaultImageOrchestrator(provider, config_dir=config_dir, metrics=metrics)
         storage = get_storage_provider()
         logger.info(
             "VisualIntelligenceFactory storage_backend=%s image_provider=%s",
             getattr(storage, "provider_name", settings.STORAGE_PROVIDER),
-            name or "mock",
+            name,
         )
         return DefaultVisualIntelligenceEngine(
             orchestrator=orch,

@@ -53,17 +53,14 @@ class DefaultCostOptimizer:
 
         max_providers = int(policy.get("max_providers") or 1)
         budget = float(policy.get("budget_usd") or 0.0)
-        allow_mock = bool(policy.get("allow_mock", False))
         force = [str(p).lower() for p in (policy.get("force_providers") or [])]
         preferred = [str(p).lower() for p in (policy.get("preferred") or [])]
 
         available = [
             p.strip().lower()
             for p in available_providers
-            if p and str(p).strip()
+            if p and str(p).strip() and str(p).strip().lower() in model_by_provider
         ]
-        if not allow_mock:
-            available = [p for p in available if p != "mock"]
         available_set = set(available)
 
         selected: list[str] = []
@@ -78,14 +75,10 @@ class DefaultCostOptimizer:
 
         # 1) Explicit force list
         for name in force:
-            if name == "mock" and not allow_mock:
-                continue
             _add(name)
 
         # 2) Preferred (in YAML order) — always include when keyed so scoring uses all models
         for name in preferred:
-            if name == "mock" and not allow_mock:
-                continue
             _add(name)
 
         # 3) Fill remaining seats by score (budget applies only here)
@@ -117,8 +110,6 @@ class DefaultCostOptimizer:
 
         if not selected and available:
             fallback = preferred[0] if preferred and preferred[0] in available_set else available[0]
-            if fallback == "mock" and not allow_mock and len(available) > 1:
-                fallback = next((p for p in available if p != "mock"), available[0])
             selected = [fallback]
 
         panel = [

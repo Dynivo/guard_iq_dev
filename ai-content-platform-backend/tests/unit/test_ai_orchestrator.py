@@ -57,6 +57,21 @@ class _AlwaysFail:
         yield  # pragma: no cover
 
 
+class _StaticProvider:
+    def __init__(self, name: str = "test") -> None:
+        self._name = name
+
+    @property
+    def provider_name(self) -> str:
+        return self._name
+
+    async def complete(self, request: CompletionRequest) -> CompletionResult:
+        return CompletionResult(text='{"ok":true}', model="test-model", provider=self._name)
+
+    async def complete_stream(self, request: CompletionRequest):
+        yield '{"ok":true}'
+
+
 class _FakeFactory:
     def __init__(self, mapping: dict) -> None:
         self._mapping = mapping
@@ -120,33 +135,45 @@ def test_router_mix_rotates_among_configured(monkeypatch: pytest.MonkeyPatch) ->
     get_settings.cache_clear()
 
 
-def test_router_unknown_falls_back_to_mock() -> None:
+def test_router_unknown_uses_configured_default() -> None:
     router = DefaultCapabilityRouter(YamlCapabilityConfigLoader(CONFIGS / "default.yaml"))
     decision = asyncio.run(router.resolve("totally_unknown_capability_xyz"))
-    assert decision.primary.provider == "mock"
+    assert decision.primary.provider == "gemini"
     assert decision.source == "default"
 
 
-def test_orchestrator_complete_with_mock() -> None:
-    orch = AIOrchestratorFactory.create(config_path=CONFIGS / "default.yaml")
-    result = asyncio.run(
-        orch.complete("writing", "Write a LinkedIn post about security")
+def test_router_replaces_legacy_mock_org_provider_and_model() -> None:
+    class _LegacyOrgRepo:
+        async def get_for_capability(self, org_id, capability):
+            return {
+                "provider": "mock",
+                "model": "mock-v1",
+                "config_json": {"model_id": "mock-v1"},
+            }
+
+    router = DefaultCapabilityRouter(
+        YamlCapabilityConfigLoader(CONFIGS / "default.yaml"),
+        org_repo=_LegacyOrgRepo(),
     )
-    assert result.provider == "mock" or result.text  # mock when no gemini key
-    assert result.text
+    decision = asyncio.run(router.resolve("writing", organization_id=uuid.uuid4()))
+    assert decision.primary.provider == "gemini"
+    assert decision.primary.model == "gemini-flash-latest"
+    assert decision.model_id == ""
+
+
+def test_provider_factory_rejects_removed_mock_provider() -> None:
+    with pytest.raises(ValueError, match="Unknown AI provider"):
+        DefaultProviderFactory().create("mock")
 
 
 def test_cache_hit() -> None:
     cache = InMemoryAICache()
     loader = YamlCapabilityConfigLoader(CONFIGS / "default.yaml")
     router = DefaultCapabilityRouter(loader)
-    from app.infrastructure.llm.mock_adapter import MockAIProvider
-
-    factory = _FakeFactory({"mock": MockAIProvider(), "gemini": MockAIProvider()})
+    factory = _FakeFactory({"gemini": _StaticProvider("gemini")})
     orch = DefaultAIOrchestrator(router=router, provider_factory=factory, cache=cache)
 
     req = OrchestratorRequest(capability="summarization", prompt="summarize this article")
-    # Force mock by resolving — summarization uses gemini in yaml; fake factory has gemini→mock
     r1 = asyncio.run(orch.execute(req))
     assert r1.success
     assert r1.cache_hit is False
@@ -159,10 +186,8 @@ def test_sensitive_not_cached() -> None:
     cache = InMemoryAICache()
     loader = YamlCapabilityConfigLoader(CONFIGS / "default.yaml")
     router = DefaultCapabilityRouter(loader)
-    from app.infrastructure.llm.mock_adapter import MockAIProvider
-
     factory = _FakeFactory(
-        {"mock": MockAIProvider(), "gemini": MockAIProvider(), "openai": MockAIProvider()}
+        {"gemini": _StaticProvider("gemini"), "openai": _StaticProvider("openai")}
     )
     orch = DefaultAIOrchestrator(router=router, provider_factory=factory, cache=cache)
     req = OrchestratorRequest(
@@ -214,7 +239,6 @@ def test_retry_then_success() -> None:
 
 
 def test_fallback_provider() -> None:
-    from app.infrastructure.llm.mock_adapter import MockAIProvider
     from app.modules.providers.domain.models import ProviderTarget, RetryConfig, RoutingDecision
 
     class FBRouter:
@@ -222,7 +246,7 @@ def test_fallback_provider() -> None:
             return RoutingDecision(
                 capability="writing",
                 primary=ProviderTarget(provider="bad", model="x"),
-                fallbacks=(ProviderTarget(provider="mock", model="mock-v1"),),
+                fallbacks=(ProviderTarget(provider="backup", model="backup-v1"),),
                 temperature=0.5,
                 max_tokens=100,
                 timeout_ms=5_000,
@@ -237,14 +261,16 @@ def test_fallback_provider() -> None:
 
     orch = DefaultAIOrchestrator(
         router=FBRouter(),
-        provider_factory=_FakeFactory({"bad": _AlwaysFail(), "mock": MockAIProvider()}),
+        provider_factory=_FakeFactory(
+            {"bad": _AlwaysFail(), "backup": _StaticProvider("backup")}
+        ),
         cache=InMemoryAICache(),
     )
     result = asyncio.run(
         orch.execute(OrchestratorRequest(capability="writing", prompt="hello world"))
     )
     assert result.success
-    assert result.provider == "mock"
+    assert result.provider == "backup"
 
 
 def test_circuit_breaker_opens() -> None:
@@ -270,10 +296,8 @@ def test_cost_estimator() -> None:
     assert dated == pytest.approx(0.00075)
 
 
-def test_mock_streaming() -> None:
-    from app.infrastructure.llm.mock_adapter import MockAIProvider
-
-    provider = MockAIProvider()
+def test_test_provider_streaming() -> None:
+    provider = _StaticProvider()
     chunks = []
 
     async def collect():
@@ -310,7 +334,6 @@ def test_provider_factory_known() -> None:
         "openrouter",
         "ollama",
         "vllm",
-        "mock",
     }.issubset(names)
 
 

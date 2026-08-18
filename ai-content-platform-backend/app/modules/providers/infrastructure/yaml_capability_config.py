@@ -50,14 +50,18 @@ class YamlCapabilityConfigLoader:
         fallbacks_raw = item.get("fallbacks") or []
         fallbacks = tuple(
             ProviderTarget(
-                provider=str(f.get("provider", "mock")),
+                provider=str(f.get("provider") or ""),
                 model=str(f.get("model") or ""),
             )
             for f in fallbacks_raw
+            if str(f.get("provider") or "").strip().lower() not in {"", "mock"}
         )
+        provider = str(item.get("provider") or "gemini").strip().lower()
+        if provider == "mock":
+            raise ValueError(f"Capability '{name}' uses the removed mock provider")
         return CapabilityConfig(
             name=normalize_capability(name),
-            provider=str(item.get("provider", "mock")),
+            provider=provider,
             model=str(item.get("model") or ""),
             model_id=str(item.get("model_id") or ""),
             temperature=float(item.get("temperature", 0.5)),

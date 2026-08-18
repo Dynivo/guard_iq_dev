@@ -16,7 +16,7 @@ from app.modules.workflow.domain.models import NodeOutcome, WorkflowContext, Wor
 
 class _BaseImageHandler:
     def __init__(self, engine=None) -> None:
-        self._engine = engine or VisualIntelligenceFactory.create_memory()
+        self._engine = engine or VisualIntelligenceFactory.create()
 
 
 class VisualBriefHandler(_BaseImageHandler):
@@ -230,7 +230,7 @@ class ImageEmbedHandler(_BaseImageHandler):
 
 
 def register_image_handlers(node_registry, engine=None) -> None:
-    eng = engine or VisualIntelligenceFactory.create_memory()
+    eng = engine or VisualIntelligenceFactory.create()
     node_registry.register("visual.brief", VisualBriefHandler(eng))
     node_registry.register("visual.scene", VisualSceneHandler(eng))
     node_registry.register("visual.compose", VisualComposeHandler(eng))

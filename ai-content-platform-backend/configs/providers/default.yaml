@@ -12,7 +12,6 @@ capabilities:
     cache_ttl_seconds: 3600
     fallbacks:
       - { provider: openai, model: gpt-4o-mini }
-      - { provider: mock }
 
   relevance_scoring:
     provider: gemini
@@ -24,7 +23,6 @@ capabilities:
     retry: { max_attempts: 2, strategy: fixed_delay, delay_ms: 200 }
     fallbacks:
       - { provider: openai, model: gpt-4o-mini }
-      - { provider: mock }
 
   # backward-compat alias key (also normalized from "relevance")
   relevance:
@@ -33,8 +31,6 @@ capabilities:
     temperature: 0.3
     max_tokens: 2048
     cacheable: true
-    fallbacks:
-      - { provider: mock }
 
   knowledge_retrieval:
     provider: openai
@@ -42,8 +38,6 @@ capabilities:
     temperature: 0.2
     max_tokens: 2048
     cacheable: true
-    fallbacks:
-      - { provider: mock }
 
   planning:
     provider: gemini
@@ -51,8 +45,6 @@ capabilities:
     temperature: 0.5
     max_tokens: 4096
     cacheable: true
-    fallbacks:
-      - { provider: mock }
 
   prompt_building:
     provider: openai
@@ -61,8 +53,6 @@ capabilities:
     max_tokens: 4096
     cacheable: false
     sensitive: true
-    fallbacks:
-      - { provider: mock }
 
   writing:
     # Drafts use CONSENSUS_ENABLED (multi-model generate + score; best wins).
@@ -78,7 +68,6 @@ capabilities:
       - { provider: grok, model: llama-3.3-70b-versatile }
       - { provider: azure_openai, model: gpt-4 }
       - { provider: perplexity, model: sonar }
-      - { provider: mock }
 
   copywriting:
     provider: gemini
@@ -86,8 +75,6 @@ capabilities:
     temperature: 0.7
     max_tokens: 4096
     cacheable: true
-    fallbacks:
-      - { provider: mock }
 
   editing:
     provider: anthropic
@@ -97,7 +84,6 @@ capabilities:
     cacheable: false
     fallbacks:
       - { provider: openai, model: gpt-4o-mini }
-      - { provider: mock }
 
   fact_checking:
     provider: perplexity
@@ -106,7 +92,7 @@ capabilities:
     max_tokens: 2048
     cacheable: true
     fallbacks:
-      - { provider: mock }
+      - { provider: openai, model: gpt-4o-mini }
 
   summarization:
     provider: gemini
@@ -114,8 +100,6 @@ capabilities:
     temperature: 0.3
     max_tokens: 2048
     cacheable: true
-    fallbacks:
-      - { provider: mock }
 
   image_prompting:
     provider: gemini
@@ -123,8 +107,6 @@ capabilities:
     temperature: 0.6
     max_tokens: 1024
     cacheable: true
-    fallbacks:
-      - { provider: mock }
 
   image_prompt:
     provider: gemini
@@ -132,8 +114,6 @@ capabilities:
     temperature: 0.6
     max_tokens: 1024
     cacheable: true
-    fallbacks:
-      - { provider: mock }
 
   embeddings:
     provider: openai
@@ -142,8 +122,6 @@ capabilities:
     max_tokens: 1
     cacheable: true
     cache_ttl_seconds: 86400
-    fallbacks:
-      - { provider: mock }
 
   preference_learning:
     provider: gemini
@@ -152,8 +130,6 @@ capabilities:
     max_tokens: 2048
     cacheable: false
     sensitive: true
-    fallbacks:
-      - { provider: mock }
 
   preference_summary:
     provider: gemini
@@ -162,8 +138,6 @@ capabilities:
     max_tokens: 2048
     cacheable: false
     sensitive: true
-    fallbacks:
-      - { provider: mock }
 
   translation:
     provider: openai
@@ -171,8 +145,6 @@ capabilities:
     temperature: 0.3
     max_tokens: 4096
     cacheable: true
-    fallbacks:
-      - { provider: mock }
 
   carousel_copy:
     provider: gemini
@@ -180,8 +152,6 @@ capabilities:
     temperature: 0.5
     max_tokens: 4096
     cacheable: true
-    fallbacks:
-      - { provider: mock }
 
   analysis:
     provider: openai
@@ -192,7 +162,6 @@ capabilities:
     fallbacks:
       - { provider: gemini, model: gemini-flash-latest }
       - { provider: grok, model: llama-3.3-70b-versatile }
-      - { provider: mock }
 
   # M17 Consensus Engine auxiliary capabilities
   consensus_judge:
@@ -204,7 +173,6 @@ capabilities:
     sensitive: true
     fallbacks:
       - { provider: gemini, model: gemini-flash-latest }
-      - { provider: mock }
 
   consensus_critique:
     provider: anthropic
@@ -215,7 +183,6 @@ capabilities:
     sensitive: true
     fallbacks:
       - { provider: openai, model: gpt-4o-mini }
-      - { provider: mock }
 
   consensus_revise:
     provider: openai
@@ -223,5 +190,3 @@ capabilities:
     temperature: 0.4
     max_tokens: 2048
     cacheable: false
-    fallbacks:
-      - { provider: mock }

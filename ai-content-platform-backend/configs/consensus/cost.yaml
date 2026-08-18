@@ -8,7 +8,6 @@ estimates_usd_per_call:
   azure_openai: 0.03
   openrouter: 0.02
   ollama: 0.0
-  mock: 0.0
 
 latency_ms_estimate:
   openai: 2500
@@ -17,7 +16,6 @@ latency_ms_estimate:
   perplexity: 3500
   grok: 2500
   azure_openai: 2800
-  mock: 50
 
 # Prefer higher composite weight when selecting panel under budget
 selection:

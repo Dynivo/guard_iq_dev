@@ -13,29 +13,6 @@ from app.modules.capture.domain.ports import TranslationResult
 logger = get_logger(__name__)
 
 
-class MockTranslationProvider:
-    """Pass-through when Translator is not configured."""
-
-    @property
-    def name(self) -> str:
-        return "mock"
-
-    async def translate_if_needed(
-        self,
-        text: str,
-        *,
-        target_language: str = "en",
-    ) -> TranslationResult:
-        return TranslationResult(
-            text=text,
-            source_language=target_language,
-            target_language=target_language,
-            translated=False,
-            provider=self.name,
-            original_text=text,
-        )
-
-
 class AzureTranslatorProvider:
     """Azure Cognitive Services Translator v3."""
 

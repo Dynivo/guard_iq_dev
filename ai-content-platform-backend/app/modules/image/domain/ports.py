@@ -91,7 +91,7 @@ class ImagePromptBuilder(Protocol):
 
 
 class ImageProvider(Protocol):
-    """Port for pixel generation — ComfyUI, mock, or future cloud adapters."""
+    """Port for pixel generation — cloud or ComfyUI adapters."""
 
     async def generate(self, request: ImageGenerationRequest) -> ImageGenerationResult: ...
 

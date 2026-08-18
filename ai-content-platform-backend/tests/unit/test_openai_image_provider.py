@@ -12,7 +12,6 @@ from PIL import Image
 
 from app.core.exceptions import AppError
 from app.infrastructure.image_generation.factory import get_image_generator
-from app.infrastructure.image_generation.mock_generator import MockImageGenerator
 from app.infrastructure.image_generation.openai_provider import (
     OpenAIImageProvider,
     estimate_image_cost,
@@ -149,14 +148,16 @@ def test_factory_openai_branch(monkeypatch: pytest.MonkeyPatch) -> None:
         get_settings.cache_clear()
 
 
-def test_factory_mock_and_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("IMAGE_PROVIDER", "mock")
+def test_factory_rejects_removed_and_unknown_providers(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("IMAGE_PROVIDER", "gemini")
     from app.core.config import get_settings
 
     get_settings.cache_clear()
     try:
-        assert isinstance(get_image_generator("mock"), MockImageGenerator)
-        assert isinstance(get_image_generator("unknown-cloud"), MockImageGenerator)
+        with pytest.raises(ValueError, match="Unknown image provider"):
+            get_image_generator("mock")
+        with pytest.raises(ValueError, match="Unknown image provider"):
+            get_image_generator("unknown-cloud")
     finally:
         get_settings.cache_clear()
 

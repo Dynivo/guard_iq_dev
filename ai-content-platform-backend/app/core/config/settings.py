@@ -78,7 +78,7 @@ class Settings(BaseSettings):
         return value  # type: ignore[return-value]
 
     # ── Image Generation ─────────────────────────────────────
-    IMAGE_PROVIDER: str = "mock"
+    IMAGE_PROVIDER: str = "gemini"
     COMFYUI_BASE_URL: str = "http://localhost:8188"
     # Dev-only cloud pixels via OpenAI Images API (IMAGE_PROVIDER=openai)
     OPENAI_IMAGE_MODEL: str = "gpt-image-1"
@@ -159,15 +159,15 @@ class Settings(BaseSettings):
     AZURE_SPEECH_ENDPOINT: str = ""
     AZURE_SPEECH_LOCALE: str = "en-IN"
     AZURE_SPEECH_RECO_LANGUAGE: str = ""  # preferred over AZURE_SPEECH_LOCALE (e.g. en-IN, hi-IN)
-    STT_PROVIDER: str = ""  # azure | mock (preferred)
-    TTS_PROVIDER: str = ""  # azure | mock (preferred)
-    TRANSCRIPTION_PROVIDER: str = "mock"  # legacy alias for STT_PROVIDER
+    STT_PROVIDER: str = "azure"
+    TTS_PROVIDER: str = "azure"
+    TRANSCRIPTION_PROVIDER: str = "azure"  # legacy alias for STT_PROVIDER
     # Azure Translator — translate non-English transcripts only
-    TRANSLATE_PROVIDER: str = "mock"  # azure | mock
+    TRANSLATE_PROVIDER: str = "azure"
     AZURE_TRANSLATOR_KEY: str = ""
     AZURE_TRANSLATOR_REGION: str = ""
     AZURE_TRANSLATOR_ENDPOINT: str = "https://api.cognitive.microsofttranslator.com"
-    DEFAULT_LLM_PROVIDER: str = "mock"
+    DEFAULT_LLM_PROVIDER: str = "gemini"
     # Rotate writing/analysis across every LLM with an API key (openai, gemini, grok, …)
     # Prefer CONSENSUS_ENABLED for writing — scores all models and keeps the best draft.
     PROVIDER_MIX_ENABLED: bool = False

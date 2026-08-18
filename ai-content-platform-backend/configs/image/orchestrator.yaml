@@ -3,4 +3,4 @@ fallback_workflow_ids:
   - flux_schnell
   - sdxl
 timeout_seconds: 120
-default_provider: mock
+default_provider: gemini

@@ -224,8 +224,6 @@ export function CapturePage() {
           toast.success(
             `Transcribed (${data.transcription_provider || 'azure'}) and translated from ${data.source_language} → English`
           );
-        } else if (data?.transcription_provider === 'mock') {
-          toast.message('Mock transcript — restart API after setting STT_PROVIDER=azure');
         } else {
           toast.success(`Transcript ready (${data?.transcription_provider || 'azure'}) — edit if needed`);
         }
@@ -492,7 +490,7 @@ export function CapturePage() {
             {busy && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
           </div>
           <p className="text-xs text-muted-foreground">
-            Voice notes use Azure Speech (or mock). Non-English speech is translated to English
+            Voice notes use Azure Speech. Non-English speech is translated to English
             automatically. You can edit the text before continuing.
           </p>
 

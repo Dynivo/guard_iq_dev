@@ -81,12 +81,23 @@ class DefaultCapabilityRouter:
         return provider, model, mid, context_window
 
     def _available_chat_pool(self) -> list[ProviderTarget]:
-        """Providers with credentials configured (excludes mock)."""
+        """Providers with credentials configured."""
         pool: list[ProviderTarget] = []
         for target in _CHAT_POOL:
             if self._factory.has_credentials(target.provider):
                 pool.append(target)
         return pool
+
+    def _default_target(self) -> ProviderTarget:
+        """Return the configured real default with its normal chat model."""
+        settings = get_settings()
+        provider = str(settings.DEFAULT_LLM_PROVIDER).strip().lower()
+        if provider not in self._factory.known_providers():
+            provider = "gemini"
+        return next(
+            (target for target in _CHAT_POOL if target.provider == provider),
+            ProviderTarget(provider=provider, model=""),
+        )
 
     def _mix_targets(
         self,
@@ -115,15 +126,9 @@ class DefaultCapabilityRouter:
                 fallbacks.append(t)
                 seen.add(t.provider)
         for t in yaml_fallbacks:
-            if t.provider not in seen and t.provider != "mock":
-                if self._factory.has_credentials(t.provider):
-                    fallbacks.append(t)
-                    seen.add(t.provider)
-        # Always keep mock as last resort if present in yaml
-        for t in yaml_fallbacks:
-            if t.provider == "mock" and t.provider not in seen:
+            if t.provider not in seen and self._factory.has_credentials(t.provider):
                 fallbacks.append(t)
-                break
+                seen.add(t.provider)
         logger.info(
             "provider_mix capability_pool=%s primary=%s fallbacks=%s",
             [t.provider for t in pool],
@@ -151,14 +156,25 @@ class DefaultCapabilityRouter:
                 fallbacks = tuple(
                     ProviderTarget(provider=str(f["provider"]), model=str(f.get("model") or ""))
                     for f in (cfg_json.get("fallbacks") or [])
+                    if str(f.get("provider") or "").lower()
+                    in self._factory.known_providers()
                 )
                 yaml_cfg = self._loader.get(canonical)
                 mid = str(cfg_json.get("model_id") or (yaml_cfg.model_id if yaml_cfg else ""))
-                provider, model, mid, ctx = self._apply_registry(
-                    str(override["provider"]),
-                    str(override.get("model") or ""),
-                    mid,
-                )
+                override_provider = str(override["provider"]).strip().lower()
+                if override_provider not in self._factory.known_providers():
+                    default_target = self._default_target()
+                    provider, model, mid, ctx = self._apply_registry(
+                        default_target.provider,
+                        default_target.model,
+                        "",
+                    )
+                else:
+                    provider, model, mid, ctx = self._apply_registry(
+                        override_provider,
+                        str(override.get("model") or ""),
+                        mid,
+                    )
                 return RoutingDecision(
                     capability=canonical,
                     primary=ProviderTarget(provider=provider, model=model),
@@ -204,7 +220,12 @@ class DefaultCapabilityRouter:
 
         cfg = self._loader.get(canonical)
         if cfg is None:
-            provider, model, mid, ctx = self._apply_registry("mock", "mock-v1", "mock-v1")
+            default_target = self._default_target()
+            provider, model, mid, ctx = self._apply_registry(
+                default_target.provider,
+                default_target.model,
+                "",
+            )
             return RoutingDecision(
                 capability=canonical,
                 primary=ProviderTarget(provider=provider, model=model),

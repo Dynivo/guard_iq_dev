@@ -10,7 +10,7 @@ from typing import Protocol
 class TranscriptionResult:
     text: str
     locale: str = "en-GB"
-    provider: str = "mock"
+    provider: str = "azure"
     confidence: float | None = None
 
 
@@ -18,7 +18,7 @@ class TranscriptionResult:
 class SynthesisResult:
     audio_bytes: bytes
     content_type: str = "audio/mpeg"
-    provider: str = "mock"
+    provider: str = "azure"
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,7 +27,7 @@ class TranslationResult:
     source_language: str
     target_language: str
     translated: bool
-    provider: str = "mock"
+    provider: str = "azure"
     original_text: str = ""
 
 

@@ -278,7 +278,7 @@ async def speak_draft(
     current_user: AuthenticatedUser = Depends(require_role(MembershipRole.VIEWER)),
     session: AsyncSession = Depends(get_async_session),
 ) -> Response:
-    """Optional TTS of the draft post text (Azure Speech or mock)."""
+    """Optional TTS of the draft post text using Azure Speech."""
     draft = (
         await session.execute(
             select(Draft).where(

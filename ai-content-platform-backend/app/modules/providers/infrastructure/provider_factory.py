@@ -8,7 +8,6 @@ from app.infrastructure.llm.anthropic_adapter import AnthropicProvider
 from app.infrastructure.llm.azure_openai_adapter import AzureOpenAIProvider
 from app.infrastructure.llm.gemini_adapter import GeminiProvider
 from app.infrastructure.llm.grok_adapter import GrokProvider
-from app.infrastructure.llm.mock_adapter import MockAIProvider
 from app.infrastructure.llm.ollama_adapter import OllamaProvider
 from app.infrastructure.llm.openai_adapter import OpenAIProvider
 from app.infrastructure.llm.openrouter_adapter import OpenRouterProvider
@@ -34,14 +33,11 @@ class DefaultProviderFactory:
             "local",
             "grok",
             "azure_openai",
-            "mock",
         }
 
     def has_credentials(self, provider_name: str) -> bool:
         settings = get_settings()
         name = provider_name.lower()
-        if name == "mock":
-            return True
         if name == "openai":
             return bool(settings.OPENAI_API_KEY)
         if name == "anthropic":
@@ -76,13 +72,12 @@ class DefaultProviderFactory:
         backend = resolve_inference_backend(name)
         logger.debug("create provider=%s inference_backend=%s", name, backend.value)
 
-        if name == "mock" or not self.has_credentials(name):
-            if name != "mock":
-                logger.info(
-                    "No credentials for provider '%s', using MockAIProvider",
-                    name,
-                )
-            return MockAIProvider()
+        if name not in self.known_providers():
+            raise ValueError(f"Unknown AI provider '{provider_name}'")
+        if not self.has_credentials(name):
+            raise RuntimeError(
+                f"AI provider '{name}' is not configured. Add its credentials before use."
+            )
 
         if name == "openai":
             return OpenAIProvider(api_key=settings.OPENAI_API_KEY)
@@ -120,5 +115,4 @@ class DefaultProviderFactory:
                 api_key=settings.VLLM_API_KEY,
             )
 
-        logger.warning("Unknown provider '%s', using mock", name)
-        return MockAIProvider()
+        raise ValueError(f"Unsupported AI provider '{provider_name}'")

@@ -40,7 +40,7 @@ from app.modules.image.application.workflow import VisualWorkflow
 router = APIRouter(tags=["images"])
 logger = get_logger(__name__)
 
-# Process-scoped engine respects IMAGE_PROVIDER (openai / mock / comfyui)
+# Process-scoped engine respects IMAGE_PROVIDER (openai / gemini / comfyui)
 _engine = VisualIntelligenceFactory.create()
 
 _ACTIVE_JOB_STATUSES = frozenset(

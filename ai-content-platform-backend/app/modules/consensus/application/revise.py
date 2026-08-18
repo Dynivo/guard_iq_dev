@@ -145,19 +145,12 @@ class DefaultRevisionEngine:
         )
 
     def _select_revision_provider(self, request: ConsensusRequest) -> str | None:
-        """Optional override: prefer mock in development, else openai when configured."""
+        """Use an explicit override or the configured real default provider."""
         meta = request.metadata or {}
         if meta.get("revision_provider"):
             return str(meta["revision_provider"]).lower()
         settings = get_settings()
-        policy = (request.policy_id or settings.CONSENSUS_POLICY or "").lower()
-        if policy in {"development", "cheap"} or settings.APP_ENV.lower() in {
-            "development",
-            "test",
-            "ci",
-        }:
-            return "mock"
-        return "openai"
+        return str(settings.DEFAULT_LLM_PROVIDER or "gemini").strip().lower()
 
     def _build_revision_prompt(
         self,

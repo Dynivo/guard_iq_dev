@@ -8,7 +8,6 @@ import pytest
 
 from app.infrastructure.llm.azure_openai_adapter import AzureOpenAIProvider
 from app.infrastructure.llm.grok_adapter import GrokProvider
-from app.infrastructure.llm.mock_adapter import MockAIProvider
 from app.modules.providers.infrastructure.provider_factory import DefaultProviderFactory
 from app.shared.ai_types import CompletionRequest
 
@@ -98,13 +97,13 @@ def test_factory_azure_openai(monkeypatch: pytest.MonkeyPatch) -> None:
         get_settings.cache_clear()
 
 
-def test_factory_missing_grok_falls_back_mock(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_factory_missing_grok_fails_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GROK_API_KEY", "")
     from app.core.config import get_settings
 
     get_settings.cache_clear()
     try:
-        provider = DefaultProviderFactory().create("grok")
-        assert isinstance(provider, MockAIProvider)
+        with pytest.raises(RuntimeError, match="not configured"):
+            DefaultProviderFactory().create("grok")
     finally:
         get_settings.cache_clear()

@@ -97,8 +97,8 @@ class MultiFakeOrchestrator:
             text = _JSON_A
             provider, model = "openai", "revise"
         else:
-            override = (request.provider_override or "mock").lower()
-            text = _JSON_A if override in {"openai", "mock", "gemini"} else _JSON_B
+            override = (request.provider_override or "gemini").lower()
+            text = _JSON_A if override in {"openai", "gemini"} else _JSON_B
             provider, model = override, request.model or "fixture"
         return OrchestratorResult(
             success=True,
@@ -128,17 +128,15 @@ def test_parse_sections_json() -> None:
     assert sections["hook"].startswith("Protect")
 
 
-def test_cost_optimizer_development_forces_mock() -> None:
+def test_cost_optimizer_development_prefers_real_providers() -> None:
     opt = DefaultCostOptimizer()
     panel = opt.select_panel(
         policy_id="development",
-        available_providers=["openai", "gemini", "mock"],
+        available_providers=["openai", "gemini"],
         weights={},
     )
     assert panel
-    assert all(m["provider"] == "mock" for m in panel) or any(
-        m["provider"] == "mock" for m in panel
-    )
+    assert {m["provider"] for m in panel}.issubset({"openai", "gemini"})
 
 
 def test_deterministic_evaluator_scores_structured_json() -> None:
@@ -303,7 +301,7 @@ async def test_partial_panel_failure_still_succeeds() -> None:
         ConsensusRequest.from_prompt_fields(
             prompt="Write a LinkedIn post about DSPT",
             capability="writing",
-            # balanced selects up to 3 preferred providers (not force-mock like development)
+            # Balanced selects several preferred real providers.
             policy_id="balanced",
             metadata={
                 "available_providers": ["openai", "grok", "perplexity"],
@@ -336,7 +334,7 @@ async def test_consensus_engine_e2e_parallel(monkeypatch: pytest.MonkeyPatch) ->
                 prompt="Write a LinkedIn post about DSPT",
                 capability="writing",
                 policy_id="development",
-                metadata={"available_providers": ["mock", "openai"]},
+                metadata={"available_providers": ["gemini", "openai"]},
             )
         )
         assert result.success

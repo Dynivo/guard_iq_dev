@@ -66,6 +66,8 @@ class AnalyticsService:
         by_name: dict[str, dict[str, Any]] = {}
         for row in live:
             key = str(row.get("provider") or "unknown").lower()
+            if key == "mock":
+                continue
             if key in {"", "unknown", "image"} and int(row.get("requests") or 0) == 0:
                 continue
             by_name[key] = {
@@ -128,11 +130,16 @@ class AnalyticsService:
         if self._live is not None and org_id is not None:
             live = await self._live.model_health(org_id)
             if live:
-                return live
+                return [
+                    row
+                    for row in live
+                    if str(row.get("provider") or "").lower() != "mock"
+                ]
         return [
             {**h, "status": "observed"}
             for h in self._engine.models.list_health()
             if int(h.get("requests") or 0) > 0
+            and str(h.get("provider") or "").lower() != "mock"
         ]
 
     async def workflow_health(self, org_id: uuid.UUID | None = None) -> dict[str, Any]:

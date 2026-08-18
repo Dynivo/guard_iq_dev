@@ -60,11 +60,6 @@ providers:
     models:
       default: { input_per_1k: 0.0, output_per_1k: 0.0 }
 
-  mock:
-    models:
-      default: { input_per_1k: 0.0, output_per_1k: 0.0 }
-      mock-v1: { input_per_1k: 0.0, output_per_1k: 0.0 }
-
   grok:
     models:
       # xAI Grok 4.3 class: $1.25 / $2.50 per 1M (prompts < 200k)

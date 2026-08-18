@@ -44,15 +44,6 @@ models:
     latency_class: standard
     cost_tier: medium
 
-  mock-v1:
-    provider: mock
-    model: mock-v1
-    context_window: 32000
-    supports_streaming: true
-    supports_json: true
-    latency_class: fast
-    cost_tier: free
-
   llama3-local:
     provider: ollama
     model: llama3

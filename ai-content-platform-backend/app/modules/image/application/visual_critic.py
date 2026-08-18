@@ -138,7 +138,7 @@ class VisualCreativeCritic:
 
                 settings = get_settings()
                 provider = DefaultProviderFactory().create(
-                    str(getattr(settings, "DEFAULT_LLM_PROVIDER", None) or "mock")
+                    str(getattr(settings, "DEFAULT_LLM_PROVIDER", None) or "gemini")
                 )
 
                 async def _complete(req: CompletionRequest) -> Any:

@@ -1,46 +1,52 @@
-"""Unit tests for mock speech + translator providers."""
+"""Unit tests for speech provider configuration."""
 
 from __future__ import annotations
 
 import pytest
 
-from app.infrastructure.speech.azure_translator_adapter import MockTranslationProvider
-from app.infrastructure.speech.mock import (
-    MockSpeechSynthesisProvider,
-    MockTranscriptionProvider,
+from app.infrastructure.speech.factory import (
+    _is_azure,
+    _speech_locale,
+    get_speech_synthesis_provider,
+    get_transcription_provider,
+    get_translation_provider,
 )
-from app.infrastructure.speech.factory import _is_azure, _speech_locale
-
-
-@pytest.mark.asyncio
-async def test_mock_transcribe_returns_editable_text() -> None:
-    provider = MockTranscriptionProvider()
-    result = await provider.transcribe(b"fake-audio", content_type="audio/webm")
-    assert result.provider == "mock"
-    assert "Mock transcript" in result.text
-
-
-@pytest.mark.asyncio
-async def test_mock_synthesize_returns_wav_bytes() -> None:
-    provider = MockSpeechSynthesisProvider()
-    result = await provider.synthesize("Hello LinkedIn")
-    assert result.provider == "mock"
-    assert result.content_type == "audio/wav"
-    assert result.audio_bytes[:4] == b"RIFF"
-
-
-@pytest.mark.asyncio
-async def test_mock_translate_passthrough() -> None:
-    provider = MockTranslationProvider()
-    result = await provider.translate_if_needed("hello", target_language="en")
-    assert result.translated is False
-    assert result.text == "hello"
 
 
 def test_azure_alias_normalization() -> None:
     assert _is_azure("azure")
     assert _is_azure("azure_speech")
     assert not _is_azure("mock")
+
+
+def test_speech_requires_azure_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("STT_PROVIDER", "azure")
+    monkeypatch.setenv("TTS_PROVIDER", "azure")
+    monkeypatch.setenv("AZURE_SPEECH_KEY", "")
+    monkeypatch.setenv("AZURE_SPEECH_REGION", "")
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
+    try:
+        with pytest.raises(RuntimeError, match="Azure Speech is not configured"):
+            get_transcription_provider()
+        with pytest.raises(RuntimeError, match="Azure Speech is not configured"):
+            get_speech_synthesis_provider()
+    finally:
+        get_settings.cache_clear()
+
+
+def test_translation_requires_azure_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TRANSLATE_PROVIDER", "azure")
+    monkeypatch.setenv("AZURE_TRANSLATOR_KEY", "")
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
+    try:
+        with pytest.raises(RuntimeError, match="Azure Translator is not configured"):
+            get_translation_provider()
+    finally:
+        get_settings.cache_clear()
 
 
 def test_speech_locale_strips_inline_comments() -> None:

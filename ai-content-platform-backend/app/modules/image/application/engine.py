@@ -226,10 +226,11 @@ class DefaultVisualIntelligenceEngine:
             brand=request.brand,
         )
         text_result = TextAccuracyResult(checked=False, passed=True)
-        # Never run on mock-generated pixels (nothing real to check — also keeps
-        # the test suite from making a live network call) and only when the
-        # operator has explicitly opted into the extra cost.
-        if validation.passed and gen.provider != "mock" and get_settings().IMAGE_TEXT_ACCURACY_CHECK_ENABLED:
+        if (
+            validation.passed
+            and gen.provider != "deterministic_test"
+            and get_settings().IMAGE_TEXT_ACCURACY_CHECK_ENABLED
+        ):
             card_copy = dict(prompt_req.parameters.get("card_copy") or {})
             text_result = await check_rendered_text(gen.image_bytes, card_copy)
         return gen, validation, text_result

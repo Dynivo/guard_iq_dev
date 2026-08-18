@@ -32,8 +32,8 @@ There is **no LinkedIn auto-post**. Editors approve drafts and publish manually.
 | Python **3.11+** | Yes | Backend runtime |
 | PostgreSQL **14+** | Yes | App database |
 | Redis | Recommended (required if `JOB_BACKEND=dramatiq`) | Job queue / cache |
-| LLM API key(s) | Optional | Real text generation (`mock` works without keys) |
-| Image provider | Optional | Real images (`mock` / `openai` / `comfyui`) |
+| LLM API key(s) | Yes for AI features | Text generation and scoring |
+| Image provider credentials | Yes for cloud images | Gemini / OpenAI key, or self-hosted ComfyUI |
 
 ---
 
@@ -174,7 +174,7 @@ cp .env.example .env
 # Edit .env — set DATABASE_URL, JWT secrets, and any API keys you need
 ```
 
-**Minimum to boot locally with mocks (no paid APIs):**
+**Minimum local configuration:**
 
 | Variable | Example | Notes |
 |----------|---------|--------|
@@ -183,8 +183,8 @@ cp .env.example .env
 | `JWT_REFRESH_SECRET_KEY` | different long random hex | **Required** |
 | `CORS_ORIGINS` | `["http://localhost:3000"]` | Must match frontend URL |
 | `JOB_BACKEND` | `inline` | No worker needed |
-| `DEFAULT_LLM_PROVIDER` | `mock` | No LLM keys needed |
-| `IMAGE_PROVIDER` | `mock` | No image API / GPU needed |
+| `DEFAULT_LLM_PROVIDER` | `gemini` | Set the matching provider API key |
+| `IMAGE_PROVIDER` | `gemini` | Set `GEMINI_API_KEY`, or configure another real image provider |
 | `STORAGE_PROVIDER` | `local` | Files under `data/media` |
 
 Generate secrets:
@@ -413,5 +413,5 @@ Envelope shape: `{ "data": ..., "error": ..., "meta": { "request_id": "..." } }`
 | RDS SSL / auth errors | `DATABASE_SSL=require`; security group allows your IP |
 | Jobs stuck in “queued” | Set `JOB_BACKEND=inline` **or** start `bash scripts/run_worker.sh` |
 | CORS errors in browser | Add exact frontend origin to `CORS_ORIGINS` |
-| Mock-looking posts/images | Set real `DEFAULT_LLM_PROVIDER` / `IMAGE_PROVIDER` + keys |
+| AI provider is not configured | Set a supported `DEFAULT_LLM_PROVIDER` / `IMAGE_PROVIDER` and matching credentials |
 | Worker crashes on import | Activate `.venv`; run from repo root; use `dramatiq app.workers` |

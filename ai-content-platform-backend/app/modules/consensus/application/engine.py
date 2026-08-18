@@ -272,13 +272,8 @@ class DefaultConsensusEngine:
         for entry in panel:
             if isinstance(entry, dict) and entry.get("provider"):
                 names.append(str(entry["provider"]).lower())
-        # Only providers with configured API keys (skip dead fan-out / mock unless alone)
+        # Only providers with configured credentials participate in the panel.
         from app.modules.providers.infrastructure.provider_factory import DefaultProviderFactory
 
         factory = DefaultProviderFactory()
-        keyed = [n for n in names if n != "mock" and factory.has_credentials(n)]
-        if keyed:
-            return keyed
-        if "mock" in names and factory.has_credentials("mock"):
-            return ["mock"]
-        return names
+        return [n for n in names if factory.has_credentials(n)]

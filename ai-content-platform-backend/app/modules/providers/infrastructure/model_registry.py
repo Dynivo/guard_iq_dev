@@ -40,9 +40,12 @@ class YamlModelRegistry:
             return
         data = yaml.safe_load(self._path.read_text(encoding="utf-8")) or {}
         for mid, item in (data.get("models") or {}).items():
+            provider = str(item.get("provider") or "").strip().lower()
+            if not provider or provider == "mock":
+                continue
             self._models[mid] = ModelSpec(
                 model_id=mid,
-                provider=str(item.get("provider", "mock")),
+                provider=provider,
                 model=str(item.get("model") or mid),
                 context_window=int(item.get("context_window", 128_000)),
                 supports_streaming=bool(item.get("supports_streaming", False)),
