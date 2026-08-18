@@ -31,14 +31,6 @@ const CarouselPage = lazy(() =>
 const BrandKitPage = lazy(() =>
   import('@/pages/BrandKitPage').then((m) => ({ default: m.BrandKitPage }))
 );
-const BrandOnboardingPage = lazy(() =>
-  import('@/pages/BrandOnboardingPage').then((m) => ({ default: m.BrandOnboardingPage }))
-);
-const BrandIntelligenceDashboardPage = lazy(() =>
-  import('@/pages/BrandIntelligenceDashboardPage').then((m) => ({
-    default: m.BrandIntelligenceDashboardPage,
-  }))
-);
 const NewsSourcesPage = lazy(() =>
   import('@/pages/NewsSourcesPage').then((m) => ({ default: m.NewsSourcesPage }))
 );
@@ -131,8 +123,8 @@ export const router = createBrowserRouter([
       { path: 'learning', element: <L><LearningPage /></L> },
       { path: 'prompts', element: <L><PromptsPage /></L> },
       { path: 'brand', element: <L><BrandKitPage /></L> },
-      { path: 'brand/onboarding', element: <L><BrandOnboardingPage /></L> },
-      { path: 'brand/intelligence', element: <L><BrandIntelligenceDashboardPage /></L> },
+      { path: 'brand/onboarding', element: <Navigate to={routes.brand} replace /> },
+      { path: 'brand/intelligence', element: <Navigate to={routes.brand} replace /> },
       { path: 'sources', element: <L><NewsSourcesPage /></L> },
       { path: 'providers', element: <L><ProvidersPage /></L> },
       { path: 'jobs', element: <L><JobsPage /></L> },
@@ -146,8 +138,8 @@ export const router = createBrowserRouter([
   { path: '/drafts/:draftId', element: <LegacyDraftRedirect /> },
   { path: '/sources', element: <Navigate to={routes.sources} replace /> },
   { path: '/brand', element: <Navigate to={routes.brand} replace /> },
-  { path: '/brand/onboarding', element: <Navigate to={routes.brandOnboarding} replace /> },
-  { path: '/brand/intelligence', element: <Navigate to={routes.brandDashboard} replace /> },
+  { path: '/brand/onboarding', element: <Navigate to={routes.brand} replace /> },
+  { path: '/brand/intelligence', element: <Navigate to={routes.brand} replace /> },
   { path: '/analytics', element: <Navigate to={routes.analytics} replace /> },
   { path: '/settings', element: <Navigate to={routes.settings} replace /> },
   { path: '*', element: <Navigate to={routes.home} replace /> },

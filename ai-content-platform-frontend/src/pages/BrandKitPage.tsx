@@ -1,16 +1,10 @@
 import { useState, useEffect, useRef, type FormEvent, type ChangeEvent } from 'react';
-import { Link } from 'react-router-dom';
 import {
   Copy,
   Check,
   FileText,
   Upload,
   Pencil,
-  Sparkles,
-  RefreshCw,
-  BarChart3,
-  RotateCcw,
-  ExternalLink,
   ImageIcon,
 } from 'lucide-react';
 import { useApiQuery } from '@/hooks/useApiQuery';
@@ -24,17 +18,14 @@ import { ErrorState } from '@/components/ErrorState';
 import { ComboboxField } from '@/components/ComboboxField';
 import { BrandProfileReadable } from '@/components/BrandProfileReadable';
 import { AuthenticatedImage } from '@/components/AuthenticatedImage';
-import { Badge } from '@/design-system/ui/badge';
 import type { BrandKit, BrandProfileTemplate, ApiEnvelope } from '@/api/types';
 import {
   getBrandProfileHub,
   listBrandProfiles,
-  syncBrandLatest,
   uploadBrandAsset,
   type BrandProfileHub,
   type BrandIntelligenceProfile,
 } from '@/api/brandIntelligence';
-import { routes } from '@/lib/routes';
 import { toast } from 'sonner';
 
 const INDUSTRY_OPTIONS = [
@@ -91,10 +82,8 @@ export function BrandKitPage() {
   const [pasteText, setPasteText] = useState('');
   const [showPrompt, setShowPrompt] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const [biProfile, setBiProfile] = useState<BrandIntelligenceProfile | null>(null);
   const [hub, setHub] = useState<BrandProfileHub | null>(null);
-  const [hubLoading, setHubLoading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -136,7 +125,6 @@ export function BrandKitPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      setHubLoading(true);
       try {
         const profiles = await listBrandProfiles();
         const selected = profiles.find((p) => p.is_default) || profiles[0] || null;
@@ -151,8 +139,6 @@ export function BrandKitPage() {
           setBiProfile(null);
           setHub(null);
         }
-      } finally {
-        if (!cancelled) setHubLoading(false);
       }
     })();
     return () => {
@@ -169,7 +155,7 @@ export function BrandKitPage() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file || !biProfile) {
-      toast.error('Create a Brand Intelligence profile first');
+      toast.error('Brand profile is unavailable');
       return;
     }
     setUploadingLogo(true);
@@ -265,28 +251,6 @@ export function BrandKitPage() {
     }
   };
 
-  const handleSyncLatest = async () => {
-    setSyncing(true);
-    try {
-      const profiles = await listBrandProfiles();
-      const selected = profiles.find((p) => p.is_default) || profiles[0];
-      if (!selected) {
-        toast.error('Create a Brand Intelligence profile first');
-        return;
-      }
-      const result = await syncBrandLatest({ brand_profile_id: selected.id });
-      toast.success(
-        result.job_id
-          ? `Sync started (job ${result.job_id.slice(0, 8)}…)`
-          : 'Sync started'
-      );
-    } catch {
-      toast.error('Sync failed — complete onboarding with LinkedIn/website first');
-    } finally {
-      setSyncing(false);
-    }
-  };
-
   if (isLoading) return <Spinner />;
   if (isError) return <ErrorState message="Unable to load brand kit." onRetry={refetch} />;
 
@@ -297,247 +261,7 @@ export function BrandKitPage() {
       <PageHeader
         title="Brand"
         description="Tell us who you are. This shapes News scoring, draft writing, and LinkedIn visuals."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" size="sm" asChild>
-              <Link to={routes.brandOnboarding}>
-                <Sparkles className="h-3.5 w-3.5" />
-                Complete Brand Intelligence
-              </Link>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              loading={syncing}
-              onClick={() => void handleSyncLatest()}
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Sync Latest
-            </Button>
-            <Button type="button" variant="outline" size="sm" asChild>
-              <Link to={routes.brandOnboarding}>
-                <RotateCcw className="h-3.5 w-3.5" />
-                Re-analyze
-              </Link>
-            </Button>
-            <Button type="button" size="sm" asChild>
-              <Link to={routes.brandDashboard}>
-                <BarChart3 className="h-3.5 w-3.5" />
-                Intelligence dashboard
-              </Link>
-            </Button>
-          </div>
-        }
       />
-
-      <Card>
-        <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-foreground">Brand Intelligence</p>
-            <p className="text-xs text-muted-foreground">
-              Import LinkedIn, website, and assets into versioned Brand Memory — then review scores
-              and DNA on the dashboard.
-            </p>
-          </div>
-          <Button type="button" asChild>
-            <Link to={routes.brandOnboarding}>Start 12-step wizard</Link>
-          </Button>
-        </CardContent>
-      </Card>
-
-      <section className="space-y-3">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-semibold tracking-tight text-foreground">
-              Scraped brand sources
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              LinkedIn / website / uploads connected to{' '}
-              {biProfile?.name || 'your Brand Intelligence profile'}. Add a logo anytime.
-            </p>
-          </div>
-          {biProfile && (
-            <Button type="button" variant="outline" size="sm" asChild>
-              <Link to={`${routes.brandDashboard}?profileId=${biProfile.id}`}>
-                <BarChart3 className="h-3.5 w-3.5" />
-                Open dashboard
-              </Link>
-            </Button>
-          )}
-        </div>
-
-        {hubLoading && (
-          <Card>
-            <CardContent className="py-6 text-sm text-muted-foreground">
-              Loading Brand Intelligence…
-            </CardContent>
-          </Card>
-        )}
-
-        {!hubLoading && !hub && (
-          <Card>
-            <CardContent className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-muted-foreground">
-                No scraped Brand Memory yet. Run the wizard with a LinkedIn URL (e.g. Shailesh
-                Bhudia / Hybrd).
-              </p>
-              <Button type="button" asChild>
-                <Link to={routes.brandOnboarding}>Connect LinkedIn</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {hub && (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <h3 className="font-semibold text-foreground">Logo & assets</h3>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex h-28 items-center justify-center rounded-md border border-dashed border-border bg-muted/30">
-                  {logoKey ? (
-                    <AuthenticatedImage
-                      src={`/media/objects/${logoKey}`}
-                      alt="Brand logo"
-                      className="max-h-24 max-w-full object-contain"
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center gap-1 text-muted-foreground">
-                      <ImageIcon className="h-6 w-6" />
-                      <span className="text-xs">No logo yet</span>
-                    </div>
-                  )}
-                </div>
-                <input
-                  ref={logoInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                  className="hidden"
-                  onChange={(e) => void handleLogoUpload(e)}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  loading={uploadingLogo}
-                  onClick={() => logoInputRef.current?.click()}
-                >
-                  <Upload className="h-3.5 w-3.5" />
-                  {logoKey ? 'Replace logo' : 'Upload logo'}
-                </Button>
-                {hub.memory && (
-                  <div className="space-y-1 text-xs text-muted-foreground">
-                    <p>
-                      Memory{' '}
-                      <Badge variant="secondary">{hub.memory.lifecycle}</Badge> · v
-                      {hub.memory.version_no}
-                    </p>
-                    <p>
-                      Confidence {Math.round((hub.memory.confidence || 0) * 100)}% · score{' '}
-                      {(hub.memory.completeness as { overall_brand_score?: number } | undefined)
-                        ?.overall_brand_score ?? '—'}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <h3 className="font-semibold text-foreground">From LinkedIn & imports</h3>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {(() => {
-                  const dna = (hub.memory?.brand_dna || {}) as Record<string, unknown>;
-                  const linkedin =
-                    (typeof dna.linkedin_url === 'string' && dna.linkedin_url) ||
-                    hub.sources.find((s) => s.source_type === 'linkedin')?.canonical_url;
-                  const topics = Array.isArray(dna.topics)
-                    ? dna.topics
-                        .map((t) =>
-                          typeof t === 'object' && t && 'label' in t
-                            ? String((t as { label: string }).label)
-                            : String(t)
-                        )
-                        .slice(0, 8)
-                    : [];
-                  return (
-                    <div className="space-y-2 text-sm">
-                      {typeof dna.founder === 'string' && (
-                        <p>
-                          <span className="text-muted-foreground">Founder:</span> {dna.founder}
-                        </p>
-                      )}
-                      {typeof dna.company === 'string' && (
-                        <p>
-                          <span className="text-muted-foreground">Company:</span> {dna.company}
-                        </p>
-                      )}
-                      {typeof dna.headline === 'string' && (
-                        <p>
-                          <span className="text-muted-foreground">Headline:</span> {dna.headline}
-                        </p>
-                      )}
-                      {linkedin && (
-                        <p className="flex flex-wrap items-center gap-2">
-                          <span className="text-muted-foreground">LinkedIn:</span>
-                          <a
-                            href={linkedin}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-primary underline-offset-2 hover:underline"
-                          >
-                            {linkedin.replace(/^https?:\/\//, '')}
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        </p>
-                      )}
-                      {topics.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 pt-1">
-                          {topics.map((t) => (
-                            <Badge key={t} variant="outline">
-                              {t}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-
-                <div className="max-h-64 space-y-2 overflow-y-auto border-t border-border pt-3">
-                  {hub.sources.length === 0 && (
-                    <p className="text-xs text-muted-foreground">No source objects stored yet.</p>
-                  )}
-                  {hub.sources.map((s) => (
-                    <div
-                      key={s.id}
-                      className="rounded-md border border-border/80 px-3 py-2 text-xs"
-                    >
-                      <div className="mb-1 flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">{s.source_type}</Badge>
-                        <Badge variant="outline">{s.object_type}</Badge>
-                        {s.title && (
-                          <span className="font-medium text-foreground">{s.title}</span>
-                        )}
-                      </div>
-                      {s.body_preview && (
-                        <p className="whitespace-pre-wrap text-muted-foreground">
-                          {s.body_preview}
-                          {(s.body_preview.length || 0) >= 400 ? '…' : ''}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </section>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <section className="space-y-3">
@@ -616,6 +340,47 @@ export function BrandKitPage() {
             </p>
           </div>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <h3 className="font-semibold text-foreground">Logo</h3>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex h-28 items-center justify-center rounded-md border border-dashed border-border bg-muted/30">
+                  {logoKey ? (
+                    <AuthenticatedImage
+                      src={`/media/objects/${logoKey}`}
+                      alt="Brand logo"
+                      className="max-h-24 max-w-full object-contain"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                      <ImageIcon className="h-6 w-6" />
+                      <span className="text-xs">No logo yet</span>
+                    </div>
+                  )}
+                </div>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="hidden"
+                  onChange={(e) => void handleLogoUpload(e)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  loading={uploadingLogo}
+                  disabled={!biProfile}
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  {logoKey ? 'Replace logo' : 'Upload logo'}
+                </Button>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <h3 className="font-semibold text-foreground">Colors</h3>

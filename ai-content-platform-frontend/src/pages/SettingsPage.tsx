@@ -12,7 +12,6 @@ import {
   Sun,
   UserRound,
   Monitor,
-  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApiQuery } from '@/hooks/useApiQuery';
@@ -42,12 +41,6 @@ const SHORTCUTS = [
     description: 'Profile, colors, and LinkedIn house style',
     to: routes.brand,
     icon: Palette,
-  },
-  {
-    title: 'Brand Intelligence',
-    description: '12-step import wizard and Brand Memory dashboard',
-    to: routes.brandOnboarding,
-    icon: Sparkles,
   },
   {
     title: 'News sources',

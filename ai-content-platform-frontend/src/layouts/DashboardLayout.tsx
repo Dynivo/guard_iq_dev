@@ -81,8 +81,6 @@ const crumbs: Record<string, string> = {
   [routes.learning]: 'Learning',
   [routes.prompts]: 'Prompts',
   [routes.brand]: 'Brand',
-  [routes.brandOnboarding]: 'Brand onboarding',
-  [routes.brandDashboard]: 'Brand Intelligence',
   [routes.sources]: 'Sources',
   [routes.providers]: 'Providers',
   [routes.jobs]: 'Jobs',
